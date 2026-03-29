@@ -1,15 +1,24 @@
 @import "tailwindcss";
 
-@theme {
-  --font-size-h1: 2.125rem; /* 34px */
-  --font-size-h2: 1.25rem; /* 20px */
-  --font-size-h3: 1rem; /* 16px */
-  --font-size-p: 0.875rem; /* 14px */
-  --color-contrast: #1F2126;
-  --color-button-primary: #98CEAA;
-  --color-button-primary-hover: #6D8F78;
-  --color-button-secondary: #565B5B;
-  --color-button-secondary-hover: #667171;
+:root {
+  /*--background: #ffffff;*/
+  /*--foreground: #171717;*/
+}
+
+.text-h1 {
+  font-size: 2.125rem; /* 34px */
+}
+
+.text-h2 {
+  font-size: 1.25rem; /* 20px */
+}
+
+.text-h3 {
+  font-size: 1rem; /* 16px */
+}
+
+.text-p {
+  font-size: 0.875rem; /* 14px */
 }
 
 .text-contrast {
@@ -18,4 +27,20 @@
 
 .button-shadow {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.15);
+}
+
+.bg-button-primary {
+  background-color: #98CEAA;
+}
+
+.bg-button-primary:hover {
+  background-color: #6D8F78;
+}
+
+.bg-button-secondary {
+  background-color: #565B5B;
+}
+
+.bg-button-secondary:hover {
+  background-color: #667171;
 }

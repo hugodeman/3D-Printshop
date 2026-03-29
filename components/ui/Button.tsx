@@ -9,15 +9,15 @@ type ButtonProps = {
 export function Button({
   children,
   variant = "primary",
-  className = "",
+  className = "", 
   ...props
 }: ButtonProps) {
   const baseClasses =
-    "px-4 py-2 text-p font-medium border border-black button-shadow transition-colors";
+    "px-6 py-3 text-p font-medium border border-black button-shadow transition-colors rounded-lg";
 
   const variantClasses = {
-    primary: "bg-button-primary text-contrast hover:bg-button-primary-hover",
-    secondary: "bg-button-secondary text-white hover:bg-button-secondary-hover",
+    primary: "bg-button-primary text-contrast",
+    secondary: "bg-button-secondary text-white",
   };
 
   return (

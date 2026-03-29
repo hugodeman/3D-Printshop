@@ -1,5 +1,5 @@
 import { H1, H2, H3, P } from "@/components/ui/Typography"
-
+import { Button } from "@/components/ui/Button"
 export default function Page() {
     return (
         <div>
@@ -11,6 +11,8 @@ export default function Page() {
             <H2 className={"text-contrast"}>Dit is subtitel</H2>
             <H3 className={"text-contrast"}>Dit is subtekst</H3>
             <P className={"text-contrast"}>Upload je model en bestel direct.</P>
+            <Button variant={"primary"}>Bestel nu</Button>
+            <Button variant={"secondary"}>Bekijk onze diensten</Button>
         </div>
     )
 }
