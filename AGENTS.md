@@ -134,3 +134,6 @@ Background components in `components/ui/Background.tsx`:
 - `<BackgroundGlow>`: Simple background with subtle white tint overlay
 - `<BackgroundContrast1>`: Solid contrast background using `bg-contrast-1` class (#CECECD)
 - `<BackgroundContrast2>`: Semi-transparent contrast background using `bg-contrast-2` class (#D9D9D9 at 10% opacity)
+
+Layout components in `components/layout/`:
+- `<Navbar>`: Navigation bar with logo placeholder, title, and navigation buttons (Webshop, Offerte maken, 3D Builder, Login/Profile) with active state detection. Conditionally shows "Login" button when not authenticated or "Profiel" button when authenticated.
