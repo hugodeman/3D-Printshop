@@ -107,3 +107,29 @@ Use Zustand for client-side state. Create stores in `lib/` or directly in compon
 - **Database**: Use `npx prisma studio` to view data, `npx prisma generate` after schema changes.
 
 Ensure all new code follows TypeScript strict mode and ESLint rules as configured in `eslint.config.mjs`.
+
+## Styling
+
+Use Tailwind CSS v4 with Poppins font loaded from Google Fonts in `app/layout.tsx`. Custom typography classes defined in `app/globals.css`:
+
+- `text-h1`: 34px, font-semibold
+- `text-h2`: 20px, font-medium  
+- `text-h3`: 16px, font-medium
+- `text-p`: 14px, normal weight
+
+Typography components in `components/ui/Typography.tsx`:
+- `<H1>`, `<H2>`, `<H3>`, `<P>` - default white color, use `className="text-contrast"` for dark text (#1F2126)
+
+Button components in `components/ui/Button.tsx` with variants:
+- `primary`: green background (#98CEAA), contrast text, hover (#6D8F78)
+- `secondary`: gray background (#565B5B), white text, hover (#667171)
+- All buttons have 5px border-radius, 1px black border, 15% black shadow, padding px-6 py-3
+
+Icon component in `components/ui/Icon.tsx` using Lucide React icons. Pass `name` prop with icon name (e.g., "Box", "Rocket"). Supports `size`, `color`, `className` props.
+
+Background components in `components/ui/Backgrounds.tsx`:
+- `<BackgroundMain>`: Main page background`bg-main` class defined in `app/globals.css`
+- `<BackgroundOverlay>`: Overlay background `bg-overlay` class, rounded corners and padding
+- `<BackgroundGlow>`: Simple background with subtle white tint overlay
+- `<BackgroundContrast1>`: Solid contrast background using `bg-contrast-1` class (#CECECD)
+- `<BackgroundContrast2>`: Semi-transparent contrast background using `bg-contrast-2` class (#D9D9D9 at 10% opacity)

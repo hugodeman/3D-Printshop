@@ -5,6 +5,12 @@
   /*--foreground: #171717;*/
 }
 
+/*Icon default*/
+body {
+  color: #FFFFFF;
+}
+
+/*Font*/
 .text-h1 {
   font-size: 2.125rem; /* 34px */
 }
@@ -25,6 +31,7 @@
   color: #1F2126;
 }
 
+/*Buttons*/
 .button-shadow {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.15);
 }
@@ -43,4 +50,22 @@
 
 .bg-button-secondary:hover {
   background-color: #667171;
+}
+
+/*Background*/
+.bg-main {
+  background-color: #37383B;
+  position: relative;
+}
+
+.bg-overlay {
+  background-color: #3F4343;
+}
+
+.bg-contrast-1 {
+  background-color: #CECECD;
+}
+
+.bg-contrast-2 {
+  background-color: rgba(217, 217, 217, 0.1); /* #D9D9D9 at 10% opacity */
 }

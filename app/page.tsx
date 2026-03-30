@@ -1,24 +1,21 @@
 import { H1, H2, H3, P } from "@/components/ui/Typography"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon";
+import { BackgroundMain, BackgroundOverlay, BackgroundContrast1, BackgroundContrast2 } from "@/components/ui/Backgrounds";
 
 export default function Page() {
     return (
-        <div className="p-8 bg-black min-h-screen text-white">
+        <BackgroundMain>
             {/* Typography Examples */}
-            <section className="mb-12">
+            <section className="p-8 mb-12">
                 <H1>Welkom bij de 3D Printshop</H1>
                 <H2>Dit is subtitel</H2>
                 <H3>Dit is subtekst</H3>
                 <P>Upload je model en bestel direct.</P>
-                <H1 className={"text-contrast"}>Welkom bij de 3D Printshop</H1>
-                <H2 className={"text-contrast"}>Dit is subtitel</H2>
-                <H3 className={"text-contrast"}>Dit is subtekst</H3>
-                <P className={"text-contrast"}>Upload je model en bestel direct.</P>
             </section>
 
             {/* Button Examples */}
-            <section className="mb-12">
+            <section className="p-8 mb-12">
                 <H2 className="mb-4">Buttons</H2>
                 <div className="flex gap-4">
                     <Button variant={"primary"}>Bestel nu</Button>
@@ -26,10 +23,55 @@ export default function Page() {
                 </div>
             </section>
 
-            {/* Icon Examples */}
-            <section>
+            {/* Background Examples */}
+            <section className="p-8 mb-12">
+                <H2 className="mb-4">Background Voorbeelden</H2>
+
+                <div className="mb-8">
+                    <H3 className="mb-4">BackgroundOverlay</H3>
+                    <BackgroundOverlay>
+                        <P>Dit is een overlay achtergrond.</P>
+                        <Button variant="primary" className="mt-4">Test Button</Button>
+                    </BackgroundOverlay>
+                </div>
+
+                <div className="mb-8">
+                    <H3 className="mb-4">BackgroundContrast2 (voorbeeld sectie)</H3>
+                    <div className="h-64">
+                        <BackgroundContrast1>
+                            <div className="p-8">
+                                <H1 className={"text-contrast"}>Welkom bij de 3D Printshop</H1>
+                                <H2 className={"text-contrast"}>Dit is subtitel</H2>
+                                <H3 className={"text-contrast"}>Dit is subtekst</H3>
+                                <P className={"text-contrast"}>Upload je model en bestel direct.</P>
+                                <Button variant="secondary" className="mt-4">Contrast button</Button>
+                            </div>
+                        </BackgroundContrast1>
+                    </div>
+                </div>
+
+                <div className="mb-8">
+                    <H3 className="mb-4">BackgroundContrast2 (voorbeeld sectie)</H3>
+                    <div className="h-64">
+                        <BackgroundContrast2>
+                            <div className="p-8">
+                                <H1>Welkom bij de 3D Printshop</H1>
+                                <H2>Dit is subtitel</H2>
+                                <H3>Dit is subtekst</H3>
+                                <P>Upload je model en bestel direct.</P>
+                                <Button variant="secondary" className="mt-4">Contrast button</Button>
+                            </div>
+                        </BackgroundContrast2>
+                    </div>
+                </div>
+            </section>
+
+
+            {/* Icon Examples */
+            }
+            <section className="p-8">
                 <H2 className="mb-8">Icon Voorbeelden</H2>
-                
+
                 {/* CAD/Design Icons */}
                 <div className="mb-8">
                     <H3 className="mb-4">CAD & Design</H3>
@@ -39,7 +81,7 @@ export default function Page() {
                             <P className="text-xs">Box</P>
                         </div>
                         <div className="flex flex-col items-center gap-2">
-                            <Icon name="Rocket" size={32} />
+                            <Icon name="Rocket" size={32}/>
                             <P className="text-xs">Rocket</P>
                         </div>
                         <div className="flex flex-col items-center gap-2">
@@ -250,6 +292,6 @@ export default function Page() {
                     </div>
                 </div>
             </section>
-        </div>
+        </BackgroundMain>
     )
 }
