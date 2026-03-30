@@ -40,7 +40,8 @@ import {
   Minus,
   Eye,
   CircleCheck,
-  ShoppingBag
+  ShoppingBag,
+  Copyright
 } from 'lucide-react';
 
 const Icons = {
@@ -84,7 +85,8 @@ const Icons = {
   Minus,
   Eye,
   CircleCheck,
-  ShoppingBag
+  ShoppingBag,
+  Copyright
 };
 
 type IconProps = {

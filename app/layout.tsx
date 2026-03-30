@@ -3,6 +3,7 @@ import "./globals.css"
 import { Poppins } from "next/font/google"
 import React from "react";
 import { Navbar } from "@/components/layout/Navbar";
+import { Footer } from "@/components/layout/Footer";
 import { BackgroundMain } from "@/components/ui/Background";
 import { SessionProvider } from "next-auth/react";
 
@@ -25,6 +26,7 @@ export default function RootLayout({
             <main>
               {children}
             </main>
+            <Footer />
           </BackgroundMain>
         </body>
       </html>

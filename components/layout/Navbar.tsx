@@ -14,7 +14,7 @@ export function Navbar({ className = "" }: NavbarProps) {
   const { data: session } = useSession();
 
   return (
-    <nav className={`flex items-center justify-between p-6 border-b border-black/5 ${className}`}>
+    <nav className={`flex items-center justify-between p-6 border-b border-black/5 bg-[#2E3033] ${className}`}>
       {/* Left side - Logo/Icon and Title */}
       <div className="flex items-center gap-4 cursor-pointer ml-8" onClick={() => window.location.href = "/"}>
         {/* Placeholder for image icon */}
