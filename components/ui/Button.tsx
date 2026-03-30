@@ -3,12 +3,14 @@ import React from "react";
 type ButtonProps = {
   children: React.ReactNode;
   variant?: "primary" | "secondary";
+  isActive?: boolean;
   className?: string;
 } & React.ButtonHTMLAttributes<HTMLButtonElement>;
 
 export function Button({
   children,
   variant = "primary",
+  isActive = false,
   className = "", 
   ...props
 }: ButtonProps) {
@@ -20,9 +22,15 @@ export function Button({
     secondary: "bg-button-secondary text-white",
   };
 
+  const activeClasses = isActive 
+    ? variant === "primary" 
+      ? "bg-button-primary-active" 
+      : "bg-button-secondary-active"
+    : "";
+
   return (
     <button
-      className={`${baseClasses} ${variantClasses[variant]} ${className}`}
+      className={`${baseClasses} ${variantClasses[variant]} ${activeClasses} ${className}`}
       {...props}
     >
       {children}

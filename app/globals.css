@@ -44,12 +44,30 @@ body {
   background-color: #6D8F78;
 }
 
+/*.bg-button-primary:active {*/
+/*  background-color: #6D8F78;*/
+/*}*/
+
+.bg-button-primary-active {
+  background-color: #6D8F78; /* Same as primary hover/active */
+  border: solid 2px; /* Add border to indicate active state */
+}
+
 .bg-button-secondary {
   background-color: #565B5B;
 }
 
 .bg-button-secondary:hover {
   background-color: #667171;
+}
+
+/*.bg-button-secondary:active {*/
+/*  background-color: #667171;*/
+/*}*/
+
+.bg-button-secondary-active {
+  background-color: #667171; /* Same as secondary hover/active */
+  border: solid 2px #1F2126; /* Add border to indicate active state */
 }
 
 /*Background*/

@@ -1,11 +1,67 @@
+"use client";
 import { H1, H2, H3, P } from "@/components/ui/Typography"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon";
-import { BackgroundMain, BackgroundOverlay, BackgroundContrast1, BackgroundContrast2 } from "@/components/ui/Backgrounds";
+import { BackgroundMain, BackgroundOverlay, BackgroundContrast1, BackgroundContrast2 } from "@/components/ui/Background";
+import { usePathname } from "next/navigation";
+
 
 export default function Page() {
+    const pathname = usePathname();
+
     return (
         <BackgroundMain>
+            {/* Navigation Example */}
+            <section className="p-8 mb-12">
+                <H2 className="mb-4">Navigation Voorbeeld</H2>
+                <div className="flex gap-4">
+                    <Button
+                        variant="secondary"
+                        isActive={pathname === "/"}
+                        onClick={() => window.location.href = "/"}
+                    >
+                        Home
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        isActive={pathname === "/builder"}
+                        onClick={() => window.location.href = "/builder"}
+                    >
+                        Builder
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        isActive={pathname === "/profile"}
+                        onClick={() => window.location.href = "/profile"}
+                    >
+                        Profile
+                    </Button>
+                </div>
+                <div className="flex gap-4 mt-4">
+                    <Button
+                        variant="primary"
+                        isActive={pathname === "/"}
+                        onClick={() => window.location.href = "/"}
+                    >
+                        Home
+                    </Button>
+                    <Button
+                        variant="primary"
+                        isActive={pathname === "/builder"}
+                        onClick={() => window.location.href = "/builder"}
+                    >
+                        Builder
+                    </Button>
+                    <Button
+                        variant="primary"
+                        isActive={pathname === "/profile"}
+                        onClick={() => window.location.href = "/profile"}
+                    >
+                        Profile
+                    </Button>
+                </div>
+            </section>
+
             {/* Typography Examples */}
             <section className="p-8 mb-12">
                 <H1>Welkom bij de 3D Printshop</H1>

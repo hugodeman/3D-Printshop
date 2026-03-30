@@ -121,13 +121,14 @@ Typography components in `components/ui/Typography.tsx`:
 - `<H1>`, `<H2>`, `<H3>`, `<P>` - default white color, use `className="text-contrast"` for dark text (#1F2126)
 
 Button components in `components/ui/Button.tsx` with variants:
-- `primary`: green background (#98CEAA), contrast text, hover (#6D8F78)
-- `secondary`: gray background (#565B5B), white text, hover (#667171)
+- `primary`: green background (#98CEAA), contrast text, hover (#6D8F78), active (#6D8F78)
+- `secondary`: gray background (#565B5B), white text, hover (#667171), active (#667171)
+- `isActive` prop: applies variant-specific active styling (primary: #6D8F78, secondary: #667171) for navigation active states
 - All buttons have 5px border-radius, 1px black border, 15% black shadow, padding px-6 py-3
 
 Icon component in `components/ui/Icon.tsx` using Lucide React icons. Pass `name` prop with icon name (e.g., "Box", "Rocket"). Supports `size`, `color`, `className` props.
 
-Background components in `components/ui/Backgrounds.tsx`:
+Background components in `components/ui/Background.tsx`:
 - `<BackgroundMain>`: Main page background`bg-main` class defined in `app/globals.css`
 - `<BackgroundOverlay>`: Overlay background `bg-overlay` class, rounded corners and padding
 - `<BackgroundGlow>`: Simple background with subtle white tint overlay
