@@ -1,10 +1,5 @@
 @import "tailwindcss";
 
-:root {
-  /*--background: #ffffff;*/
-  /*--foreground: #171717;*/
-}
-
 /*Icon default*/
 body {
   color: #FFFFFF;
@@ -68,6 +63,35 @@ body {
 .bg-button-secondary-active {
   background-color: #667171; /* Same as secondary hover/active */
   border: solid 2px #1F2126; /* Add border to indicate active state */
+}
+
+/*Inputs*/
+.input-shadow {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.15);
+}
+
+.bg-input-normal {
+  background-color: #565B5B;
+}
+
+.border-input-normal {
+  border-color: rgba(0, 0, 0, 0.30);
+}
+
+.text-input-normal {
+  color: #FFFFFF;
+}
+
+.bg-input-contrast {
+  background-color: #6D8F78;
+}
+
+.border-input-contrast {
+  border-color: #000000;
+}
+
+.text-input-contrast {
+  color: #1F2126;
 }
 
 /*Background*/

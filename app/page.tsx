@@ -3,6 +3,7 @@ import { H1, H2, H3, P } from "@/components/ui/Typography"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon";
 import { BackgroundOverlay, BackgroundContrast1, BackgroundContrast2 } from "@/components/ui/Background";
+import { Input } from "@/components/ui/Input";
 
 
 export default function Page() {
@@ -18,26 +19,9 @@ export default function Page() {
                 </section>
             </BackgroundOverlay>
 
-            {/* Button Examples */}
-            <section className="p-8 mb-12">
-                <H2 className="mb-4">Buttons</H2>
-                <div className="flex gap-4">
-                    <Button variant={"primary"}>Bestel nu</Button>
-                    <Button variant={"secondary"}>Bekijk onze diensten</Button>
-                </div>
-            </section>
-
             {/* Background Examples */}
-            <section className="p-8 mb-12">
+            <section className="p-8 mb-12 h-72]]">
                 <H2 className="mb-4">Background Voorbeelden</H2>
-
-                <div className="mb-8">
-                    <BackgroundOverlay>
-                    <H3 className="mb-4">BackgroundOverlay</H3>
-                        <P>Dit is een overlay achtergrond.</P>
-                        <Button variant="primary" className="mt-4">Test Button</Button>
-                    </BackgroundOverlay>
-                </div>
 
                 <div className="mb-8">
                     <H3 className="mb-4">BackgroundContrast2 (voorbeeld sectie)</H3>
@@ -50,11 +34,30 @@ export default function Page() {
                                 <P className={"text-contrast"}>Upload je model en bestel direct.</P>
                                 <Button variant="secondary" className="mt-4">Contrast button</Button>
                             </div>
+                            <div className="p-6 space-y-4 max-w-xl">
+                                <Input
+                                    variant="contrast"
+                                    inputSize="lg"
+                                    placeholder="Groene input - groot"
+                                />
+                                <div className={"flex gap-10"}>
+                                    <Input
+                                        variant="contrast"
+                                        inputSize="sm"
+                                        placeholder="Groene input - klein"
+                                    />
+                                    <Input
+                                        variant="contrast"
+                                        inputSize="sm"
+                                        placeholder="Groene input - klein"
+                                    />
+                                </div>
+                            </div>
                         </BackgroundContrast1>
                     </div>
                 </div>
 
-                <div className="mb-8">
+                <div className="mb-20 mt-45">
                     <H3 className="mb-4">BackgroundContrast2 (voorbeeld sectie)</H3>
                     <div className="h-64">
                         <BackgroundContrast2>
@@ -63,13 +66,34 @@ export default function Page() {
                                 <H2>Dit is subtitel</H2>
                                 <H3>Dit is subtekst</H3>
                                 <P>Upload je model en bestel direct.</P>
-                                <Button variant="secondary" className="mt-4">Contrast button</Button>
+                                <div className={"flex gap-10"}>
+                                    <Button variant="secondary" className="mt-4">Contrast button</Button>
+                                    <Button variant="primary" className="mt-4">Contrast button</Button>
+                                </div>
+                            </div>
+                            <div className="p-6 space-y-4 max-w-xl">
+                                <Input
+                                    variant="normal"
+                                    inputSize="lg"
+                                    placeholder="Normale input - groot"
+                                />
+                                <div className={"flex gap-10"}>
+                                    <Input
+                                        variant="normal"
+                                        inputSize="sm"
+                                        placeholder="Normale input - klein"
+                                    />
+                                    <Input
+                                        variant="normal"
+                                        inputSize="sm"
+                                        placeholder="Normale input - klein"
+                                    />
+                                </div>
                             </div>
                         </BackgroundContrast2>
                     </div>
                 </div>
             </section>
-
 
             {/* Icon Examples */
             }
