@@ -12,3 +12,187 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+//////////////////////////////////////
+// ENUMS
+//////////////////////////////////////
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  COMPLETED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+enum QuoteStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+enum ProductType {
+  FIGURE
+  PRACTICAL
+}
+
+//////////////////////////////////////
+// MODELS
+//////////////////////////////////////
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  role      UserRole @default(USER)
+  createdAt DateTime @default(now())
+
+  addresses       Address[]
+  orders          Order[]
+  quotes          Quote[]
+  builderItems    BuilderItem[]
+  productsCreated Product[]
+}
+
+model Address {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  firstName String
+  lastName  String
+  country   String
+  postal    String
+  street    String
+  addition  String?
+  city      String
+}
+
+model Product {
+  id          String      @id @default(cuid())
+  title       String
+  description String
+  price       Decimal
+  type        ProductType
+
+  filament     String?
+  dimensions   String?
+  deliveryTime Int?
+
+  createdAt DateTime @default(now())
+
+  createdById String?
+  createdBy   User?   @relation(fields: [createdById], references: [id])
+
+  images     ProductImage[]
+  options    ProductOption?
+  orderItems OrderItem[]
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  url String
+}
+
+model ProductOption {
+  id        String  @id @default(cuid())
+  productId String  @unique
+  product   Product @relation(fields: [productId], references: [id])
+
+  paintable Boolean?
+  color     String?
+}
+
+model BuilderItem {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  imageUrl     String?
+  deliveryTime Int?
+  configJson   Json
+
+  createdAt DateTime @default(now())
+
+  orderItem OrderItem?
+}
+
+model Order {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  status OrderStatus @default(PENDING)
+  total  Decimal
+  note   String?
+
+  createdAt DateTime @default(now())
+
+  items   OrderItem[]
+  payment Payment?
+}
+
+model OrderItem {
+  id String @id @default(cuid())
+
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id])
+
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id])
+
+  builderItemId String?      @unique
+  builderItem   BuilderItem? @relation(fields: [builderItemId], references: [id])
+
+  quantity Int
+  price    Decimal
+}
+
+model Payment {
+  id String @id @default(cuid())
+
+  orderId String @unique
+  order   Order  @relation(fields: [orderId], references: [id])
+
+  mollieId String
+  status   PaymentStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+}
+
+model Quote {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  status      QuoteStatus @default(PENDING)
+  description String
+  question    String?
+
+  createdAt DateTime @default(now())
+
+  files QuoteFile[]
+}
+
+model QuoteFile {
+  id String @id @default(cuid())
+
+  quoteId String
+  quote   Quote  @relation(fields: [quoteId], references: [id])
+
+  url String
+}
