@@ -22,6 +22,9 @@ type PlacedObject = {
 	color: string
 }
 
+const PREVIEW_SCALE_MULTIPLIER = 20
+const SCENE_ITEM_SPACING = 3.6
+
 const modelAssets: ModelAsset[] = [
 	{
 		id: "cylinder-model",
@@ -84,7 +87,13 @@ function GLTFObject({
 		return sceneClone
 	}, [gltf.scene, tintColor])
 
-	return <primitive object={clonedScene} position={position} />
+	return (
+		<primitive
+			object={clonedScene}
+			position={position}
+			scale={PREVIEW_SCALE_MULTIPLIER}
+		/>
+	)
 }
 
 function SceneObject({ asset, placedObject }: { asset: ModelAsset; placedObject: PlacedObject }) {
@@ -106,7 +115,11 @@ export default function BuilderPage() {
 		setPlacedObjects((current) => {
 			const column = current.length % 4
 			const row = Math.floor(current.length / 4)
-			const position: [number, number, number] = [column * 1.8 - 2.7, 0.5, row * -1.8]
+			const position: [number, number, number] = [
+				column * SCENE_ITEM_SPACING - SCENE_ITEM_SPACING * 1.5,
+				0.5,
+				row * -SCENE_ITEM_SPACING,
+			]
 
 			return [
 				...current,
@@ -126,6 +139,9 @@ export default function BuilderPage() {
 				<h2 className="text-h2">Modellen</h2>
 				<p className="mt-2 text-p text-white/80">
 					Plaats .glb bestanden in <code>/public/models</code> en thumbnails in <code>/public/object-cards</code>.
+				</p>
+				<p className="mt-2 text-p text-white/70">
+					Preview is visueel opgeschaald voor duidelijkheid. Printformaat blijft gebaseerd op je echte modelmaten.
 				</p>
 
 				<div className="mt-4 grid grid-cols-2 gap-3">
@@ -150,19 +166,19 @@ export default function BuilderPage() {
 			</section>
 
 			<section className="rounded-md border border-black/20">
-				<Canvas camera={{ position: [6, 6, 6], fov: 55 }}>
+				<Canvas camera={{ position: [4.5, 4.5, 4.5], fov: 46 }}>
 					<color attach="background" args={["#1F2126"]} />
 					<ambientLight intensity={0.5} />
 					<directionalLight position={[6, 9, 4]} intensity={1.2} />
 
 					<Grid
 						args={[20, 20]}
-						cellSize={0.4}
+						cellSize={0.2}
 						cellThickness={0.5}
 						// sectionColor={"#D9D9D9"}
-						sectionSize={2}
+						sectionSize={1}
 						sectionThickness={1}
-						fadeDistance={30}
+						fadeDistance={18}
 						fadeStrength={1}
 						infiniteGrid
 					/>
@@ -185,7 +201,7 @@ export default function BuilderPage() {
 						})}
 					</Suspense>
 
-					<OrbitControls makeDefault />
+					<OrbitControls makeDefault minDistance={1.5} maxDistance={30} />
 				</Canvas>
 			</section>
 		</main>
