@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../app/generated/prisma"
@@ -10,12 +5,127 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
-//////////////////////////////////////
-// ENUMS
-//////////////////////////////////////
+model User {
+  id              String        @id @default(cuid())
+  email           String        @unique
+  password        String
+  role            UserRole      @default(USER)
+  createdAt       DateTime      @default(now())
+  addresses       Address[]
+  builderItems    BuilderItem[]
+  orders          Order[]
+  productsCreated Product[]
+  quotes          Quote[]
+}
+
+model Address {
+  id        String  @id @default(cuid())
+  userId    String
+  firstName String
+  lastName  String
+  country   String
+  postal    String
+  street    String
+  addition  String?
+  city      String
+  user      User    @relation(fields: [userId], references: [id])
+}
+
+model Product {
+  id           String         @id @default(cuid())
+  title        String
+  description  String
+  price        Decimal
+  type         ProductType
+  filament     String?
+  dimensions   String?
+  deliveryTime Int?
+  createdAt    DateTime       @default(now())
+  createdById  String?
+  orderItems   OrderItem[]
+  createdBy    User?          @relation(fields: [createdById], references: [id])
+  images       ProductImage[]
+  options      ProductOption?
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  productId String
+  url       String
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+model ProductOption {
+  id        String   @id @default(cuid())
+  productId String   @unique
+  paintable Boolean?
+  color     String?
+  product   Product  @relation(fields: [productId], references: [id])
+}
+
+model BuilderItem {
+  id           String     @id @default(cuid())
+  userId       String
+  imageUrl     String?
+  deliveryTime Int?
+  configJson   Json
+  createdAt    DateTime   @default(now())
+  user         User       @relation(fields: [userId], references: [id])
+  orderItem    OrderItem?
+}
+
+model Order {
+  id        String      @id @default(cuid())
+  userId    String
+  status    OrderStatus @default(PENDING)
+  total     Decimal
+  note      String?
+  createdAt DateTime    @default(now())
+  user      User        @relation(fields: [userId], references: [id])
+  items     OrderItem[]
+  payment   Payment?
+}
+
+model OrderItem {
+  id            String       @id @default(cuid())
+  orderId       String
+  productId     String?
+  builderItemId String?      @unique
+  quantity      Int
+  price         Decimal
+  builderItem   BuilderItem? @relation(fields: [builderItemId], references: [id])
+  order         Order        @relation(fields: [orderId], references: [id])
+  product       Product?     @relation(fields: [productId], references: [id])
+}
+
+model Payment {
+  id        String        @id @default(cuid())
+  orderId   String        @unique
+  mollieId  String
+  status    PaymentStatus @default(PENDING)
+  createdAt DateTime      @default(now())
+  order     Order         @relation(fields: [orderId], references: [id])
+}
+
+model Quote {
+  id          String      @id @default(cuid())
+  userId      String
+  status      QuoteStatus @default(PENDING)
+  description String
+  question    String?
+  createdAt   DateTime    @default(now())
+  user        User        @relation(fields: [userId], references: [id])
+  files       QuoteFile[]
+}
+
+model QuoteFile {
+  id      String @id @default(cuid())
+  quoteId String
+  url     String
+  quote   Quote  @relation(fields: [quoteId], references: [id])
+}
 
 enum UserRole {
   USER
@@ -44,155 +154,4 @@ enum QuoteStatus {
 enum ProductType {
   FIGURE
   PRACTICAL
-}
-
-//////////////////////////////////////
-// MODELS
-//////////////////////////////////////
-
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  role      UserRole @default(USER)
-  createdAt DateTime @default(now())
-
-  addresses       Address[]
-  orders          Order[]
-  quotes          Quote[]
-  builderItems    BuilderItem[]
-  productsCreated Product[]
-}
-
-model Address {
-  id     String @id @default(cuid())
-  userId String
-  user   User   @relation(fields: [userId], references: [id])
-
-  firstName String
-  lastName  String
-  country   String
-  postal    String
-  street    String
-  addition  String?
-  city      String
-}
-
-model Product {
-  id          String      @id @default(cuid())
-  title       String
-  description String
-  price       Decimal
-  type        ProductType
-
-  filament     String?
-  dimensions   String?
-  deliveryTime Int?
-
-  createdAt DateTime @default(now())
-
-  createdById String?
-  createdBy   User?   @relation(fields: [createdById], references: [id])
-
-  images     ProductImage[]
-  options    ProductOption?
-  orderItems OrderItem[]
-}
-
-model ProductImage {
-  id        String  @id @default(cuid())
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
-
-  url String
-}
-
-model ProductOption {
-  id        String  @id @default(cuid())
-  productId String  @unique
-  product   Product @relation(fields: [productId], references: [id])
-
-  paintable Boolean?
-  color     String?
-}
-
-model BuilderItem {
-  id     String @id @default(cuid())
-  userId String
-  user   User   @relation(fields: [userId], references: [id])
-
-  imageUrl     String?
-  deliveryTime Int?
-  configJson   Json
-
-  createdAt DateTime @default(now())
-
-  orderItem OrderItem?
-}
-
-model Order {
-  id     String @id @default(cuid())
-  userId String
-  user   User   @relation(fields: [userId], references: [id])
-
-  status OrderStatus @default(PENDING)
-  total  Decimal
-  note   String?
-
-  createdAt DateTime @default(now())
-
-  items   OrderItem[]
-  payment Payment?
-}
-
-model OrderItem {
-  id String @id @default(cuid())
-
-  orderId String
-  order   Order  @relation(fields: [orderId], references: [id])
-
-  productId String?
-  product   Product? @relation(fields: [productId], references: [id])
-
-  builderItemId String?      @unique
-  builderItem   BuilderItem? @relation(fields: [builderItemId], references: [id])
-
-  quantity Int
-  price    Decimal
-}
-
-model Payment {
-  id String @id @default(cuid())
-
-  orderId String @unique
-  order   Order  @relation(fields: [orderId], references: [id])
-
-  mollieId String
-  status   PaymentStatus @default(PENDING)
-
-  createdAt DateTime @default(now())
-}
-
-model Quote {
-  id String @id @default(cuid())
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id])
-
-  status      QuoteStatus @default(PENDING)
-  description String
-  question    String?
-
-  createdAt DateTime @default(now())
-
-  files QuoteFile[]
-}
-
-model QuoteFile {
-  id String @id @default(cuid())
-
-  quoteId String
-  quote   Quote  @relation(fields: [quoteId], references: [id])
-
-  url String
 }
