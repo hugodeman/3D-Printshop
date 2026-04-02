@@ -1,0 +1,35 @@
+$kind: http-request
+name: http://localhost:3000/api/products
+description: Figurine
+url: http://localhost:3000/api/products
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"title\": \"3D Geprint Beeldje\",\r
+
+    \  \"description\": \"Een gepersonaliseerd beeldje\",\r
+
+    \  \"price\": 19.99,\r
+
+    \  \"type\": \"FIGURE\",\r
+
+    \  \"filament\": \"PLA\",\r
+
+    \  \"dimensions\": \"10x10x15 cm\",\r
+
+    \  \"deliveryTime\": 5,\r
+
+    \  \"createdById\": \"cmnhd6gtk0000pkv967yt8uzs\",\r
+
+    \r
+
+    \  \"options\": {\r
+
+    \    \"paintable\": true\r
+
+    \  }\r
+
+    }"
+order: 71383952681197
