@@ -6,6 +6,11 @@ import { Canvas } from "@react-three/fiber"
 import Image from "next/image"
 import { Color, type Material, type Mesh, type Object3D } from "three"
 
+// Keys zijn de node/mesh-namen zoals ze in het .glb-bestand staan.
+// Tip: open je .glb op https://gltf.report/ of check de console om
+// de exacte namen van child-nodes te ontdekken (zie ook het console.log hieronder).
+type PartColors = Record<string, string>
+
 type ModelAsset = {
 	id: string
 	name: string
@@ -13,6 +18,7 @@ type ModelAsset = {
 	kind: "model"
 	modelPath: string
 	color: string
+	partColors?: PartColors
 }
 
 type PlacedObject = {
@@ -20,6 +26,7 @@ type PlacedObject = {
 	assetId: string
 	position: [number, number, number]
 	color: string
+	partColors?: PartColors
 }
 
 const PREVIEW_SCALE_MULTIPLIER = 20
@@ -28,24 +35,36 @@ const SCENE_ITEM_SPACING = 3.6
 const modelAssets: ModelAsset[] = [
 	{
 		id: "cylinder-model",
-		name: "Cylinder",
+		name: "Cirkel",
 		thumbnail: "/object-cards/Cylinder.png",
 		kind: "model",
-		modelPath: "/models/Cylinder_100.glb",
+		modelPath: "/models/Cylinder.glb",
 		color: "#98CEAA",
 	},
 	{
 		id: "square-model",
-		name: "Square",
+		name: "Vierkant",
 		thumbnail: "/object-cards/Square.png",
 		kind: "model",
-		modelPath: "/models/Square_100.glb",
+		modelPath: "/models/Square.glb",
 		color: "#A9B4FF",
+	},
+	{
+		id: "Tree-model",
+		name: "Boom",
+		thumbnail: "/object-cards/Tree.png",
+		kind: "model",
+		modelPath: "/models/tree.glb",
+		color: "#FFFFFF",
+		partColors: {
+			trunk:  "#8B4513",
+			leaves: "#228B22",
+		},
 	},
 ]
 
-useGLTF.preload("/models/Cylinder_100.glb")
-useGLTF.preload("/models/Square_100.glb")
+useGLTF.preload("/models/Cylinder.glb")
+useGLTF.preload("/models/Square.glb")
 
 function tintMaterial(material: Material, color: string) {
 	const clone = material.clone() as Material & { color?: Color }
@@ -55,19 +74,22 @@ function tintMaterial(material: Material, color: string) {
 	return clone
 }
 
-function applyModelTint(root: Object3D, tintColor: string) {
+function applyModelTint(root: Object3D, defaultColor: string, partColors?: PartColors) {
 	root.traverse((node) => {
 		const mesh = node as Mesh
 		if (!mesh.isMesh || !mesh.material) {
 			return
 		}
 
+		// Zoek de kleur op basis van de node-naam; val terug op de standaardkleur.
+		const color = partColors?.[node.name] ?? defaultColor
+
 		if (Array.isArray(mesh.material)) {
-			mesh.material = mesh.material.map((mat) => tintMaterial(mat, tintColor))
+			mesh.material = mesh.material.map((mat) => tintMaterial(mat, color))
 			return
 		}
 
-		mesh.material = tintMaterial(mesh.material, tintColor)
+		mesh.material = tintMaterial(mesh.material, color)
 	})
 }
 
@@ -75,17 +97,27 @@ function GLTFObject({
 	modelPath,
 	position,
 	tintColor,
+	partColors,
 }: {
 	modelPath: string
 	position: [number, number, number]
 	tintColor: string
+	partColors?: PartColors
 }) {
 	const gltf = useGLTF(modelPath)
 	const clonedScene = useMemo<Object3D>(() => {
 		const sceneClone = gltf.scene.clone(true)
-		applyModelTint(sceneClone, tintColor)
+
+		// Dev-hulp: log alle node-namen zodat je weet welke keys je in partColors kunt gebruiken.
+		if (process.env.NODE_ENV === "development") {
+			const names: string[] = []
+			sceneClone.traverse((n) => { if (n.name) names.push(n.name) })
+			console.log(`[GLTFObject] node-namen in "${modelPath}":`, names)
+		}
+
+		applyModelTint(sceneClone, tintColor, partColors)
 		return sceneClone
-	}, [gltf.scene, tintColor])
+	}, [gltf.scene, tintColor, partColors, modelPath])
 
 	return (
 		<primitive
@@ -102,6 +134,7 @@ function SceneObject({ asset, placedObject }: { asset: ModelAsset; placedObject:
 			modelPath={asset.modelPath}
 			position={placedObject.position}
 			tintColor={placedObject.color}
+			partColors={placedObject.partColors}
 		/>
 	)
 }
@@ -128,6 +161,7 @@ export default function BuilderPage() {
 					assetId: asset.id,
 					position,
 					color: asset.color,
+					partColors: asset.partColors, // per-part kleuren overnemen van de asset
 				},
 			]
 		})
