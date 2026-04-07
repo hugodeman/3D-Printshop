@@ -1,30 +1,40 @@
 "use client"
 
-import { Suspense, useMemo, useState } from "react"
-import { Grid, OrbitControls, useGLTF } from "@react-three/drei"
+import { useMemo, useRef, useState, Suspense } from "react"
 import { Canvas } from "@react-three/fiber"
+import { OrbitControls, Grid, useGLTF } from "@react-three/drei"
 import Image from "next/image"
-import { Color, type Material, type Mesh, type Object3D } from "three"
+import { useRouter } from "next/navigation"
 
-// Keys zijn de node/mesh-namen zoals ze in het .glb-bestand staan.
-// Tip: open je .glb op https://gltf.report/ of check de console om
-// de exacte namen van child-nodes te ontdekken (zie ook het console.log hieronder).
+import { H3, P } from "@/components/ui/Typography"
+import { Button } from "@/components/ui/Button"
+import { Icon } from "@/components/ui/Icon"
+import { BackgroundContrast2 } from "@/components/ui/Background"
+
+import { Color, type Material, type Mesh, type Object3D } from "three"
+import rawModelAssets from "./model-assets.json"
+import { saveBuilderCheckoutDraft } from "@/lib/builder-checkout-draft"
+
 type PartColors = Record<string, string>
 
 type ModelAsset = {
 	id: string
 	name: string
 	thumbnail: string
-	kind: "model"
+	kind: "platform" | "decoration"
 	modelPath: string
 	color: string
 	partColors?: PartColors
 }
 
+type BuilderStep = 1 | 2 | 3
+
 type PlacedObject = {
 	instanceId: string
 	assetId: string
 	position: [number, number, number]
+	rotationY: number
+	scale: number
 	color: string
 	partColors?: PartColors
 }
@@ -32,212 +42,438 @@ type PlacedObject = {
 const PREVIEW_SCALE_MULTIPLIER = 20
 const SCENE_ITEM_SPACING = 3.6
 
-const modelAssets: ModelAsset[] = [
-	{
-		id: "cylinder-model",
-		name: "Cirkel",
-		thumbnail: "/object-cards/Cylinder.png",
-		kind: "model",
-		modelPath: "/models/Cylinder.glb",
-		color: "#98CEAA",
-	},
-	{
-		id: "square-model",
-		name: "Vierkant",
-		thumbnail: "/object-cards/Square.png",
-		kind: "model",
-		modelPath: "/models/Square.glb",
-		color: "#A9B4FF",
-	},
-	{
-		id: "Tree-model",
-		name: "Boom",
-		thumbnail: "/object-cards/Tree.png",
-		kind: "model",
-		modelPath: "/models/tree.glb",
-		color: "#FFFFFF",
-		partColors: {
-			trunk:  "#8B4513",
-			leaves: "#228B22",
-		},
-	},
+const STEP_ITEMS: { id: BuilderStep; label: string }[] = [
+	{ id: 1, label: "Platform" },
+	{ id: 2, label: "Decoraties" },
+	{ id: 3, label: "Bestellen" },
 ]
 
-useGLTF.preload("/models/Cylinder.glb")
-useGLTF.preload("/models/Square.glb")
+const modelAssets = rawModelAssets as ModelAsset[]
+
+for (const asset of modelAssets) {
+	useGLTF.preload(asset.modelPath)
+}
 
 function tintMaterial(material: Material, color: string) {
 	const clone = material.clone() as Material & { color?: Color }
-	if (clone.color) {
-		clone.color.set(color)
-	}
+	if (clone.color) clone.color.set(color)
 	return clone
 }
 
 function applyModelTint(root: Object3D, defaultColor: string, partColors?: PartColors) {
 	root.traverse((node) => {
 		const mesh = node as Mesh
-		if (!mesh.isMesh || !mesh.material) {
-			return
-		}
-
-		// Zoek de kleur op basis van de node-naam; val terug op de standaardkleur.
+		if (!mesh.isMesh || !mesh.material) return
 		const color = partColors?.[node.name] ?? defaultColor
-
 		if (Array.isArray(mesh.material)) {
-			mesh.material = mesh.material.map((mat) => tintMaterial(mat, color))
-			return
+			mesh.material = mesh.material.map((m) => tintMaterial(m, color))
+		} else {
+			mesh.material = tintMaterial(mesh.material, color)
 		}
-
-		mesh.material = tintMaterial(mesh.material, color)
 	})
 }
 
 function GLTFObject({
 	modelPath,
 	position,
+	rotationY,
+	scale,
 	tintColor,
 	partColors,
 }: {
 	modelPath: string
 	position: [number, number, number]
+	rotationY?: number
+	scale?: number
 	tintColor: string
 	partColors?: PartColors
 }) {
 	const gltf = useGLTF(modelPath)
-	const clonedScene = useMemo<Object3D>(() => {
-		const sceneClone = gltf.scene.clone(true)
 
-		// Dev-hulp: log alle node-namen zodat je weet welke keys je in partColors kunt gebruiken.
-		if (process.env.NODE_ENV === "development") {
-			const names: string[] = []
-			sceneClone.traverse((n) => { if (n.name) names.push(n.name) })
-			console.log(`[GLTFObject] node-namen in "${modelPath}":`, names)
-		}
-
-		applyModelTint(sceneClone, tintColor, partColors)
-		return sceneClone
-	}, [gltf.scene, tintColor, partColors, modelPath])
+	const scene = useMemo(() => {
+		const clone = gltf.scene.clone(true)
+		applyModelTint(clone, tintColor, partColors)
+		return clone
+	}, [gltf.scene, tintColor, partColors])
 
 	return (
 		<primitive
-			object={clonedScene}
+			object={scene}
 			position={position}
-			scale={PREVIEW_SCALE_MULTIPLIER}
-		/>
-	)
-}
-
-function SceneObject({ asset, placedObject }: { asset: ModelAsset; placedObject: PlacedObject }) {
-	return (
-		<GLTFObject
-			modelPath={asset.modelPath}
-			position={placedObject.position}
-			tintColor={placedObject.color}
-			partColors={placedObject.partColors}
+			rotation={[0, rotationY ?? 0, 0]}
+			scale={PREVIEW_SCALE_MULTIPLIER * (scale ?? 1)}
 		/>
 	)
 }
 
 export default function BuilderPage() {
+	const router = useRouter()
+	const [step, setStep] = useState<BuilderStep>(1)
+	const [selectedPlatformId, setSelectedPlatformId] = useState<string | null>(null)
 	const [placedObjects, setPlacedObjects] = useState<PlacedObject[]>([])
-	const assetLibrary = useMemo<ModelAsset[]>(() => modelAssets, [])
-	const assetsById = useMemo(() => new Map(assetLibrary.map((asset) => [asset.id, asset])), [assetLibrary])
+	const [selectedId, setSelectedId] = useState<string | null>(null)
+	const nextId = useRef(0)
 
-	function addObjectToScene(asset: ModelAsset) {
-		setPlacedObjects((current) => {
-			const column = current.length % 4
-			const row = Math.floor(current.length / 4)
+	const platformAssets = useMemo(() => modelAssets.filter((a) => a.kind === "platform"), [])
+	const decorationAssets = useMemo(() => modelAssets.filter((a) => a.kind === "decoration"), [])
+	const assetsById = useMemo(() => new Map(modelAssets.map((a) => [a.id, a])), [])
+
+	const selectedPlatform = selectedPlatformId ? (assetsById.get(selectedPlatformId) ?? null) : null
+	const selectedObject = placedObjects.find((o) => o.instanceId === selectedId) ?? null
+	const selectedObjectAsset = selectedObject ? assetsById.get(selectedObject.assetId) : null
+
+	const hierarchyRows = useMemo(
+		() =>
+			placedObjects.map((obj, i) => ({
+				instanceId: obj.instanceId,
+				label: `${assetsById.get(obj.assetId)?.name ?? "Onbekend"} ${i + 1}`,
+			})),
+		[placedObjects, assetsById],
+	)
+
+	const canGoToStep2 = Boolean(selectedPlatformId)
+	const canGoToStep3 = canGoToStep2 && placedObjects.length > 0
+
+	function isStepEnabled(s: BuilderStep) {
+		if (s === 1) return true
+		if (s === 2) return canGoToStep2
+		return canGoToStep3
+	}
+
+	function addObject(asset: ModelAsset) {
+		if (asset.kind !== "decoration") return
+
+		nextId.current += 1
+		const instanceId = `${asset.id}-${nextId.current}`
+
+		setPlacedObjects((prev) => {
+			const col = prev.length % 4
+			const row = Math.floor(prev.length / 4)
 			const position: [number, number, number] = [
-				column * SCENE_ITEM_SPACING - SCENE_ITEM_SPACING * 1.5,
-				0.5,
+				col * SCENE_ITEM_SPACING - SCENE_ITEM_SPACING * 1.5,
+				0,
 				row * -SCENE_ITEM_SPACING,
 			]
-
 			return [
-				...current,
+				...prev,
 				{
-					instanceId: `${asset.id}-${Date.now()}-${current.length}`,
+					instanceId,
 					assetId: asset.id,
 					position,
+					rotationY: 0,
+					scale: 1,
 					color: asset.color,
-					partColors: asset.partColors, // per-part kleuren overnemen van de asset
+					partColors: asset.partColors,
 				},
 			]
 		})
+
+		setSelectedId(instanceId)
+	}
+
+	function updateSelected(updater: (o: PlacedObject) => PlacedObject) {
+		if (!selectedId) return
+		setPlacedObjects((prev) => prev.map((o) => (o.instanceId === selectedId ? updater(o) : o)))
+	}
+
+	function removeSelected() {
+		if (!selectedId) return
+		setPlacedObjects((prev) => prev.filter((o) => o.instanceId !== selectedId))
+		setSelectedId(null)
+	}
+
+	function goToCheckout() {
+		if (!selectedPlatform) return
+		saveBuilderCheckoutDraft({
+			platformId: selectedPlatform.id,
+			platformName: selectedPlatform.name,
+			decorations: placedObjects.map((obj) => ({
+				instanceId: obj.instanceId,
+				assetId: obj.assetId,
+				name: assetsById.get(obj.assetId)?.name ?? "Onbekend",
+				position: obj.position,
+				rotationY: obj.rotationY,
+				scale: obj.scale,
+				color: obj.color,
+			})),
+			totalItems: placedObjects.length,
+			createdAt: new Date().toISOString(),
+		})
+		router.push("/checkout/payment")
 	}
 
 	return (
-		<main className="grid h-[calc(100vh-120px)] min-h-[520px] w-full grid-cols-1 gap-4 p-4 lg:grid-cols-[320px_1fr]">
-			<section className="rounded-md border border-black/20 bg-contrast-2 p-4 text-white">
-				<h2 className="text-h2">Modellen</h2>
-				<p className="mt-2 text-p text-white/80">
-					Plaats .glb bestanden in <code>/public/models</code> en thumbnails in <code>/public/object-cards</code>.
-				</p>
-				<p className="mt-2 text-p text-white/70">
-					Preview is visueel opgeschaald voor duidelijkheid. Printformaat blijft gebaseerd op je echte modelmaten.
-				</p>
+		<BackgroundContrast2>
+			<main className="h-[calc(100vh-120px)] p-4 text-white">
+				<div className="grid h-full grid-cols-[260px_1fr_300px] gap-4">
 
-				<div className="mt-4 grid grid-cols-2 gap-3">
-					{assetLibrary.map((asset) => (
-						<button
-							key={asset.id}
-							type="button"
-							onClick={() => addObjectToScene(asset)}
-							className="rounded-md border border-black/30 bg-black/20 p-2 text-left transition hover:bg-black/35"
-						>
-							<Image
-								src={asset.thumbnail}
-								alt={asset.name}
-								width={400}
-								height={240}
-								className="h-24 w-full rounded object-cover"
-							/>
-							<p className="mt-2 text-p">{asset.name}</p>
-						</button>
-					))}
-				</div>
-			</section>
+					{/* ===== LEFT SIDEBAR ===== */}
+					<div className="flex flex-col gap-4 overflow-y-auto rounded-xl bg-black/30 p-4">
 
-			<section className="rounded-md border border-black/20">
-				<Canvas camera={{ position: [4.5, 4.5, 4.5], fov: 46 }}>
-					<color attach="background" args={["#1F2126"]} />
-					<ambientLight intensity={0.5} />
-					<directionalLight position={[6, 9, 4]} intensity={1.2} />
+						{/* Hierarchy — always visible */}
+						<div className="rounded-lg border border-white/10 bg-black/20 p-3 text-xs">
+							<P className="mb-1 font-medium text-white/90">Hierarchy</P>
+							<p className="text-white/60">Platform: {selectedPlatform?.name ?? "Nog niet gekozen"}</p>
+							<div className="mt-2 space-y-1">
+								{hierarchyRows.length === 0 ? (
+									<p className="text-white/40">— Geen decoraties</p>
+								) : (
+									hierarchyRows.map((row) => (
+										<button
+											key={row.instanceId}
+											type="button"
+											onClick={() => setSelectedId(row.instanceId)}
+											className={`block w-full rounded px-2 py-1 text-left ${
+												selectedId === row.instanceId
+													? "bg-[#98CEAA] text-black"
+													: "bg-black/25 text-white/80"
+											}`}
+										>
+											— {row.label}
+										</button>
+									))
+								)}
+							</div>
+						</div>
 
-					<Grid
-						args={[20, 20]}
-						cellSize={0.2}
-						cellThickness={0.5}
-						// sectionColor={"#D9D9D9"}
-						sectionSize={1}
-						sectionThickness={1}
-						fadeDistance={18}
-						fadeStrength={1}
-						infiniteGrid
-					/>
+						{/* Stap 1: platform kiezen */}
+						{step === 1 && (
+							<div className="flex flex-col gap-3">
+								<H3>Kies een platform</H3>
+								{platformAssets.map((asset) => {
+									const active = selectedPlatformId === asset.id
+									return (
+										<button
+											key={asset.id}
+											type="button"
+											onClick={() => setSelectedPlatformId(asset.id)}
+											className={`rounded-lg border p-2 text-left transition ${
+												active
+													? "border-[#98CEAA] bg-[#98CEAA]/10"
+													: "border-white/10 hover:border-white/30"
+											}`}
+										>
+											<Image
+												src={asset.thumbnail}
+												alt={asset.name}
+												width={300}
+												height={200}
+												className="h-28 w-full rounded object-cover"
+											/>
+											<P className="mt-2 text-sm">{asset.name}</P>
+										</button>
+									)
+								})}
+								<Button onClick={() => setStep(2)} disabled={!canGoToStep2} className="w-full">
+									Naar decoraties
+								</Button>
+							</div>
+						)}
 
-					<Suspense fallback={null}>
-						{placedObjects.map((placedObject) => {
-							const asset = assetsById.get(placedObject.assetId)
+						{/* Stap 2: decoraties toevoegen */}
+						{step === 2 && (
+							<div className="flex flex-col gap-3">
+								<H3>Voeg decoraties toe</H3>
+								<div className="grid grid-cols-2 gap-2">
+									{decorationAssets.map((asset) => (
+										<button
+											key={asset.id}
+											type="button"
+											onClick={() => addObject(asset)}
+											className="rounded-lg border border-white/10 p-2 transition hover:border-[#98CEAA]"
+										>
+											<Image
+												src={asset.thumbnail}
+												alt={asset.name}
+												width={200}
+												height={120}
+												className="h-20 w-full rounded object-cover"
+											/>
+											<P className="mt-1 text-xs">{asset.name}</P>
+										</button>
+									))}
+								</div>
+								<div className="grid grid-cols-2 gap-2">
+									<Button variant="secondary" onClick={() => setStep(1)}>Terug</Button>
+									<Button onClick={() => setStep(3)} disabled={!canGoToStep3}>Bestellen</Button>
+								</div>
+							</div>
+						)}
 
-							if (!asset) {
-								return null
-							}
+						{/* Stap 3: samenvatting */}
+						{step === 3 && (
+							<div className="flex flex-col gap-3">
+								<H3>Samenvatting</H3>
+								<div className="rounded-lg border border-white/10 bg-black/20 p-3 text-sm text-white/80">
+									<p>Platform: {selectedPlatform?.name}</p>
+									<p className="mt-1">Decoraties: {placedObjects.length}</p>
+								</div>
+								<Button variant="secondary" onClick={() => setStep(2)} className="w-full">
+									Terug naar decoraties
+								</Button>
+							</div>
+						)}
+					</div>
 
-							return (
-								<SceneObject
-									key={placedObject.instanceId}
-									asset={asset}
-									placedObject={placedObject}
+					{/* ===== CANVAS ===== */}
+					<div className="flex flex-col overflow-hidden rounded-xl bg-[#1F2126]">
+						{/* Stap nav boven de scene */}
+						<div className="border-b border-black/30 bg-black/25 p-3">
+							<div className="flex gap-2">
+								{STEP_ITEMS.map((item) => {
+									const isActive = step === item.id
+									const enabled = isStepEnabled(item.id)
+									return (
+										<button
+											key={item.id}
+											type="button"
+											onClick={() => setStep(item.id)}
+											disabled={!enabled}
+											className={`rounded-md border px-3 py-1 text-sm transition ${
+												isActive
+													? "border-[#98CEAA] bg-[#98CEAA] text-black"
+													: "border-black/30 bg-black/20 text-white disabled:opacity-40"
+											}`}
+										>
+											{item.id}. {item.label}
+										</button>
+									)
+								})}
+							</div>
+						</div>
+
+						<div className="flex-1">
+							<Canvas camera={{ position: [4.5, 4.5, 4.5], fov: 46 }}>
+								<color attach="background" args={["#1F2126"]} />
+								<ambientLight intensity={0.5} />
+								<directionalLight position={[6, 9, 4]} intensity={1.2} />
+
+								<Grid
+									args={[20, 20]}
+									cellSize={0.2}
+									cellThickness={0.5}
+									sectionSize={1}
+									sectionThickness={1}
+									fadeDistance={18}
+									fadeStrength={1}
+									infiniteGrid
 								/>
-							)
-						})}
-					</Suspense>
 
-					<OrbitControls makeDefault minDistance={1.5} maxDistance={30} />
-				</Canvas>
-			</section>
-		</main>
+								<Suspense fallback={null}>
+									{selectedPlatform && (
+										<GLTFObject
+											modelPath={selectedPlatform.modelPath}
+											position={[0, 0, 0]}
+											tintColor={selectedPlatform.color}
+											partColors={selectedPlatform.partColors}
+										/>
+									)}
+
+									{placedObjects.map((obj) => {
+										const asset = assetsById.get(obj.assetId)
+										if (!asset) return null
+										return (
+											<GLTFObject
+												key={obj.instanceId}
+												modelPath={asset.modelPath}
+												position={obj.position}
+												rotationY={obj.rotationY}
+												scale={obj.scale}
+												tintColor={obj.color}
+												partColors={obj.partColors}
+											/>
+										)
+									})}
+								</Suspense>
+
+								<OrbitControls makeDefault minDistance={1.5} maxDistance={30} />
+							</Canvas>
+						</div>
+					</div>
+
+					{/* ===== RIGHT SIDEBAR ===== */}
+					<div className="flex flex-col gap-4 overflow-y-auto rounded-xl bg-black/30 p-4">
+						<H3>Aanpassen</H3>
+
+						{selectedObject ? (
+							<div className="space-y-3 text-xs">
+								<p className="text-sm font-medium">{selectedObjectAsset?.name}</p>
+
+								<label className="block">
+									Positie X
+									<input
+										type="range" min={-8} max={8} step={0.1}
+										value={selectedObject.position[0]}
+										onChange={(e) => {
+											const x = Number(e.currentTarget.value)
+											updateSelected((o) => ({ ...o, position: [x, o.position[1], o.position[2]] }))
+										}}
+										className="w-full"
+									/>
+								</label>
+
+								<label className="block">
+									Positie Z
+									<input
+										type="range" min={-8} max={8} step={0.1}
+										value={selectedObject.position[2]}
+										onChange={(e) => {
+											const z = Number(e.currentTarget.value)
+											updateSelected((o) => ({ ...o, position: [o.position[0], o.position[1], z] }))
+										}}
+										className="w-full"
+									/>
+								</label>
+
+								<label className="block">
+									Rotatie Y
+									<input
+										type="range" min={-3.14} max={3.14} step={0.01}
+										value={selectedObject.rotationY}
+										onChange={(e) =>
+											updateSelected((o) => ({ ...o, rotationY: Number(e.currentTarget.value) }))
+										}
+										className="w-full"
+									/>
+								</label>
+
+								<label className="block">
+									Schaal
+									<input
+										type="range" min={0.5} max={3} step={0.05}
+										value={selectedObject.scale}
+										onChange={(e) =>
+											updateSelected((o) => ({ ...o, scale: Number(e.currentTarget.value) }))
+										}
+										className="w-full"
+									/>
+								</label>
+
+								<button
+									type="button"
+									onClick={removeSelected}
+									className="mt-2 w-full rounded-md border border-red-400/50 bg-red-500/20 px-3 py-2 text-red-100"
+								>
+									Verwijder
+								</button>
+							</div>
+						) : (
+							<div className="mt-10 text-center text-white/40">
+								<Icon name="Sliders" size={24} />
+								<P className="mt-2 text-sm">Selecteer een object om te bewerken</P>
+							</div>
+						)}
+
+						{step === 3 && (
+							<Button className="mt-auto w-full" onClick={goToCheckout}>
+								Verder naar betalen
+							</Button>
+						)}
+					</div>
+
+				</div>
+			</main>
+		</BackgroundContrast2>
 	)
 }
+

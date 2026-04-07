@@ -1,0 +1,31 @@
+[
+  {
+    "id": "cylinder-model",
+    "name": "Cirkel",
+    "thumbnail": "/object-cards/Cylinder.png",
+    "kind": "platform",
+    "modelPath": "/models/Cylinder.glb",
+    "color": "#228B22"
+  },
+  {
+    "id": "square-model",
+    "name": "Vierkant",
+    "thumbnail": "/object-cards/Square.png",
+    "kind": "platform",
+    "modelPath": "/models/Square_1.glb",
+    "color": "#228B22"
+  },
+  {
+    "id": "tree-model",
+    "name": "Boom",
+    "thumbnail": "/object-cards/Tree.png",
+    "kind": "decoration",
+    "modelPath": "/models/tree.glb",
+    "color": "#FFFFFF",
+    "partColors": {
+      "trunk": "#8B4513",
+      "leaves": "#228B22"
+    }
+  }
+]
+
