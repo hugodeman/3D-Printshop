@@ -15,6 +15,7 @@ import { saveBuilderCheckoutDraft } from "@/lib/builder-checkout-draft"
 import rawModelAssets from "./model-assets.json"
 
 type PartColors = Record<string, string>
+type Vec3 = [number, number, number]
 
 type ModelAsset = {
 	dimensions: string;
@@ -25,6 +26,7 @@ type ModelAsset = {
 	modelPath: string
 	color: string
 	partColors?: PartColors
+	spawnPosition?: Vec3
 }
 
 type BuilderStep = 1 | 2
@@ -32,7 +34,7 @@ type BuilderStep = 1 | 2
 type PlacedObject = {
 	instanceId: string
 	assetId: string
-	position: [number, number, number]
+	position: Vec3
 	rotationY: number
 	scale: number
 	color: string
@@ -40,7 +42,7 @@ type PlacedObject = {
 }
 
 const PREVIEW_SCALE_MULTIPLIER = 20
-const SCENE_ITEM_SPACING = 3.6
+const DEFAULT_SPAWN_POSITION: Vec3 = [0, 0, 0]
 
 const modelAssets = rawModelAssets as ModelAsset[]
 
@@ -77,7 +79,7 @@ function GLTFObject({
 	partColors,
 }: {
 	modelPath: string
-	position: [number, number, number]
+	position: Vec3
 	rotationY?: number
 	scale?: number
 	tintColor: string
@@ -136,13 +138,7 @@ export default function BuilderPage() {
 		const instanceId = `${asset.id}-${nextId.current}`
 
 		setPlacedObjects((prev) => {
-			const col = prev.length % 4
-			const row = Math.floor(prev.length / 4)
-			const position: [number, number, number] = [
-				col * SCENE_ITEM_SPACING - SCENE_ITEM_SPACING * 1.5,
-				0,
-				row * -SCENE_ITEM_SPACING,
-			]
+			const position = asset.spawnPosition ?? DEFAULT_SPAWN_POSITION
 
 			return [
 				...prev,
@@ -380,7 +376,7 @@ export default function BuilderPage() {
 								{selectedPlatform && (
 									<GLTFObject
 										modelPath={selectedPlatform.modelPath}
-										position={[0, 0, 0]}
+													position={selectedPlatform.spawnPosition ?? [0, 0, 0]}
 										tintColor={selectedPlatform.color}
 										partColors={selectedPlatform.partColors}
 									/>
@@ -457,9 +453,10 @@ export default function BuilderPage() {
 										max={3.14}
 										step={0.01}
 										value={selectedObject.rotationY}
-										onChange={(e) =>
-											updateSelected((o) => ({ ...o, rotationY: Number(e.currentTarget.value) }))
-										}
+										onChange={(e) => {
+											const rotationY = Number(e.currentTarget.value)
+											updateSelected((o) => ({ ...o, rotationY }))
+										}}
 										className="w-full"
 									/>
 								</label>
@@ -472,9 +469,10 @@ export default function BuilderPage() {
 										max={3}
 										step={0.05}
 										value={selectedObject.scale}
-										onChange={(e) =>
-											updateSelected((o) => ({ ...o, scale: Number(e.currentTarget.value) }))
-										}
+										onChange={(e) => {
+											const scale = Number(e.currentTarget.value)
+											updateSelected((o) => ({ ...o, scale }))
+										}}
 										className="w-full"
 									/>
 								</label>

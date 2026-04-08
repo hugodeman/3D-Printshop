@@ -6,7 +6,8 @@
     "kind": "platform",
     "dimensions": "10 x 10 x 1",
     "modelPath": "/models/Cylinder.glb",
-    "color": "#228B22"
+    "color": "#228B22",
+    "spawnPosition": [0, 0, 0]
   },
   {
     "id": "square-model",
@@ -14,19 +15,35 @@
     "thumbnail": "/object-cards/Square.png",
     "dimensions": "10 x 10 x 1",
     "kind": "platform",
-    "modelPath": "/models/Square_1.glb",
-    "color": "#228B22"
+    "modelPath": "/models/Square.glb",
+    "color": "#228B22",
+    "spawnPosition": [0, 0, 0]
   },
   {
     "id": "tree-model",
     "name": "Boom",
     "thumbnail": "/object-cards/Tree.png",
     "kind": "decoration",
-    "modelPath": "/models/tree.glb",
+    "modelPath": "/models/Tree.glb",
     "color": "#FFFFFF",
+    "spawnPosition": [0, 0.2, 0],
     "partColors": {
       "trunk": "#8B4513",
       "leaves": "#228B22"
+    }
+  },
+  {
+    "id": "flower-model",
+    "name": "Bloem",
+    "thumbnail": "/object-cards/Flower.png",
+    "kind": "decoration",
+    "modelPath": "/models/Flower.glb",
+    "color": "#FFFFFF",
+    "spawnPosition": [0, 0.25, 0],
+    "partColors": {
+      "grass": "#228B22",
+      "head_center": "#FFFFFF",
+      "head_leaf": "#FF69B4"
     }
   }
 ]
