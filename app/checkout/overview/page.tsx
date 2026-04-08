@@ -1,70 +1,134 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
-import { useSyncExternalStore } from "react"
-import {
-	readBuilderCheckoutDraft,
-	subscribeBuilderCheckoutDraft,
-	type BuilderCheckoutDraft,
-} from "@/lib/builder-checkout-draft"
+import { useRouter } from "next/navigation"
+import {H1, H2, H3, P} from "@/components/ui/Typography"
+import { Button } from "@/components/ui/Button"
+import { Icon } from "@/components/ui/Icon"
+import { readBuilderCheckoutDraft, subscribeBuilderCheckoutDraft, type BuilderCheckoutDraft } from "@/lib/builder-checkout-draft"
 
-export default function CheckoutOverviewPage() {
-	const draft = useSyncExternalStore<BuilderCheckoutDraft | null>(
-		subscribeBuilderCheckoutDraft,
-		readBuilderCheckoutDraft,
-		() => null,
-	)
+export default function CheckoutPage() {
+	const router = useRouter()
+	const [data, setData] = useState<BuilderCheckoutDraft | null>(() => readBuilderCheckoutDraft())
 
-	if (!draft) {
+	useEffect(() => {
+		// Subscribe to changes
+		return subscribeBuilderCheckoutDraft(() => {
+			const updatedDraft = readBuilderCheckoutDraft()
+			setData(updatedDraft)
+		})
+	}, [])
+
+	if (!data) {
 		return (
-			<section className="space-y-4">
-				<h2 className="text-h2">Overzicht</h2>
-				<p className="text-p text-white/75">Er is nog geen afgeronde builder-bestelling beschikbaar.</p>
-				<Link
-					href="/builder"
-					className="inline-flex rounded-md border border-black/30 bg-[#98CEAA] px-4 py-2 text-sm text-black"
-				>
-					Terug naar builder
-				</Link>
-			</section>
+			<div className="min-h-screen bg-[#1A1C1E]">
+				<div className="h-[calc(100vh-120px)] flex flex-col items-center justify-center gap-4 text-white">
+					<H3>Geen creatie gevonden</H3>
+					<Button onClick={() => router.push("/builder")}>Terug naar builder</Button>
+				</div>
+			</div>
 		)
 	}
 
+	const totalItems = data.decorations.length
+
+	const steps = [
+		{ id: 1, label: "Platform", done: true },
+		{ id: 2, label: "Decoraties", done: true },
+		{ id: 3, label: "Bestellen", done: false },
+	]
+
 	return (
-		<section className="space-y-6">
-			<div>
-				<h2 className="text-h2">Bestellingsoverzicht</h2>
-				<p className="mt-2 text-p text-white/75">
-					Dit is de plek waar je straks de betaalstatus, orderinformatie en eventueel een preview-link toont.
-				</p>
-			</div>
+		<div className="min-h-screen bg-[#1A1C1E]">
+			<div className="h-[calc(100vh-120px)] p-6 text-white">
+				<div className="mx-auto flex max-h-[90%] h-full w-full max-w-[70%] flex-col">
 
-			<div className="rounded-md border border-black/20 bg-black/20 p-4 text-sm text-white/80">
-				<p><span className="font-medium text-white">Platform:</span> {draft.platformName}</p>
-				<p className="mt-1"><span className="font-medium text-white">Decoraties:</span> {draft.totalItems}</p>
-				<p className="mt-1"><span className="font-medium text-white">Concept opgeslagen op:</span> {new Date(draft.createdAt).toLocaleString("nl-NL")}</p>
-				<ul className="mt-3 space-y-1 text-white/75">
-					{draft.decorations.map((decoration) => (
-						<li key={decoration.instanceId}>- {decoration.name}</li>
-					))}
-				</ul>
-			</div>
+					{/* HEADER */}
+					<div className="mb-6 mt-5 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+						<Link
+							href="/builder"
+							className="inline-flex items-center gap-2 justify-self-start text-p font-medium text-white transition-colors hover:text-[#98CEAA]"
+						>
+							<Icon name="ArrowBigLeft" size={25} />
+							Terug naar builder
+						</Link>
 
-			<div className="flex flex-wrap gap-3">
-				<Link
-					href="/builder"
-					className="inline-flex rounded-md border border-black/30 bg-black/25 px-4 py-2 text-sm"
-				>
-					Creatie opnieuw aanpassen
-				</Link>
-				<Link
-					href="/checkout/payment"
-					className="inline-flex rounded-md border border-black/30 bg-[#98CEAA] px-4 py-2 text-sm text-black"
-				>
-					Terug naar betalen
-				</Link>
+						<div className="flex items-center gap-10 justify-self-center">
+							{steps.map((step, index) => {
+								const isCurrent = step.id === 3
+								const stateClasses = step.done
+									? "!bg-[#6D8F78]/80 !text-[#1F2126] hover:!bg-[#6D8F78]"
+									: isCurrent
+										? "!bg-[#98CEAA] !text-[#1F2126]"
+									: ""
+
+								return (
+									<div key={step.id} className="flex items-center gap-10">
+										{index > 0 ? (
+											<Icon name="Minus" size={30} color="#ffffff99" />
+										) : null}
+										<Button
+											variant={isCurrent ? "primary" : "secondary"}
+											isActive={isCurrent}
+											className={`flex items-center gap-4 px-3 py-2 rounded-full! text-[#1F2126]! ${stateClasses}`}
+											style={isCurrent ? { boxShadow: "0 10px 15px rgba(179, 234, 197, 0.15)" } : undefined}
+										>
+											{step.done ? <Icon name="CircleCheck" color="#B3EAC5" size={22} /> : null}
+											<H3 className={"text-contrast"}>Stap {step.id}: {step.label}</H3>
+										</Button>
+									</div>
+								)
+							})}
+						</div>
+						<div />
+					</div>
+
+					{/* MAIN CARD + OVERLAY */}
+					<div className="relative mt-10 min-h-0 h-3/4 w-full flex-1 lg:overflow-visible">
+						<div className="min-h-0 h-full flex-1 rounded-4xl border border-white/20 bg-white/2 p-4 shadow-[0_0_30px_rgba(0,0,0,0.45)] lg:pr-28">
+							<H3>Decoraties</H3>
+							{/* image van de build */}
+							{/* knop voor bekijken in 3D */}
+						</div>
+
+						<div className="mt-6 flex flex-col rounded-3xl border border-white/10 bg-white/2 p-5 shadow-[-12px_0_40px_0px_rgba(0,0,0,0.6)] backdrop-blur-xl lg:absolute lg:-right-60 lg:top-20 lg:bottom-20 lg:z-10 lg:mt-0 lg:w-100">
+							<H1>Jouw custom stand</H1>
+
+							<div className="mt-15">
+								<div className="flex justify-between ">
+									<P className="text-white/80">Basis</P>
+									<H3>{data.platformName}</H3>
+								</div>
+
+								<div className="flex justify-between border-t border-white/10 my-6 pt-6">
+									<P className="text-white/80">Decoraties</P>
+									<H3>{totalItems}</H3>
+								</div>
+
+								<div className="flex justify-between border-t border-white/10 my-6 pt-6">
+									<P className={"text-white/80"}>Geschatte maaktijd</P>
+									{/*voorbeeld berekening*/}
+									<H3>{(1.5 + totalItems * 0.75).toFixed(1)} uur</H3>
+								</div>
+							</div>
+
+							<div className="border-t border-white/10">
+								<div className="flex justify-between text-lg mt-12">
+									<H3>Totaal Prijs</H3>
+									{/*bereking tijd * volume*/}
+									<H2>€ 50,00</H2>
+								</div>
+							</div>
+
+							<Button className="mt-auto w-full flex justify-center gap-4" onClick={() => router.push("/checkout/payment")}>
+								<Icon name="ShoppingBag" size={20} color="#1F2126" />
+								<H3 className={"text-contrast"}>Bestellen</H3>
+							</Button>
+						</div>
+					</div>
+				</div>
 			</div>
-		</section>
+		</div>
 	)
 }
-

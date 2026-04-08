@@ -1,19 +1,19 @@
 "use client"
 
-import { useMemo, useRef, useState, Suspense } from "react"
+import { Suspense, useMemo, useRef, useState } from "react"
 import { Canvas } from "@react-three/fiber"
 import { OrbitControls, Grid, useGLTF } from "@react-three/drei"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
+import { Color, type Material, type Mesh, type Object3D } from "three"
 
-import { H3, P } from "@/components/ui/Typography"
+import { BackgroundContrast2 } from "@/components/ui/Background"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
-import { BackgroundContrast2 } from "@/components/ui/Background"
-
-import { Color, type Material, type Mesh, type Object3D } from "three"
-import rawModelAssets from "./model-assets.json"
+import { H3, P } from "@/components/ui/Typography"
 import { saveBuilderCheckoutDraft } from "@/lib/builder-checkout-draft"
+
+import rawModelAssets from "./model-assets.json"
 
 type PartColors = Record<string, string>
 
@@ -27,7 +27,7 @@ type ModelAsset = {
 	partColors?: PartColors
 }
 
-type BuilderStep = 1 | 2 | 3
+type BuilderStep = 1 | 2
 
 type PlacedObject = {
 	instanceId: string
@@ -41,12 +41,6 @@ type PlacedObject = {
 
 const PREVIEW_SCALE_MULTIPLIER = 20
 const SCENE_ITEM_SPACING = 3.6
-
-const STEP_ITEMS: { id: BuilderStep; label: string }[] = [
-	{ id: 1, label: "Platform" },
-	{ id: 2, label: "Decoraties" },
-	{ id: 3, label: "Bestellen" },
-]
 
 const modelAssets = rawModelAssets as ModelAsset[]
 
@@ -64,6 +58,7 @@ function applyModelTint(root: Object3D, defaultColor: string, partColors?: PartC
 	root.traverse((node) => {
 		const mesh = node as Mesh
 		if (!mesh.isMesh || !mesh.material) return
+
 		const color = partColors?.[node.name] ?? defaultColor
 		if (Array.isArray(mesh.material)) {
 			mesh.material = mesh.material.map((m) => tintMaterial(m, color))
@@ -132,13 +127,7 @@ export default function BuilderPage() {
 	)
 
 	const canGoToStep2 = Boolean(selectedPlatformId)
-	const canGoToStep3 = canGoToStep2 && placedObjects.length > 0
-
-	function isStepEnabled(s: BuilderStep) {
-		if (s === 1) return true
-		if (s === 2) return canGoToStep2
-		return canGoToStep3
-	}
+	const canGoToCheckout = canGoToStep2 && placedObjects.length > 0
 
 	function addObject(asset: ModelAsset) {
 		if (asset.kind !== "decoration") return
@@ -154,6 +143,7 @@ export default function BuilderPage() {
 				0,
 				row * -SCENE_ITEM_SPACING,
 			]
+
 			return [
 				...prev,
 				{
@@ -182,8 +172,9 @@ export default function BuilderPage() {
 		setSelectedId(null)
 	}
 
-	function goToCheckout() {
+	function goToCheckoutOverview() {
 		if (!selectedPlatform) return
+
 		saveBuilderCheckoutDraft({
 			platformId: selectedPlatform.id,
 			platformName: selectedPlatform.name,
@@ -199,24 +190,22 @@ export default function BuilderPage() {
 			totalItems: placedObjects.length,
 			createdAt: new Date().toISOString(),
 		})
-		router.push("/checkout/payment")
+
+		router.push("/checkout/overview")
 	}
 
 	return (
 		<BackgroundContrast2>
 			<main className="h-[calc(100vh-120px)] p-4 text-white">
 				<div className="grid h-full grid-cols-[260px_1fr_300px] gap-4">
-
-					{/* ===== LEFT SIDEBAR ===== */}
 					<div className="flex flex-col gap-4 overflow-y-auto rounded-xl bg-black/30 p-4">
-
-						{/* Hierarchy — always visible */}
+						{/*hierarchy*/}
 						<div className="rounded-lg border border-white/10 bg-black/20 p-3 text-xs">
 							<P className="mb-1 font-medium text-white/90">Hierarchy</P>
 							<p className="text-white/60">Platform: {selectedPlatform?.name ?? "Nog niet gekozen"}</p>
 							<div className="mt-2 space-y-1">
 								{hierarchyRows.length === 0 ? (
-									<p className="text-white/40">— Geen decoraties</p>
+									<p className="text-white/40">- Geen decoraties</p>
 								) : (
 									hierarchyRows.map((row) => (
 										<button
@@ -229,14 +218,14 @@ export default function BuilderPage() {
 													: "bg-black/25 text-white/80"
 											}`}
 										>
-											— {row.label}
+											- {row.label}
 										</button>
 									))
 								)}
 							</div>
 						</div>
 
-						{/* Stap 1: platform kiezen */}
+						{/*stap 1*/}
 						{step === 1 && (
 							<div className="flex flex-col gap-3">
 								<H3>Kies een platform</H3>
@@ -270,7 +259,7 @@ export default function BuilderPage() {
 							</div>
 						)}
 
-						{/* Stap 2: decoraties toevoegen */}
+						{/*stap 2*/}
 						{step === 2 && (
 							<div className="flex flex-col gap-3">
 								<H3>Voeg decoraties toe</H3>
@@ -295,53 +284,51 @@ export default function BuilderPage() {
 								</div>
 								<div className="grid grid-cols-2 gap-2">
 									<Button variant="secondary" onClick={() => setStep(1)}>Terug</Button>
-									<Button onClick={() => setStep(3)} disabled={!canGoToStep3}>Bestellen</Button>
+									<Button onClick={goToCheckoutOverview} disabled={!canGoToCheckout}>Naar checkout</Button>
 								</div>
-							</div>
-						)}
-
-						{/* Stap 3: samenvatting */}
-						{step === 3 && (
-							<div className="flex flex-col gap-3">
-								<H3>Samenvatting</H3>
-								<div className="rounded-lg border border-white/10 bg-black/20 p-3 text-sm text-white/80">
-									<p>Platform: {selectedPlatform?.name}</p>
-									<p className="mt-1">Decoraties: {placedObjects.length}</p>
-								</div>
-								<Button variant="secondary" onClick={() => setStep(2)} className="w-full">
-									Terug naar decoraties
-								</Button>
 							</div>
 						)}
 					</div>
 
-					{/* ===== CANVAS ===== */}
+					{/*stappen buttons*/}
 					<div className="flex flex-col overflow-hidden rounded-xl bg-[#1F2126]">
-						{/* Stap nav boven de scene */}
 						<div className="border-b border-black/30 bg-black/25 p-3">
 							<div className="flex gap-2">
-								{STEP_ITEMS.map((item) => {
-									const isActive = step === item.id
-									const enabled = isStepEnabled(item.id)
-									return (
-										<button
-											key={item.id}
-											type="button"
-											onClick={() => setStep(item.id)}
-											disabled={!enabled}
-											className={`rounded-md border px-3 py-1 text-sm transition ${
-												isActive
-													? "border-[#98CEAA] bg-[#98CEAA] text-black"
-													: "border-black/30 bg-black/20 text-white disabled:opacity-40"
-											}`}
-										>
-											{item.id}. {item.label}
-										</button>
-									)
-								})}
+								<button
+									type="button"
+									onClick={() => setStep(1)}
+									className={`rounded-md border px-3 py-1 text-sm transition ${
+										step === 1
+											? "border-[#98CEAA] bg-[#98CEAA] text-black"
+											: "border-black/30 bg-black/20 text-white"
+									}`}
+								>
+									1. Platform
+								</button>
+								<button
+									type="button"
+									onClick={() => setStep(2)}
+									disabled={!canGoToStep2}
+									className={`rounded-md border px-3 py-1 text-sm transition ${
+										step === 2
+											? "border-[#98CEAA] bg-[#98CEAA] text-black"
+											: "border-black/30 bg-black/20 text-white disabled:opacity-40"
+									}`}
+								>
+									2. Decoraties
+								</button>
+								<button
+									type="button"
+									onClick={goToCheckoutOverview}
+									disabled={!canGoToCheckout}
+									className="rounded-md border border-black/30 bg-black/20 px-3 py-1 text-sm text-white disabled:opacity-40"
+								>
+									3. Checkout overview
+								</button>
 							</div>
 						</div>
 
+						{/*Canvas*/}
 						<div className="flex-1">
 							<Canvas camera={{ position: [4.5, 4.5, 4.5], fov: 46 }}>
 								<color attach="background" args={["#1F2126"]} />
@@ -391,7 +378,7 @@ export default function BuilderPage() {
 						</div>
 					</div>
 
-					{/* ===== RIGHT SIDEBAR ===== */}
+					{/*sidebar rechts*/}
 					<div className="flex flex-col gap-4 overflow-y-auto rounded-xl bg-black/30 p-4">
 						<H3>Aanpassen</H3>
 
@@ -402,7 +389,10 @@ export default function BuilderPage() {
 								<label className="block">
 									Positie X
 									<input
-										type="range" min={-8} max={8} step={0.1}
+										type="range"
+										min={-8}
+										max={8}
+										step={0.1}
 										value={selectedObject.position[0]}
 										onChange={(e) => {
 											const x = Number(e.currentTarget.value)
@@ -415,7 +405,10 @@ export default function BuilderPage() {
 								<label className="block">
 									Positie Z
 									<input
-										type="range" min={-8} max={8} step={0.1}
+										type="range"
+										min={-8}
+										max={8}
+										step={0.1}
 										value={selectedObject.position[2]}
 										onChange={(e) => {
 											const z = Number(e.currentTarget.value)
@@ -428,7 +421,10 @@ export default function BuilderPage() {
 								<label className="block">
 									Rotatie Y
 									<input
-										type="range" min={-3.14} max={3.14} step={0.01}
+										type="range"
+										min={-3.14}
+										max={3.14}
+										step={0.01}
 										value={selectedObject.rotationY}
 										onChange={(e) =>
 											updateSelected((o) => ({ ...o, rotationY: Number(e.currentTarget.value) }))
@@ -440,7 +436,10 @@ export default function BuilderPage() {
 								<label className="block">
 									Schaal
 									<input
-										type="range" min={0.5} max={3} step={0.05}
+										type="range"
+										min={0.5}
+										max={3}
+										step={0.05}
 										value={selectedObject.scale}
 										onChange={(e) =>
 											updateSelected((o) => ({ ...o, scale: Number(e.currentTarget.value) }))
@@ -463,17 +462,9 @@ export default function BuilderPage() {
 								<P className="mt-2 text-sm">Selecteer een object om te bewerken</P>
 							</div>
 						)}
-
-						{step === 3 && (
-							<Button className="mt-auto w-full" onClick={goToCheckout}>
-								Verder naar betalen
-							</Button>
-						)}
 					</div>
-
 				</div>
 			</main>
 		</BackgroundContrast2>
 	)
 }
-
