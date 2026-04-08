@@ -4,6 +4,7 @@
     "name": "Cirkel",
     "thumbnail": "/object-cards/Cylinder.png",
     "kind": "platform",
+    "dimensions": "10 x 10 x 1",
     "modelPath": "/models/Cylinder.glb",
     "color": "#228B22"
   },
@@ -11,6 +12,7 @@
     "id": "square-model",
     "name": "Vierkant",
     "thumbnail": "/object-cards/Square.png",
+    "dimensions": "10 x 10 x 1",
     "kind": "platform",
     "modelPath": "/models/Square_1.glb",
     "color": "#228B22"

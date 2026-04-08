@@ -7,7 +7,6 @@ import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { Color, type Material, type Mesh, type Object3D } from "three"
 
-import { BackgroundContrast2 } from "@/components/ui/Background"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import { H3, P } from "@/components/ui/Typography"
@@ -18,6 +17,7 @@ import rawModelAssets from "./model-assets.json"
 type PartColors = Record<string, string>
 
 type ModelAsset = {
+	dimensions: string;
 	id: string
 	name: string
 	thumbnail: string
@@ -195,17 +195,19 @@ export default function BuilderPage() {
 	}
 
 	return (
-		<BackgroundContrast2>
-			<main className="h-[calc(100vh-120px)] p-4 text-white">
-				<div className="grid h-full grid-cols-[260px_1fr_300px] gap-4">
-					<div className="flex flex-col gap-4 overflow-y-auto rounded-xl bg-black/30 p-4">
-						{/*hierarchy*/}
+		<main className="h-[calc(100vh-120px)] bg-[#1A1C1E] text-white">
+			<div className="grid h-full grid-cols-[260px_1fr_300px] gap-4">
+
+				{/* Left Sidebar */}
+				<div className="flex flex-col overflow-hidden bg-white/5">
+					<div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4">
+						{/* Hierarchy */}
 						<div className="rounded-lg border border-white/10 bg-black/20 p-3 text-xs">
 							<P className="mb-1 font-medium text-white/90">Hierarchy</P>
-							<p className="text-white/60">Platform: {selectedPlatform?.name ?? "Nog niet gekozen"}</p>
+							<P className="text-white/60">Platform: {selectedPlatform?.name ?? "Nog niet gekozen"}</P>
 							<div className="mt-2 space-y-1">
 								{hierarchyRows.length === 0 ? (
-									<p className="text-white/40">- Geen decoraties</p>
+									<P className="text-white/40">- Geen decoraties</P>
 								) : (
 									hierarchyRows.map((row) => (
 										<button
@@ -225,7 +227,7 @@ export default function BuilderPage() {
 							</div>
 						</div>
 
-						{/*stap 1*/}
+						{/* Step 1 */}
 						{step === 1 && (
 							<div className="flex flex-col gap-3">
 								<H3>Kies een platform</H3>
@@ -247,19 +249,19 @@ export default function BuilderPage() {
 												alt={asset.name}
 												width={300}
 												height={200}
-												className="h-28 w-full rounded object-cover"
+												className="h-auto w-full rounded object-cover"
 											/>
-											<P className="mt-2 text-sm">{asset.name}</P>
+											<div className={"flex flex-col gap-3 mt-1"}>
+												<P className="mt-2 text-sm">{asset.name}</P>
+												<P className={"text-white/60"}>{asset.dimensions} cm</P>
+											</div>
 										</button>
 									)
 								})}
-								<Button onClick={() => setStep(2)} disabled={!canGoToStep2} className="w-full">
-									Naar decoraties
-								</Button>
 							</div>
 						)}
 
-						{/*stap 2*/}
+						{/* Step 2 */}
 						{step === 2 && (
 							<div className="flex flex-col gap-3">
 								<H3>Voeg decoraties toe</H3>
@@ -282,111 +284,140 @@ export default function BuilderPage() {
 										</button>
 									))}
 								</div>
-								<div className="grid grid-cols-2 gap-2">
-									<Button variant="secondary" onClick={() => setStep(1)}>Terug</Button>
-									<Button onClick={goToCheckoutOverview} disabled={!canGoToCheckout}>Naar checkout</Button>
-								</div>
 							</div>
 						)}
 					</div>
 
-					{/*stappen buttons*/}
-					<div className="flex flex-col overflow-hidden rounded-xl bg-[#1F2126]">
-						<div className="border-b border-black/30 bg-black/25 p-3">
-							<div className="flex gap-2">
-								<button
-									type="button"
-									onClick={() => setStep(1)}
-									className={`rounded-md border px-3 py-1 text-sm transition ${
-										step === 1
-											? "border-[#98CEAA] bg-[#98CEAA] text-black"
-											: "border-black/30 bg-black/20 text-white"
-									}`}
-								>
-									1. Platform
-								</button>
-								<button
-									type="button"
-									onClick={() => setStep(2)}
-									disabled={!canGoToStep2}
-									className={`rounded-md border px-3 py-1 text-sm transition ${
-										step === 2
-											? "border-[#98CEAA] bg-[#98CEAA] text-black"
-											: "border-black/30 bg-black/20 text-white disabled:opacity-40"
-									}`}
-								>
-									2. Decoraties
-								</button>
-								<button
-									type="button"
-									onClick={goToCheckoutOverview}
-									disabled={!canGoToCheckout}
-									className="rounded-md border border-black/30 bg-black/20 px-3 py-1 text-sm text-white disabled:opacity-40"
-								>
-									3. Checkout overview
-								</button>
-							</div>
+					{step === 2 && (
+						<div className="border-t border-white/10 p-4">
+							<Button variant="secondary" onClick={() => setStep(1)} className="w-full">
+								Terug
+							</Button>
 						</div>
+					)}
+				</div>
 
-						{/*Canvas*/}
-						<div className="flex-1">
-							<Canvas camera={{ position: [4.5, 4.5, 4.5], fov: 46 }}>
-								<color attach="background" args={["#1F2126"]} />
-								<ambientLight intensity={0.5} />
-								<directionalLight position={[6, 9, 4]} intensity={1.2} />
+				{/* Center */}
+				<div className="mb-5 flex flex-col overflow-hidden rounded-xl bg-[#1A1C1E]">
+					{/* Step Buttons */}
+					<div className="flex justify-center p-4">
+						<div className="mb-2 flex items-center gap-10">
+							{[
+								{
+									id: 1,
+									label: "Platform",
+									done: step > 1,
+									current: step === 1,
+									onClick: () => setStep(1),
+									disabled: false,
+								},
+								{
+									id: 2,
+									label: "Decoraties",
+									done: step > 2,
+									current: step === 2,
+									onClick: () => setStep(2),
+									disabled: !canGoToStep2,
+								},
+								{
+									id: 3,
+									label: "Bestellen",
+									done: false,
+									current: false,
+									onClick: goToCheckoutOverview,
+									disabled: !canGoToCheckout,
+								},
+							].map((s, index) => {
+								const stateClasses = s.done
+									? "!bg-[#6D8F78]/80 !text-[#1F2126] hover:!bg-[#6D8F78]"
+									: s.current
+										? "!bg-[#98CEAA] !text-[#1F2126]"
+										: "!bg-[#CAC4D0]/50 !text-[#1F2126]/70"
 
-								<Grid
-									args={[20, 20]}
-									cellSize={0.2}
-									cellThickness={0.5}
-									sectionSize={1}
-									sectionThickness={1}
-									fadeDistance={18}
-									fadeStrength={1}
-									infiniteGrid
-								/>
-
-								<Suspense fallback={null}>
-									{selectedPlatform && (
-										<GLTFObject
-											modelPath={selectedPlatform.modelPath}
-											position={[0, 0, 0]}
-											tintColor={selectedPlatform.color}
-											partColors={selectedPlatform.partColors}
-										/>
-									)}
-
-									{placedObjects.map((obj) => {
-										const asset = assetsById.get(obj.assetId)
-										if (!asset) return null
-										return (
-											<GLTFObject
-												key={obj.instanceId}
-												modelPath={asset.modelPath}
-												position={obj.position}
-												rotationY={obj.rotationY}
-												scale={obj.scale}
-												tintColor={obj.color}
-												partColors={obj.partColors}
-											/>
-										)
-									})}
-								</Suspense>
-
-								<OrbitControls makeDefault minDistance={1.5} maxDistance={30} />
-							</Canvas>
+								return (
+									<div key={s.id} className="flex items-center gap-10">
+										{index > 0 && <Icon name="Minus" size={30} color="#ffffff99" />}
+										<Button
+											variant={s.current ? "primary" : "secondary"}
+											isActive={s.current}
+											disabled={s.disabled}
+											onClick={s.onClick}
+											className={`flex items-center gap-4 px-3 py-2 rounded-full! text-[#1F2126]! ${stateClasses}`}
+											style={
+												s.current
+													? { boxShadow: "0 10px 15px rgba(179,234,197,0.15)" }
+													: undefined
+											}
+										>
+											{s.done && <Icon name="CircleCheck" color="#B3EAC5" size={22} />}
+											<H3 className="text-contrast">Stap {s.id}: {s.label}</H3>
+										</Button>
+									</div>
+								)
+							})}
 						</div>
 					</div>
 
-					{/*sidebar rechts*/}
-					<div className="flex flex-col gap-4 overflow-y-auto rounded-xl bg-black/30 p-4">
+					{/* Canvas */}
+					<div className="flex-1">
+						<Canvas camera={{ position: [4.5, 4.5, 4.5], fov: 46 }}>
+							<color attach="background" args={["#1F2126"]} />
+							<ambientLight intensity={0.5} />
+							<directionalLight position={[6, 9, 4]} intensity={1.2} />
+
+							<Grid
+								args={[20, 20]}
+								cellSize={0.2}
+								cellThickness={0.5}
+								sectionSize={1}
+								sectionThickness={1}
+								fadeDistance={18}
+								fadeStrength={1}
+								infiniteGrid
+							/>
+
+							<Suspense fallback={null}>
+								{selectedPlatform && (
+									<GLTFObject
+										modelPath={selectedPlatform.modelPath}
+										position={[0, 0, 0]}
+										tintColor={selectedPlatform.color}
+										partColors={selectedPlatform.partColors}
+									/>
+								)}
+
+								{placedObjects.map((obj) => {
+									const asset = assetsById.get(obj.assetId)
+									if (!asset) return null
+									return (
+										<GLTFObject
+											key={obj.instanceId}
+											modelPath={asset.modelPath}
+											position={obj.position}
+											rotationY={obj.rotationY}
+											scale={obj.scale}
+											tintColor={obj.color}
+											partColors={obj.partColors}
+										/>
+									)
+								})}
+							</Suspense>
+
+							<OrbitControls makeDefault minDistance={1.5} maxDistance={30} />
+						</Canvas>
+					</div>
+				</div>
+
+				{/* Right Sidebar */}
+				<div className="flex flex-col overflow-hidden bg-white/5">
+					<div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4">
 						<H3>Aanpassen</H3>
 
 						{selectedObject ? (
-							<div className="space-y-3 text-xs">
-								<p className="text-sm font-medium">{selectedObjectAsset?.name}</p>
+							<div className="flex flex-col gap-3">
+								<P>{selectedObjectAsset?.name}</P>
 
-								<label className="block">
+								<label className="block text-xs">
 									Positie X
 									<input
 										type="range"
@@ -402,7 +433,7 @@ export default function BuilderPage() {
 									/>
 								</label>
 
-								<label className="block">
+								<label className="block text-xs">
 									Positie Z
 									<input
 										type="range"
@@ -418,7 +449,7 @@ export default function BuilderPage() {
 									/>
 								</label>
 
-								<label className="block">
+								<label className="block text-xs">
 									Rotatie Y
 									<input
 										type="range"
@@ -433,7 +464,7 @@ export default function BuilderPage() {
 									/>
 								</label>
 
-								<label className="block">
+								<label className="block text-xs">
 									Schaal
 									<input
 										type="range"
@@ -451,7 +482,7 @@ export default function BuilderPage() {
 								<button
 									type="button"
 									onClick={removeSelected}
-									className="mt-2 w-full rounded-md border border-red-400/50 bg-red-500/20 px-3 py-2 text-red-100"
+									className="w-full rounded-md border border-red-400/50 bg-red-500/20 px-3 py-2 text-sm text-red-100"
 								>
 									Verwijder
 								</button>
@@ -463,8 +494,21 @@ export default function BuilderPage() {
 							</div>
 						)}
 					</div>
+
+					<div className="border-t border-white/10 p-4">
+						{step === 1 && (
+							<Button onClick={() => setStep(2)} disabled={!canGoToStep2} className="w-full">
+								Naar decoraties
+							</Button>
+						)}
+						{step === 2 && (
+							<Button onClick={goToCheckoutOverview} disabled={!canGoToCheckout} className="w-full">
+								Naar checkout
+							</Button>
+						)}
+					</div>
 				</div>
-			</main>
-		</BackgroundContrast2>
+			</div>
+		</main>
 	)
 }
