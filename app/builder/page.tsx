@@ -9,13 +9,14 @@ import { Color, type Material, type Mesh, type Object3D } from "three"
 
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
-import { H3, P } from "@/components/ui/Typography"
+import {H2, H3, P} from "@/components/ui/Typography"
 import { saveBuilderCheckoutDraft } from "@/lib/builder-checkout-draft"
 
 import rawModelAssets from "./model-assets.json"
 
 type PartColors = Record<string, string>
 type Vec3 = [number, number, number]
+type ScaleLimits = { min: number; max: number }
 
 type ModelAsset = {
 	dimensions: string;
@@ -27,6 +28,7 @@ type ModelAsset = {
 	color: string
 	partColors?: PartColors
 	spawnPosition?: Vec3
+	scaleLimits?: ScaleLimits
 }
 
 type BuilderStep = 1 | 2
@@ -43,6 +45,15 @@ type PlacedObject = {
 
 const PREVIEW_SCALE_MULTIPLIER = 20
 const DEFAULT_SPAWN_POSITION: Vec3 = [0, 0, 0]
+const POSITION_MIN = -1
+const POSITION_MAX = 1
+const POSITION_STEP = 0.05
+const ROTATION_MIN = -3.14
+const ROTATION_MAX = 3.14
+const ROTATION_STEP = 0.02
+const SCALE_MIN = 0.5
+const SCALE_MAX = 3
+const SCALE_STEP = 0.05
 
 const modelAssets = rawModelAssets as ModelAsset[]
 
@@ -68,6 +79,21 @@ function applyModelTint(root: Object3D, defaultColor: string, partColors?: PartC
 			mesh.material = tintMaterial(mesh.material, color)
 		}
 	})
+}
+
+function clamp(value: number, min: number, max: number) {
+	return Math.min(Math.max(value, min), max)
+}
+
+function toNumber(value: string) {
+	const next = Number(value)
+	return Number.isFinite(next) ? next : null
+}
+
+function getAssetScaleLimits(asset: ModelAsset | null | undefined): ScaleLimits {
+	const min = asset?.scaleLimits?.min ?? SCALE_MIN
+	const max = asset?.scaleLimits?.max ?? SCALE_MAX
+	return { min: Math.min(min, max), max: Math.max(min, max) }
 }
 
 function GLTFObject({
@@ -130,6 +156,7 @@ export default function BuilderPage() {
 
 	const canGoToStep2 = Boolean(selectedPlatformId)
 	const canGoToCheckout = canGoToStep2 && placedObjects.length > 0
+	const selectedScaleLimits = useMemo(() => getAssetScaleLimits(selectedObjectAsset), [selectedObjectAsset])
 
 	function addObject(asset: ModelAsset) {
 		if (asset.kind !== "decoration") return
@@ -139,6 +166,7 @@ export default function BuilderPage() {
 
 		setPlacedObjects((prev) => {
 			const position = asset.spawnPosition ?? DEFAULT_SPAWN_POSITION
+			const scaleLimits = getAssetScaleLimits(asset)
 
 			return [
 				...prev,
@@ -147,7 +175,7 @@ export default function BuilderPage() {
 					assetId: asset.id,
 					position,
 					rotationY: 0,
-					scale: 1,
+					scale: clamp(1, scaleLimits.min, scaleLimits.max),
 					color: asset.color,
 					partColors: asset.partColors,
 				},
@@ -159,7 +187,14 @@ export default function BuilderPage() {
 
 	function updateSelected(updater: (o: PlacedObject) => PlacedObject) {
 		if (!selectedId) return
-		setPlacedObjects((prev) => prev.map((o) => (o.instanceId === selectedId ? updater(o) : o)))
+		setPlacedObjects((prev) =>
+			prev.map((o) => {
+				if (o.instanceId !== selectedId) return o
+				const next = updater(o)
+				const limits = getAssetScaleLimits(assetsById.get(next.assetId) ?? null)
+				return { ...next, scale: clamp(next.scale, limits.min, limits.max) }
+			}),
+		)
 	}
 
 	function removeSelected() {
@@ -260,7 +295,7 @@ export default function BuilderPage() {
 						{/* Step 2 */}
 						{step === 2 && (
 							<div className="flex flex-col gap-3">
-								<H3>Voeg decoraties toe</H3>
+								<H2>Voeg decoraties toe</H2>
 								<div className="grid grid-cols-2 gap-2">
 									{decorationAssets.map((asset) => (
 										<button
@@ -407,19 +442,35 @@ export default function BuilderPage() {
 				{/* Right Sidebar */}
 				<div className="flex flex-col overflow-hidden bg-white/5">
 					<div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4">
-						<H3>Aanpassen</H3>
+						<H2>Aanpassen</H2>
 
 						{selectedObject ? (
 							<div className="flex flex-col gap-3">
-								<P>{selectedObjectAsset?.name}</P>
+								<H3>{selectedObjectAsset?.name}</H3>
 
 								<label className="block text-xs">
-									Positie X
+									<div className="mb-1 flex items-center justify-between">
+										<P>Positie X</P>
+										<input
+											type="number"
+											min={POSITION_MIN}
+											max={POSITION_MAX}
+											step={POSITION_STEP}
+											value={selectedObject.position[0].toFixed(2)}
+											onChange={(e) => {
+												const value = toNumber(e.currentTarget.value)
+												if (value === null) return
+												const x = clamp(value, POSITION_MIN, POSITION_MAX)
+												updateSelected((o) => ({ ...o, position: [x, o.position[1], o.position[2]] }))
+											}}
+											className="w-20 rounded border border-white/15 bg-black/30 px-2 py-1 text-right text-xs"
+										/>
+									</div>
 									<input
 										type="range"
-										min={-8}
-										max={8}
-										step={0.1}
+										min={POSITION_MIN}
+										max={POSITION_MAX}
+										step={POSITION_STEP}
 										value={selectedObject.position[0]}
 										onChange={(e) => {
 											const x = Number(e.currentTarget.value)
@@ -430,12 +481,28 @@ export default function BuilderPage() {
 								</label>
 
 								<label className="block text-xs">
-									Positie Z
+									<div className="mb-1 flex items-center justify-between">
+										<P>Positie Z</P>
+										<input
+											type="number"
+											min={POSITION_MIN}
+											max={POSITION_MAX}
+											step={POSITION_STEP}
+											value={selectedObject.position[2].toFixed(2)}
+											onChange={(e) => {
+												const value = toNumber(e.currentTarget.value)
+												if (value === null) return
+												const z = clamp(value, POSITION_MIN, POSITION_MAX)
+												updateSelected((o) => ({ ...o, position: [o.position[0], o.position[1], z] }))
+											}}
+											className="w-20 rounded border border-white/15 bg-black/30 px-2 py-1 text-right text-xs"
+										/>
+									</div>
 									<input
 										type="range"
-										min={-8}
-										max={8}
-										step={0.1}
+										min={POSITION_MIN}
+										max={POSITION_MAX}
+										step={POSITION_STEP}
 										value={selectedObject.position[2]}
 										onChange={(e) => {
 											const z = Number(e.currentTarget.value)
@@ -446,15 +513,31 @@ export default function BuilderPage() {
 								</label>
 
 								<label className="block text-xs">
-									Rotatie Y
+									<div className="mb-1 flex items-center justify-between">
+										<P>Rotatie Y</P>
+										<input
+											type="number"
+											min={ROTATION_MIN}
+											max={ROTATION_MAX}
+											step={ROTATION_STEP}
+											value={selectedObject.rotationY.toFixed(2)}
+											onChange={(e) => {
+												const value = toNumber(e.currentTarget.value)
+												if (value === null) return
+												const rotationY = clamp(value, ROTATION_MIN, ROTATION_MAX)
+												updateSelected((o) => ({ ...o, rotationY }))
+											}}
+											className="w-20 rounded border border-white/15 bg-black/30 px-2 py-1 text-right text-xs"
+										/>
+									</div>
 									<input
 										type="range"
-										min={-3.14}
-										max={3.14}
-										step={0.01}
+										min={ROTATION_MIN}
+										max={ROTATION_MAX}
+										step={ROTATION_STEP}
 										value={selectedObject.rotationY}
 										onChange={(e) => {
-											const rotationY = Number(e.currentTarget.value)
+											const rotationY = clamp(Number(e.currentTarget.value), ROTATION_MIN, ROTATION_MAX)
 											updateSelected((o) => ({ ...o, rotationY }))
 										}}
 										className="w-full"
@@ -462,15 +545,31 @@ export default function BuilderPage() {
 								</label>
 
 								<label className="block text-xs">
-									Schaal
+									<div className="mb-1 flex items-center justify-between">
+										<P>Schaal</P>
+										<input
+											type="number"
+											min={selectedScaleLimits.min}
+											max={selectedScaleLimits.max}
+											step={SCALE_STEP}
+											value={selectedObject.scale.toFixed(2)}
+											onChange={(e) => {
+												const value = toNumber(e.currentTarget.value)
+												if (value === null) return
+												const scale = clamp(value, selectedScaleLimits.min, selectedScaleLimits.max)
+												updateSelected((o) => ({ ...o, scale }))
+											}}
+											className="w-20 rounded border border-white/15 bg-black/30 px-2 py-1 text-right text-xs"
+										/>
+									</div>
 									<input
 										type="range"
-										min={0.5}
-										max={3}
-										step={0.05}
+										min={selectedScaleLimits.min}
+										max={selectedScaleLimits.max}
+										step={SCALE_STEP}
 										value={selectedObject.scale}
 										onChange={(e) => {
-											const scale = Number(e.currentTarget.value)
+											const scale = clamp(Number(e.currentTarget.value), selectedScaleLimits.min, selectedScaleLimits.max)
 											updateSelected((o) => ({ ...o, scale }))
 										}}
 										className="w-full"
