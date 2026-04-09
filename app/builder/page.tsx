@@ -250,6 +250,7 @@ export default function BuilderPage() {
 	const [selectedPlatformSize, setSelectedPlatformSize] = useState<10 | 15 | 20>(10)
 	const [placedObjects, setPlacedObjects] = useState<PlacedObject[]>([])
 	const [selectedId, setSelectedId] = useState<string | null>(null)
+	const [hierarchyOpen, setHierarchyOpen] = useState(true)
 	const nextId = useRef(0)
 
 	const platformAssets = useMemo(() => modelAssets.filter((a) => a.kind === "platform"), [])
@@ -260,14 +261,19 @@ export default function BuilderPage() {
 	const selectedObject = placedObjects.find((o) => o.instanceId === selectedId) ?? null
 	const selectedObjectAsset = selectedObject ? assetsById.get(selectedObject.assetId) : null
 
-	const hierarchyRows = useMemo(
-		() =>
-			placedObjects.map((obj, i) => ({
+	const hierarchyRows = useMemo(() => {
+		const countsByAssetId = new Map<string, number>()
+
+		return placedObjects.map((obj) => {
+			const currentCount = (countsByAssetId.get(obj.assetId) ?? 0) + 1
+			countsByAssetId.set(obj.assetId, currentCount)
+
+			return {
 				instanceId: obj.instanceId,
-				label: `${assetsById.get(obj.assetId)?.name ?? "Onbekend"} ${i + 1}`,
-			})),
-		[placedObjects, assetsById],
-	)
+				label: `${assetsById.get(obj.assetId)?.name ?? "Onbekend"} ${currentCount}`,
+			}
+		})
+	}, [placedObjects, assetsById])
 
 	const canGoToStep2 = Boolean(selectedPlatformId)
 	const canGoToCheckout = canGoToStep2 && placedObjects.length > 0
@@ -347,32 +353,50 @@ export default function BuilderPage() {
 
 				{/* Left Sidebar */}
 				<div className="flex flex-col overflow-hidden bg-white/5">
-					<div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4">
-						{/* Hierarchy */}
-						<div className="rounded-lg border border-white/10 bg-black/20 p-3 text-xs">
-							<P className="mb-1 font-medium text-white/90">Hierarchy</P>
-							<P className="text-white/60">Platform: {selectedPlatform?.name ?? "Nog niet gekozen"}</P>
-							<div className="mt-2 space-y-1">
-								{hierarchyRows.length === 0 ? (
-									<P className="text-white/40">- Geen decoraties</P>
-								) : (
-									hierarchyRows.map((row) => (
-										<button
-											key={row.instanceId}
-											type="button"
-											onClick={() => setSelectedId(row.instanceId)}
-											className={`block w-full rounded px-2 py-1 text-left ${
-												selectedId === row.instanceId
-													? "bg-[#98CEAA] text-black"
-													: "bg-black/25 text-white/80"
-											}`}
-										>
-											- {row.label}
-										</button>
-									))
-								)}
+					{/* Hierarchy - sticky, outside scroll area */}
+					<div className="shrink-0 border-b border-white/10 ">
+						<button
+							type="button"
+							onClick={() => setHierarchyOpen((o) => !o)}
+							className="flex w-full items-center justify-between p-3 text-left"
+						>
+							<P className="font-medium text-white/90">Hierarchy</P>
+							<Icon
+								name="ChevronDown"
+								size={14}
+								color="#ffffff99"
+								className={`transition-transform duration-200 ${hierarchyOpen ? "rotate-180" : ""}`}
+							/>
+						</button>
+
+						{hierarchyOpen && (
+							<div className="border-t border-white/10 px-3 pb-3 pt-2">
+								<P className="text-white/60">Platform: {selectedPlatform?.name ?? "Nog niet gekozen"}</P>
+								<div className="mt-2 space-y-1">
+									{hierarchyRows.length === 0 ? (
+										<P className="text-white/40">- Geen decoraties</P>
+									) : (
+										hierarchyRows.map((row) => (
+											<button
+												key={row.instanceId}
+												type="button"
+												onClick={() => setSelectedId(row.instanceId)}
+												className={`block w-full rounded px-2 py-1 text-left ${
+													selectedId === row.instanceId
+														? "bg-[#98CEAA] text-black"
+														: "bg-black/25 text-white/80"
+												}`}
+											>
+												- {row.label}
+											</button>
+										))
+									)}
+								</div>
 							</div>
-						</div>
+						)}
+					</div>
+
+					<div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain scrollbar-hide p-4">
 
 						{/* Step 1 */}
 						{step === 1 && (
@@ -385,19 +409,16 @@ export default function BuilderPage() {
 											key={asset.id}
 											type="button"
 											onClick={() => setSelectedPlatformId(asset.id)}
-											className={`rounded-lg border p-2 text-left transition ${
-												active
-													? "border-[#98CEAA] bg-[#98CEAA]/10"
-													: "border-white/10 hover:border-white/30"
-											}`}
+											className={`rounded-lg border p-2 text-left transition ${active
+												? "border-[#98CEAA] bg-[#98CEAA]/10"
+												: "border-white/10 hover:border-white/30"}`}
 										>
 											<Image
 												src={asset.thumbnail}
 												alt={asset.name}
 												width={300}
 												height={200}
-												className="h-auto w-full rounded object-cover"
-											/>
+												className="h-auto w-full rounded object-cover"/>
 											<div className={"flex flex-col gap-3 mt-1"}>
 												<P className="mt-2 text-sm">{asset.name}</P>
 												<P className={"text-white/60"}>{asset.dimensions} cm</P>
