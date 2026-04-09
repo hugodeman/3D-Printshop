@@ -1,7 +1,7 @@
 "use client"
 
-import { Suspense, useMemo, useRef, useState } from "react"
-import { Canvas, useFrame, useThree } from "@react-three/fiber"
+import { Suspense, useMemo, useRef, useState, useEffect } from "react"
+import { Canvas, useThree } from "@react-three/fiber"
 import { OrbitControls, Grid, useGLTF } from "@react-three/drei"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
@@ -184,60 +184,61 @@ function ClickHandler({
 	const raycaster = useRef(new Raycaster())
 	const mouse = useRef(new Vector2())
 
-	const handleCanvasClick = (event: MouseEvent) => {
-		if (!(event.target instanceof HTMLCanvasElement)) return
+	useEffect(() => {
+		const handleCanvasClick = (event: PointerEvent) => {
+			// Ignore clicks on non-canvas elements (like sliders)
+			if (!(event.target instanceof HTMLCanvasElement)) return
 
-		const canvas = event.target
-		const rect = canvas.getBoundingClientRect()
-		mouse.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
-		mouse.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
+			const canvas = event.target as HTMLCanvasElement
+			const rect = canvas.getBoundingClientRect()
+			mouse.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+			mouse.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
 
-		raycaster.current.setFromCamera(mouse.current, camera)
+			raycaster.current.setFromCamera(mouse.current, camera)
 
-		// Get all meshes from decoration objects
-		const allMeshes: Mesh[] = []
+			// Get all meshes from decoration objects
+			const allMeshes: Mesh[] = []
 
-		placedObjects.forEach((obj) => {
-			scene.traverse((node) => {
-				const mesh = node as Mesh
-				if (!mesh.isMesh || !mesh.userData?.decorationInstanceId) return
-				if (mesh.userData.decorationInstanceId === obj.instanceId) {
-					allMeshes.push(mesh)
-				}
-			})
-		})
-
-		// Check for intersections
-		const intersects = raycaster.current.intersectObjects(allMeshes, true)
-
-		if (intersects.length > 0) {
-			// Find which decoration was hit
-			const hitMesh = intersects[0].object as Mesh
-			for (const obj of placedObjects) {
-				let found = false
+			placedObjects.forEach((obj) => {
 				scene.traverse((node) => {
 					const mesh = node as Mesh
-					if (!mesh.isMesh) return
-					if (mesh.userData?.decorationInstanceId === obj.instanceId) {
-						if (hitMesh === mesh || mesh.children.includes(hitMesh as unknown as THREE_Group)) {
-							onSelectDecoration(obj.instanceId)
-							found = true
-						}
+					if (!mesh.isMesh || !mesh.userData?.decorationInstanceId) return
+					if (mesh.userData.decorationInstanceId === obj.instanceId) {
+						allMeshes.push(mesh)
 					}
 				})
-				if (found) break
+			})
+
+			// Check for intersections
+			const intersects = raycaster.current.intersectObjects(allMeshes, true)
+
+			if (intersects.length > 0) {
+				// Find which decoration was hit
+				const hitMesh = intersects[0].object as Mesh
+				for (const obj of placedObjects) {
+					let found = false
+					scene.traverse((node) => {
+						const mesh = node as Mesh
+						if (!mesh.isMesh) return
+						if (mesh.userData?.decorationInstanceId === obj.instanceId) {
+							if (hitMesh === mesh || mesh.children.includes(hitMesh as unknown as THREE_Group)) {
+								onSelectDecoration(obj.instanceId)
+								found = true
+							}
+						}
+					})
+					if (found) break
+				}
 			}
 		}
-	}
 
-	useFrame(() => {
 		const canvas = gl.domElement
-		canvas.addEventListener("click", handleCanvasClick, { capture: true })
+		canvas.addEventListener("pointerdown", handleCanvasClick, { capture: false })
 
 		return () => {
-			canvas.removeEventListener("click", handleCanvasClick, true)
+			canvas.removeEventListener("pointerdown", handleCanvasClick, false)
 		}
-	})
+	}, [camera, scene, placedObjects, gl.domElement, onSelectDecoration])
 
 	return null
 }
