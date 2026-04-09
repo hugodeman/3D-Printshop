@@ -54,6 +54,7 @@ const ROTATION_STEP = 0.02
 const SCALE_MIN = 0.5
 const SCALE_MAX = 3
 const SCALE_STEP = 0.05
+const BASE_PLATFORM_SIZE_CM = 10
 
 const modelAssets = rawModelAssets as ModelAsset[]
 
@@ -101,6 +102,7 @@ function GLTFObject({
 	position,
 	rotationY,
 	scale,
+	scaleVector,
 	tintColor,
 	partColors,
 }: {
@@ -108,6 +110,7 @@ function GLTFObject({
 	position: Vec3
 	rotationY?: number
 	scale?: number
+	scaleVector?: Vec3
 	tintColor: string
 	partColors?: PartColors
 }) {
@@ -119,12 +122,20 @@ function GLTFObject({
 		return clone
 	}, [gltf.scene, tintColor, partColors])
 
+	const previewScale: number | Vec3 = scaleVector
+		? [
+				PREVIEW_SCALE_MULTIPLIER * scaleVector[0],
+				PREVIEW_SCALE_MULTIPLIER * scaleVector[1],
+				PREVIEW_SCALE_MULTIPLIER * scaleVector[2],
+			]
+		: PREVIEW_SCALE_MULTIPLIER * (scale ?? 1)
+
 	return (
 		<primitive
 			object={scene}
 			position={position}
 			rotation={[0, rotationY ?? 0, 0]}
-			scale={PREVIEW_SCALE_MULTIPLIER * (scale ?? 1)}
+			scale={previewScale}
 		/>
 	)
 }
@@ -133,6 +144,7 @@ export default function BuilderPage() {
 	const router = useRouter()
 	const [step, setStep] = useState<BuilderStep>(1)
 	const [selectedPlatformId, setSelectedPlatformId] = useState<string | null>(null)
+	const [selectedPlatformSize, setSelectedPlatformSize] = useState<10 | 15 | 20>(10)
 	const [placedObjects, setPlacedObjects] = useState<PlacedObject[]>([])
 	const [selectedId, setSelectedId] = useState<string | null>(null)
 	const nextId = useRef(0)
@@ -157,6 +169,7 @@ export default function BuilderPage() {
 	const canGoToStep2 = Boolean(selectedPlatformId)
 	const canGoToCheckout = canGoToStep2 && placedObjects.length > 0
 	const selectedScaleLimits = useMemo(() => getAssetScaleLimits(selectedObjectAsset), [selectedObjectAsset])
+	const platformSizeScaleMultiplier = selectedPlatformSize / BASE_PLATFORM_SIZE_CM
 
 	function addObject(asset: ModelAsset) {
 		if (asset.kind !== "decoration") return
@@ -411,7 +424,8 @@ export default function BuilderPage() {
 								{selectedPlatform && (
 									<GLTFObject
 										modelPath={selectedPlatform.modelPath}
-													position={selectedPlatform.spawnPosition ?? [0, 0, 0]}
+										position={selectedPlatform.spawnPosition ?? [0, 0, 0]}
+										scaleVector={[platformSizeScaleMultiplier, 1, platformSizeScaleMultiplier]}
 										tintColor={selectedPlatform.color}
 										partColors={selectedPlatform.partColors}
 									/>
@@ -442,9 +456,41 @@ export default function BuilderPage() {
 				{/* Right Sidebar */}
 				<div className="flex flex-col overflow-hidden bg-white/5">
 					<div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4">
-						<H2>Aanpassen</H2>
+						{step === 1 ? (
+							<div className="flex flex-col gap-3">
+								{!selectedPlatform ? (
+									<div className="mt-10 rounded-lg border border-dashed border-white/20 bg-black/20 p-4 text-center">
+										<P className="text-white/70">Selecteer een platform</P>
+										<P className="mt-1 text-xs text-white/50">Kies links eerst een basis om maten te kunnen instellen</P>
+									</div>
+								) : (
+									<>
+										<H2>Kies een maat</H2>
+										<div className="rounded-lg border border-white/10 bg-black/20 p-3 text-xs">
+											<P className="text-white/60">Afmetingen</P>
+											<P className="mt-1 font-medium">{selectedPlatform.dimensions} cm</P>
+											<P className="mt-1 text-white/60">Preview maat: {selectedPlatformSize} cm</P>
+										</div>
+										<div className="grid grid-cols-3 gap-2">
+											{[10, 15, 20].map((size) => (
+												<Button
+													key={size}
+													variant={selectedPlatformSize === size ? "primary" : "secondary"}
+													onClick={() => setSelectedPlatformSize(size as 10 | 15 | 20)}
+													className="w-full"
+												>
+													{size} cm
+												</Button>
+											))}
+										</div>
+									</>
+								)}
+							</div>
+						) : (
+							<>
+								<H2>Aanpassen</H2>
 
-						{selectedObject ? (
+								{selectedObject ? (
 							<div className="flex flex-col gap-3">
 								<H3>{selectedObjectAsset?.name}</H3>
 
@@ -589,6 +635,8 @@ export default function BuilderPage() {
 								<Icon name="Sliders" size={24} />
 								<P className="mt-2 text-sm">Selecteer een object om te bewerken</P>
 							</div>
+						)}
+							</>
 						)}
 					</div>
 
