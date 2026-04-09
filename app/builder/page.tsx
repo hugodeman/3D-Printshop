@@ -1,11 +1,11 @@
 "use client"
 
 import { Suspense, useMemo, useRef, useState } from "react"
-import { Canvas } from "@react-three/fiber"
+import { Canvas, useFrame, useThree } from "@react-three/fiber"
 import { OrbitControls, Grid, useGLTF } from "@react-three/drei"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { Color, type Material, type Mesh, type Object3D } from "three"
+import { Color, type Material, type Mesh, type Object3D, Raycaster, Vector2, type Group as THREE_Group } from "three"
 
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
@@ -105,6 +105,8 @@ function GLTFObject({
 	scaleVector,
 	tintColor,
 	partColors,
+	isSelected,
+	instanceId,
 }: {
 	modelPath: string
 	position: Vec3
@@ -113,14 +115,43 @@ function GLTFObject({
 	scaleVector?: Vec3
 	tintColor: string
 	partColors?: PartColors
+	isSelected?: boolean
+	instanceId?: string
 }) {
 	const gltf = useGLTF(modelPath)
+	const groupRef = useRef<THREE_Group>(null)
 
 	const scene = useMemo(() => {
 		const clone = gltf.scene.clone(true)
 		applyModelTint(clone, tintColor, partColors)
+
+		// Add userData for raycasting
+		if (instanceId) {
+			clone.traverse((node) => {
+				const n = node as unknown as { userData: Record<string, string> }
+				n.userData.decorationInstanceId = instanceId
+			})
+		}
+
+		// Add orange glow if selected
+		if (isSelected) {
+			clone.traverse((node) => {
+				const mesh = node as Mesh
+				if (!mesh.isMesh || !mesh.material) return
+
+				const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+				materials.forEach((mat) => {
+					const m = mat as Material & { emissive?: Color; emissiveIntensity?: number }
+					if (m.emissive) {
+						m.emissive.set("#FF8C00")
+						m.emissiveIntensity = 0.5
+					}
+				})
+			})
+		}
+
 		return clone
-	}, [gltf.scene, tintColor, partColors])
+	}, [gltf.scene, tintColor, partColors, isSelected, instanceId])
 
 	const previewScale: number | Vec3 = scaleVector
 		? [
@@ -131,13 +162,84 @@ function GLTFObject({
 		: PREVIEW_SCALE_MULTIPLIER * (scale ?? 1)
 
 	return (
-		<primitive
-			object={scene}
+		<group
+			ref={groupRef}
 			position={position}
 			rotation={[0, rotationY ?? 0, 0]}
 			scale={previewScale}
-		/>
+		>
+			<primitive object={scene} />
+		</group>
 	)
+}
+
+function ClickHandler({
+	placedObjects,
+	onSelectDecoration,
+}: {
+	placedObjects: PlacedObject[]
+	onSelectDecoration: (instanceId: string) => void
+}) {
+	const { camera, gl, scene } = useThree()
+	const raycaster = useRef(new Raycaster())
+	const mouse = useRef(new Vector2())
+
+	const handleCanvasClick = (event: MouseEvent) => {
+		if (!(event.target instanceof HTMLCanvasElement)) return
+
+		const canvas = event.target
+		const rect = canvas.getBoundingClientRect()
+		mouse.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+		mouse.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
+
+		raycaster.current.setFromCamera(mouse.current, camera)
+
+		// Get all meshes from decoration objects
+		const allMeshes: Mesh[] = []
+
+		placedObjects.forEach((obj) => {
+			scene.traverse((node) => {
+				const mesh = node as Mesh
+				if (!mesh.isMesh || !mesh.userData?.decorationInstanceId) return
+				if (mesh.userData.decorationInstanceId === obj.instanceId) {
+					allMeshes.push(mesh)
+				}
+			})
+		})
+
+		// Check for intersections
+		const intersects = raycaster.current.intersectObjects(allMeshes, true)
+
+		if (intersects.length > 0) {
+			// Find which decoration was hit
+			const hitMesh = intersects[0].object as Mesh
+			for (const obj of placedObjects) {
+				let found = false
+				scene.traverse((node) => {
+					const mesh = node as Mesh
+					if (!mesh.isMesh) return
+					if (mesh.userData?.decorationInstanceId === obj.instanceId) {
+						if (hitMesh === mesh || mesh.children.includes(hitMesh as unknown as THREE_Group)) {
+							onSelectDecoration(obj.instanceId)
+							found = true
+						}
+					}
+				})
+				if (found) break
+			}
+		}
+	}
+
+	useFrame(() => {
+		const canvas = gl.domElement
+		canvas.addEventListener("click", handleCanvasClick, { capture: true })
+
+		return () => {
+			canvas.removeEventListener("click", handleCanvasClick, true)
+		}
+	})
+
+	return null
 }
 
 export default function BuilderPage() {
@@ -437,15 +539,22 @@ export default function BuilderPage() {
 									return (
 										<GLTFObject
 											key={obj.instanceId}
+											instanceId={obj.instanceId}
 											modelPath={asset.modelPath}
 											position={obj.position}
 											rotationY={obj.rotationY}
 											scale={obj.scale}
 											tintColor={obj.color}
 											partColors={obj.partColors}
+											isSelected={selectedId === obj.instanceId}
 										/>
 									)
 								})}
+
+								<ClickHandler
+									placedObjects={placedObjects}
+									onSelectDecoration={setSelectedId}
+								/>
 							</Suspense>
 
 							<OrbitControls makeDefault minDistance={1.5} maxDistance={30} />
@@ -465,7 +574,7 @@ export default function BuilderPage() {
 									</div>
 								) : (
 									<>
-										<H2>Kies een maat</H2>
+										<H2 >Kies een maat</H2>
 										<div className="rounded-lg border border-white/10 bg-black/20 p-3 text-xs">
 											<P className="text-white/60">Afmetingen</P>
 											<P className="mt-1 font-medium">{selectedPlatform.dimensions} cm</P>
@@ -487,6 +596,7 @@ export default function BuilderPage() {
 								)}
 							</div>
 						) : (
+							// step 2, selected
 							<>
 								<H2>Aanpassen</H2>
 
@@ -625,12 +735,13 @@ export default function BuilderPage() {
 								<button
 									type="button"
 									onClick={removeSelected}
-									className="w-full rounded-md border border-red-400/50 bg-red-500/20 px-3 py-2 text-sm text-red-100"
+									className="w-full rounded-md border border-red-400/50 bg-red-500/20 px-3 py-2 text-sm text-red-100 mt-5"
 								>
 									Verwijder
 								</button>
 							</div>
 						) : (
+							// unselected display
 							<div className="mt-10 text-center text-white/40">
 								<Icon name="Sliders" size={24} />
 								<P className="mt-2 text-sm">Selecteer een object om te bewerken</P>
