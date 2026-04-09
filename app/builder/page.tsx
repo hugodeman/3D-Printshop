@@ -602,7 +602,7 @@ export default function BuilderPage() {
 								<H2>Aanpassen</H2>
 
 								{selectedObject ? (
-							<div className="flex flex-col gap-3">
+							<div className="flex flex-col gap-5">
 								<H3>{selectedObjectAsset?.name}</H3>
 
 								<label className="block text-xs">
@@ -633,8 +633,8 @@ export default function BuilderPage() {
 											const x = Number(e.currentTarget.value)
 											updateSelected((o) => ({ ...o, position: [x, o.position[1], o.position[2]] }))
 										}}
-										className="w-full"
-									/>
+										className="slider w-full appearance-none rounded-lg bg-[#98CEAA]/65 p-2"
+ 									/>
 								</label>
 
 								<label className="block text-xs">
@@ -665,8 +665,8 @@ export default function BuilderPage() {
 											const z = Number(e.currentTarget.value)
 											updateSelected((o) => ({ ...o, position: [o.position[0], o.position[1], z] }))
 										}}
-										className="w-full"
-									/>
+										className="slider w-full appearance-none rounded-lg bg-[#98CEAA]/65 p-2"
+ 									/>
 								</label>
 
 								<label className="block text-xs">
@@ -697,8 +697,8 @@ export default function BuilderPage() {
 											const rotationY = clamp(Number(e.currentTarget.value), ROTATION_MIN, ROTATION_MAX)
 											updateSelected((o) => ({ ...o, rotationY }))
 										}}
-										className="w-full"
-									/>
+										className="slider w-full appearance-none rounded-lg bg-[#98CEAA]/65 p-2"
+ 									/>
 								</label>
 
 								<label className="block text-xs">
@@ -729,8 +729,8 @@ export default function BuilderPage() {
 											const scale = clamp(Number(e.currentTarget.value), selectedScaleLimits.min, selectedScaleLimits.max)
 											updateSelected((o) => ({ ...o, scale }))
 										}}
-										className="w-full"
-									/>
+										className="slider w-full appearance-none rounded-lg bg-[#98CEAA]/65 p-2"
+ 									/>
 								</label>
 
 								<button
@@ -769,3 +769,5 @@ export default function BuilderPage() {
 		</main>
 	)
 }
+
+
