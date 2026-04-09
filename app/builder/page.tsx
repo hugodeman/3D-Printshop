@@ -566,47 +566,62 @@ export default function BuilderPage() {
 				{/* Right Sidebar */}
 				<div className="flex flex-col overflow-hidden bg-white/5">
 					<div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4">
+						<H2>Aanpassen</H2>
+
 						{step === 1 ? (
-							<div className="flex flex-col gap-3">
+							<div className="flex flex-1 flex-col">
 								{!selectedPlatform ? (
-									<div className="mt-10 rounded-lg border border-dashed border-white/20 bg-black/20 p-4 text-center">
-										<P className="text-white/70">Selecteer een platform</P>
-										<P className="mt-1 text-xs text-white/50">Kies links eerst een basis om maten te kunnen instellen</P>
+									<div className="flex flex-1 flex-col items-center justify-center text-center text-white/70">
+										<div className="mb-4 flex h-22 w-22 items-center justify-center rounded-full border border-white/20 bg-[#D9D9D9]/25">
+											<Icon name="Box" size={34} color="#1F2126" />
+										</div>
+										<P className="max-w-55 text-sm">Kies een platform en selecteer je maat</P>
 									</div>
 								) : (
-									<>
-										<H2 >Kies een maat</H2>
-										<div className="rounded-lg border border-white/10 bg-black/20 p-3 text-xs">
+									<div className="flex flex-col gap-3">
+										<div className={"flex justify-between mr-2 mt-3 mb-5"}>
+											<H3>Geselecteerd:</H3>
+											<H3>{selectedPlatform.name}</H3>
+										</div>
+										<div className="rounded-lg border border-white/10 bg-black/20 p-3 mb-5">
 											<P className="text-white/60">Afmetingen</P>
-											<P className="mt-1 font-medium">{selectedPlatform.dimensions} cm</P>
-											<P className="mt-1 text-white/60">Preview maat: {selectedPlatformSize} cm</P>
+											<div className={"flex items-baseline gap-1"}>
+												<H2 className="mt-1 font-medium">{selectedPlatformSize} x {selectedPlatformSize} x 1</H2>
+												<P className="text-white/60">cm</P>
+											</div>
 										</div>
 										<div className="grid grid-cols-3 gap-2">
-											{[10, 15, 20].map((size) => (
+											{[
+												{ label: "M", value: 10 as const },
+												{ label: "L", value: 15 as const },
+												{ label: "XL", value: 20 as const },
+											].map((size) => (
 												<Button
-													key={size}
-													variant={selectedPlatformSize === size ? "primary" : "secondary"}
-													onClick={() => setSelectedPlatformSize(size as 10 | 15 | 20)}
+													key={size.value}
+													variant={selectedPlatformSize === size.value ? "primary" : "secondary"}
+													onClick={() => setSelectedPlatformSize(size.value)}
 													className="w-full"
 												>
-													{size} cm
+													{size.label}
 												</Button>
 											))}
 										</div>
-									</>
+									</div>
 								)}
 							</div>
 						) : (
 							// step 2, selected
 							<>
-								<H2>Aanpassen</H2>
 
 								{selectedObject ? (
 							<div className="flex flex-col gap-5">
-								<H3>{selectedObjectAsset?.name}</H3>
+								<div className={"flex justify-between mr-2 mb-8 mt-3"}>
+									<H3>Geselecteerd:</H3>
+									<H3>{selectedObjectAsset?.name}</H3>
+								</div>
 
 								<label className="block text-xs">
-									<div className="mb-1 flex items-center justify-between">
+									<div className="mb-1 mr-2 flex items-center justify-between">
 										<P>Positie X</P>
 										<input
 											type="number"
@@ -638,7 +653,7 @@ export default function BuilderPage() {
 								</label>
 
 								<label className="block text-xs">
-									<div className="mb-1 flex items-center justify-between">
+									<div className="mb-1 mr-2 flex items-center justify-between">
 										<P>Positie Z</P>
 										<input
 											type="number"
@@ -670,7 +685,7 @@ export default function BuilderPage() {
 								</label>
 
 								<label className="block text-xs">
-									<div className="mb-1 flex items-center justify-between">
+									<div className="mb-1 mr-2 flex items-center justify-between">
 										<P>Rotatie Y</P>
 										<input
 											type="number"
@@ -702,7 +717,7 @@ export default function BuilderPage() {
 								</label>
 
 								<label className="block text-xs">
-									<div className="mb-1 flex items-center justify-between">
+									<div className="mb-1 mr-2 flex items-center justify-between">
 										<P>Schaal</P>
 										<input
 											type="number"
@@ -743,9 +758,11 @@ export default function BuilderPage() {
 							</div>
 						) : (
 							// unselected display
-							<div className="mt-10 text-center text-white/40">
-								<Icon name="Sliders" size={24} />
-								<P className="mt-2 text-sm">Selecteer een object om te bewerken</P>
+							<div className="flex flex-1 flex-col items-center justify-center text-center text-white/70">
+								<div className="mb-4 flex h-22 w-22 items-center justify-center rounded-full bg-[#D9D9D9]/35 border border-white/20">
+									<Icon name="MousePointerClick" size={34} color="#1F2126" />
+								</div>
+								<P className="max-w-55 text-sm">Selecteer een model om deze aan te passen</P>
 							</div>
 						)}
 							</>
