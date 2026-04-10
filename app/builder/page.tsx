@@ -3,6 +3,8 @@
 import { Suspense, useMemo, useRef, useState, useEffect } from "react"
 import { Canvas, useThree } from "@react-three/fiber"
 import { OrbitControls, Grid, useGLTF } from "@react-three/drei"
+import { EffectComposer, Outline } from "@react-three/postprocessing"
+import { BlendFunction } from "postprocessing"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { Color, type Material, type Mesh, type Object3D, Raycaster, Vector2, type Group as THREE_Group } from "three"
@@ -89,6 +91,12 @@ function toNumber(value: string) {
 	return Number.isFinite(next) ? next : null
 }
 
+function normalizeHexColor(value: string) {
+	const withHash = value.startsWith("#") ? value : `#${value}`
+	const isHex = /^#[0-9a-fA-F]{6}$/.test(withHash)
+	return isHex ? withHash.toUpperCase() : null
+}
+
 function getAssetScaleLimits(asset: ModelAsset | null | undefined): ScaleLimits {
 	const min = asset?.scaleLimits?.min ?? SCALE_MIN
 	const max = asset?.scaleLimits?.max ?? SCALE_MAX
@@ -103,8 +111,8 @@ function GLTFObject({
 	scaleVector,
 	tintColor,
 	partColors,
-	isSelected,
 	instanceId,
+	onReady,
 }: {
 	modelPath: string
 	position: Vec3
@@ -113,8 +121,8 @@ function GLTFObject({
 	scaleVector?: Vec3
 	tintColor: string
 	partColors?: PartColors
-	isSelected?: boolean
 	instanceId?: string
+	onReady?: (objects: Object3D[] | null) => void
 }) {
 	const gltf = useGLTF(modelPath)
 	const groupRef = useRef<THREE_Group>(null)
@@ -122,21 +130,6 @@ function GLTFObject({
 	const scene = useMemo(() => {
 		const clone = gltf.scene.clone(true)
 		applyModelTint(clone, tintColor, partColors)
-
-		if (isSelected) {
-			clone.traverse((node) => {
-				const mesh = node as Mesh
-				if (!mesh.isMesh || !mesh.material) return
-				const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
-				materials.forEach((mat) => {
-					const m = mat as Material & { emissive?: Color; emissiveIntensity?: number }
-					if (m.emissive) {
-						m.emissive.set(0xff8c00)
-						m.emissiveIntensity = 0.25
-					}
-				})
-			})
-		}
 
 		// Add userData for raycasting
 		if (instanceId) {
@@ -146,25 +139,24 @@ function GLTFObject({
 			})
 		}
 
-		// Add orange glow if selected
-		if (isSelected) {
-			clone.traverse((node) => {
-				const mesh = node as Mesh
-				if (!mesh.isMesh || !mesh.material) return
-
-				const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
-				materials.forEach((mat) => {
-					const m = mat as Material & { emissive?: Color; emissiveIntensity?: number }
-					if (m.emissive) {
-						m.emissive.set("#FF8C00")
-						m.emissiveIntensity = 0.2
-					}
-				})
-			})
-		}
-
 		return clone
-	}, [gltf.scene, tintColor, partColors, isSelected, instanceId])
+	}, [gltf.scene, tintColor, partColors, instanceId])
+
+	useEffect(() => {
+		if (!onReady || !groupRef.current) return
+
+		const meshes: Object3D[] = []
+		groupRef.current.traverse((child) => {
+			const maybeMesh = child as Mesh
+			if (maybeMesh.isMesh) meshes.push(maybeMesh)
+		})
+
+		onReady(meshes.length > 0 ? meshes : null)
+
+		return () => {
+			onReady(null)
+		}
+	}, [onReady, scene])
 
 	const previewScale: number | Vec3 = scaleVector
 		? [
@@ -189,20 +181,21 @@ function GLTFObject({
 function ClickHandler({
 	placedObjects,
 	onSelectDecoration,
+	onClearSelection,
 }: {
 	placedObjects: PlacedObject[]
 	onSelectDecoration: (instanceId: string) => void
+	onClearSelection: () => void
 }) {
 	const { camera, gl, scene } = useThree()
 	const raycaster = useRef(new Raycaster())
 	const mouse = useRef(new Vector2())
+	const pointerStart = useRef<{ x: number; y: number } | null>(null)
+	const CLICK_MOVE_THRESHOLD = 5
 
 	useEffect(() => {
-		const handleCanvasClick = (event: PointerEvent) => {
-			// Ignore clicks on non-canvas elements (like sliders)
-			if (!(event.target instanceof HTMLCanvasElement)) return
-
-			const canvas = event.target as HTMLCanvasElement
+		const pickAtPointer = (event: PointerEvent) => {
+			const canvas = gl.domElement
 			const rect = canvas.getBoundingClientRect()
 			mouse.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
 			mouse.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
@@ -242,16 +235,42 @@ function ClickHandler({
 					})
 					if (found) break
 				}
+			} else {
+				onClearSelection()
 			}
 		}
 
+		const handlePointerDown = (event: PointerEvent) => {
+			if (event.button !== 0) return
+			if (event.target !== gl.domElement) return
+			pointerStart.current = { x: event.clientX, y: event.clientY }
+		}
+
+		const handlePointerUp = (event: PointerEvent) => {
+			if (event.button !== 0) return
+			if (!pointerStart.current) return
+
+			const dx = event.clientX - pointerStart.current.x
+			const dy = event.clientY - pointerStart.current.y
+			const distance = Math.sqrt(dx * dx + dy * dy)
+			pointerStart.current = null
+
+			// Treat only near-stationary mouse actions as a click.
+			if (distance > CLICK_MOVE_THRESHOLD) return
+			if (event.target !== gl.domElement) return
+
+			pickAtPointer(event)
+		}
+
 		const canvas = gl.domElement
-		canvas.addEventListener("pointerdown", handleCanvasClick, { capture: false })
+		canvas.addEventListener("pointerdown", handlePointerDown, { capture: false })
+		canvas.addEventListener("pointerup", handlePointerUp, { capture: false })
 
 		return () => {
-			canvas.removeEventListener("pointerdown", handleCanvasClick, false)
+			canvas.removeEventListener("pointerdown", handlePointerDown, false)
+			canvas.removeEventListener("pointerup", handlePointerUp, false)
 		}
-	}, [camera, scene, placedObjects, gl.domElement, onSelectDecoration])
+	}, [camera, scene, placedObjects, gl.domElement, onSelectDecoration, onClearSelection])
 
 	return null
 }
@@ -260,9 +279,13 @@ export default function BuilderPage() {
 	const router = useRouter()
 	const [step, setStep] = useState<BuilderStep>(1)
 	const [selectedPlatformId, setSelectedPlatformId] = useState<string | null>(null)
+	const [selectedPlatformColor, setSelectedPlatformColor] = useState("#228B22")
+	const [selectedPlatformColorInput, setSelectedPlatformColorInput] = useState("#228B22")
 	const [selectedPlatformSize, setSelectedPlatformSize] = useState<10 | 15 | 20>(10)
 	const [placedObjects, setPlacedObjects] = useState<PlacedObject[]>([])
 	const [selectedId, setSelectedId] = useState<string | null>(null)
+	const [selectedPartColorInputs, setSelectedPartColorInputs] = useState<Record<string, string>>({})
+	const [outlineSelection, setOutlineSelection] = useState<Object3D[] | null>(null)
 	const [hierarchyOpen, setHierarchyOpen] = useState(true)
 	const nextId = useRef(0)
 
@@ -294,6 +317,27 @@ export default function BuilderPage() {
 	const platformSizeScaleMultiplier = selectedPlatformSize / BASE_PLATFORM_SIZE_CM
 	const positionMin = -(selectedPlatformSize / BASE_PLATFORM_SIZE_CM)
 	const positionMax = selectedPlatformSize / BASE_PLATFORM_SIZE_CM
+
+	useEffect(() => {
+		if (!selectedObject || !selectedObjectAsset?.partColors) {
+			// eslint-disable-next-line react-hooks/set-state-in-effect
+			setSelectedPartColorInputs({})
+			return
+		}
+
+		const nextInputs: Record<string, string> = {}
+		for (const [partName, defaultColor] of Object.entries(selectedObjectAsset.partColors)) {
+			nextInputs[partName] = (selectedObject.partColors?.[partName] ?? defaultColor).toUpperCase()
+		}
+		setSelectedPartColorInputs(nextInputs)
+	}, [selectedId, selectedObject, selectedObjectAsset])
+
+	function selectPlatform(asset: ModelAsset) {
+		const normalizedColor = normalizeHexColor(asset.color) ?? "#228B22"
+		setSelectedPlatformId(asset.id)
+		setSelectedPlatformColor(normalizedColor)
+		setSelectedPlatformColorInput(normalizedColor)
+	}
 
 	function addObject(asset: ModelAsset) {
 		if (asset.kind !== "decoration") return
@@ -338,6 +382,7 @@ export default function BuilderPage() {
 		if (!selectedId) return
 		setPlacedObjects((prev) => prev.filter((o) => o.instanceId !== selectedId))
 		setSelectedId(null)
+		setOutlineSelection(null)
 	}
 
 	function goToCheckoutOverview() {
@@ -368,7 +413,7 @@ export default function BuilderPage() {
 
 				{/* Left Sidebar */}
 				<div className="flex flex-col overflow-hidden bg-white/5">
-					{/* Hierarchy - sticky, outside scroll area */}
+					{/* Hierarchy */}
 					<div className="shrink-0 border-b border-white/10 ">
 						<button
 							type="button"
@@ -413,7 +458,6 @@ export default function BuilderPage() {
 
 					<div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain scrollbar-hide p-4">
 
-						{/* Step 1 */}
 						{step === 1 && (
 							<div className="flex flex-col gap-3">
 								<H3>Kies een platform</H3>
@@ -423,7 +467,7 @@ export default function BuilderPage() {
 										<button
 											key={asset.id}
 											type="button"
-											onClick={() => setSelectedPlatformId(asset.id)}
+											onClick={() => selectPlatform(asset)}
 											className={`rounded-lg border p-2 text-left transition ${active
 												? "border-[#98CEAA] bg-[#98CEAA]/10"
 												: "border-white/10 hover:border-white/30"}`}
@@ -444,7 +488,6 @@ export default function BuilderPage() {
 							</div>
 						)}
 
-						{/* Step 2 */}
 						{step === 2 && (
 							<div className="flex flex-col gap-3">
 								<H2>Voeg decoraties toe</H2>
@@ -471,6 +514,7 @@ export default function BuilderPage() {
 						)}
 					</div>
 
+					{/* nav button */}
 					{step === 2 && (
 						<div className="border-t border-white/10 p-4">
 							<Button variant="secondary" onClick={() => setStep(1)} className="w-full">
@@ -482,6 +526,7 @@ export default function BuilderPage() {
 
 				{/* Center */}
 				<div className="mb-5 flex flex-col overflow-hidden rounded-xl bg-[#1A1C1E]">
+
 					{/* Step Buttons */}
 					<div className="flex justify-center p-4">
 						<div className="mb-2 flex items-center gap-10">
@@ -543,7 +588,9 @@ export default function BuilderPage() {
 
 					{/* Canvas */}
 					<div className="flex-1">
-						<Canvas camera={{ position: [4.5, 4.5, 4.5], fov: 46 }}>
+						<Canvas
+							camera={{ position: [4.5, 4.5, 4.5], fov: 46 }}
+						>
 							<color attach="background" args={["#1F2126"]} />
 							<ambientLight intensity={0.5} />
 							<directionalLight position={[6, 9, 4]} intensity={1.2} />
@@ -565,8 +612,7 @@ export default function BuilderPage() {
 										modelPath={selectedPlatform.modelPath}
 										position={selectedPlatform.spawnPosition ?? [0, 0, 0]}
 										scaleVector={[platformSizeScaleMultiplier, 1, platformSizeScaleMultiplier]}
-										tintColor={selectedPlatform.color}
-										partColors={selectedPlatform.partColors}
+										tintColor={selectedPlatformColor}
 									/>
 								)}
 
@@ -583,7 +629,7 @@ export default function BuilderPage() {
 											scale={obj.scale}
 											tintColor={obj.color}
 											partColors={obj.partColors}
-											isSelected={selectedId === obj.instanceId}
+											onReady={selectedId === obj.instanceId ? setOutlineSelection : undefined}
 										/>
 									)
 								})}
@@ -591,8 +637,24 @@ export default function BuilderPage() {
 								<ClickHandler
 									placedObjects={placedObjects}
 									onSelectDecoration={setSelectedId}
+									onClearSelection={() => {
+										setSelectedId(null)
+										setOutlineSelection(null)
+									}}
 								/>
 							</Suspense>
+
+							<EffectComposer multisampling={4} autoClear={false}>
+								<Outline
+									selection={outlineSelection ?? []}
+									edgeStrength={5}
+									visibleEdgeColor={0x673f11}
+									hiddenEdgeColor={0x673f11}
+									blendFunction={BlendFunction.ALPHA}
+									blur
+									xRay={true}
+								/>
+							</EffectComposer>
 
 							<OrbitControls makeDefault minDistance={1.5} maxDistance={30} />
 						</Canvas>
@@ -642,6 +704,39 @@ export default function BuilderPage() {
 												</Button>
 											))}
 										</div>
+
+										<div className="mt-3 border-t border-white/10 pt-4">
+											<H3 className="mb-5 mt-3 ">Kleur platform</H3>
+											<div className="flex items-center gap-2">
+												<input
+													type="color"
+													value={selectedPlatformColor}
+													onChange={(e) => {
+														const next = e.currentTarget.value.toUpperCase()
+														setSelectedPlatformColor(next)
+														setSelectedPlatformColorInput(next)
+													}}
+													className="h-10 w-50 cursor-pointer rounded border border-white/15 bg-black/20"
+												/>
+												<input
+													type="text"
+													inputMode="text"
+													maxLength={7}
+													value={selectedPlatformColorInput}
+													onChange={(e) => {
+														const raw = e.currentTarget.value.toUpperCase()
+														setSelectedPlatformColorInput(raw)
+														const normalized = normalizeHexColor(raw)
+														if (normalized) setSelectedPlatformColor(normalized)
+													}}
+													onBlur={() => {
+														setSelectedPlatformColorInput(selectedPlatformColor)
+													}}
+													className="h-10 w-3/5 rounded border border-white/15 bg-black/30 pl-2"
+													placeholder="#RRGGBB"
+												/>
+											</div>
+										</div>
 									</div>
 								)}
 							</div>
@@ -658,7 +753,7 @@ export default function BuilderPage() {
 
 								<label className="block text-xs">
 									<div className="mb-1 mr-2 flex items-center justify-between">
-										<P>Positie X</P>
+										<P className={"pl-1"}>Positie X</P>
 										<input
 											type="number"
 											min={positionMin}
@@ -671,7 +766,7 @@ export default function BuilderPage() {
 												const x = clamp(value, positionMin, positionMax)
 												updateSelected((o) => ({ ...o, position: [x, o.position[1], o.position[2]] }))
 											}}
-											className="w-20 rounded border border-white/15 bg-black/30 px-2 py-1 text-right text-xs"
+											className="w-20 rounded border border-white/15 bg-black/30 px-2 py-1 text-right"
 										/>
 									</div>
 									<input
@@ -684,13 +779,13 @@ export default function BuilderPage() {
 											const x = Number(e.currentTarget.value)
 											updateSelected((o) => ({ ...o, position: [x, o.position[1], o.position[2]] }))
 										}}
-										className="slider w-full appearance-none rounded-lg bg-[#98CEAA]/65 p-2"
+										className="slider w-full appearance-none rounded-lg bg-[#98CEAA]/65 p-1"
  									/>
 								</label>
 
 								<label className="block text-xs">
 									<div className="mb-1 mr-2 flex items-center justify-between">
-										<P>Positie Z</P>
+										<P className={"pl-1"}>Positie Z</P>
 										<input
 											type="number"
 											min={positionMin}
@@ -703,7 +798,7 @@ export default function BuilderPage() {
 												const z = clamp(value, positionMin, positionMax)
 												updateSelected((o) => ({ ...o, position: [o.position[0], o.position[1], z] }))
 											}}
-											className="w-20 rounded border border-white/15 bg-black/30 px-2 py-1 text-right text-xs"
+											className="w-20 rounded border border-white/15 bg-black/30 px-2 py-1 text-right"
 										/>
 									</div>
 									<input
@@ -716,13 +811,13 @@ export default function BuilderPage() {
 											const z = Number(e.currentTarget.value)
 											updateSelected((o) => ({ ...o, position: [o.position[0], o.position[1], z] }))
 										}}
-										className="slider w-full appearance-none rounded-lg bg-[#98CEAA]/65 p-2"
+										className="slider w-full appearance-none rounded-lg bg-[#98CEAA]/65 p-1"
  									/>
 								</label>
 
 								<label className="block text-xs">
 									<div className="mb-1 mr-2 flex items-center justify-between">
-										<P>Rotatie Y</P>
+										<P className={"pl-1"}>Rotatie Y</P>
 										<input
 											type="number"
 											min={ROTATION_MIN}
@@ -735,7 +830,7 @@ export default function BuilderPage() {
 												const rotationY = clamp(value, ROTATION_MIN, ROTATION_MAX)
 												updateSelected((o) => ({ ...o, rotationY }))
 											}}
-											className="w-20 rounded border border-white/15 bg-black/30 px-2 py-1 text-right text-xs"
+											className="w-20 rounded border border-white/15 bg-black/30 px-2 py-1 text-right"
 										/>
 									</div>
 									<input
@@ -748,13 +843,13 @@ export default function BuilderPage() {
 											const rotationY = clamp(Number(e.currentTarget.value), ROTATION_MIN, ROTATION_MAX)
 											updateSelected((o) => ({ ...o, rotationY }))
 										}}
-										className="slider w-full appearance-none rounded-lg bg-[#98CEAA]/65 p-2"
+										className="slider w-full appearance-none rounded-lg bg-[#98CEAA]/65 p-1"
  									/>
 								</label>
 
 								<label className="block text-xs">
 									<div className="mb-1 mr-2 flex items-center justify-between">
-										<P>Schaal</P>
+										<P className={"pl-1"}>Schaal</P>
 										<input
 											type="number"
 											min={selectedScaleLimits.min}
@@ -767,7 +862,7 @@ export default function BuilderPage() {
 												const scale = clamp(value, selectedScaleLimits.min, selectedScaleLimits.max)
 												updateSelected((o) => ({ ...o, scale }))
 											}}
-											className="w-20 rounded border border-white/15 bg-black/30 px-2 py-1 text-right text-xs"
+											className="w-20 rounded border border-white/15 bg-black/30 px-2 py-1 text-right"
 										/>
 									</div>
 									<input
@@ -780,32 +875,60 @@ export default function BuilderPage() {
 											const scale = clamp(Number(e.currentTarget.value), selectedScaleLimits.min, selectedScaleLimits.max)
 											updateSelected((o) => ({ ...o, scale }))
 										}}
-										className="slider w-full appearance-none rounded-lg bg-[#98CEAA]/65 p-2"
+										className="slider w-full appearance-none rounded-lg bg-[#98CEAA]/65 p-1"
  									/>
 								</label>
 
 								{selectedObjectAsset?.partColors && Object.keys(selectedObjectAsset.partColors).length > 0 && (
-									<div className="border-t border-white/10 pt-5 mt-5">
-										<P className="mb-3 font-medium">Kleuren</P>
+									<div className="border-t border-white/10 pt-5 mt-5 ">
+										<H3 className="mb-3 font-medium">Kleuren</H3>
 										<div className="space-y-3">
 											{Object.entries(selectedObjectAsset.partColors).map(([partName, defaultColor]) => {
 												const currentColor = selectedObject.partColors?.[partName] ?? defaultColor
+												const inputValue = selectedPartColorInputs[partName] ?? currentColor.toUpperCase()
 												return (
-													<div key={partName} className="flex items-center gap-2">
+													<div key={partName} className="flex items-center gap-2 pl-2 pr-2">
 														<label className="flex-1">
-															<P className="mb-1 text-xs capitalize">{partName}</P>
-															<input
-																type="color"
-																value={currentColor}
-																onChange={(e) => {
-																	const newPartColors = {
-																		...selectedObject.partColors,
-																		[partName]: e.currentTarget.value,
-																	}
-																	updateSelected((o) => ({ ...o, partColors: newPartColors }))
-																}}
-																className="h-8 w-full cursor-pointer rounded border border-white/15"
-															/>
+															<P className="mb-3 mt-2 capitalize">{partName}</P>
+															<div className="flex items-center gap-2">
+																<input
+																	type="color"
+																	value={currentColor}
+																	onChange={(e) => {
+																		const next = e.currentTarget.value.toUpperCase()
+																		setSelectedPartColorInputs((prev) => ({ ...prev, [partName]: next }))
+																		const newPartColors = {
+																			...selectedObject.partColors,
+																			[partName]: next,
+																		}
+																		updateSelected((o) => ({ ...o, partColors: newPartColors }))
+																	}}
+																	className="h-10 w-50 cursor-pointer rounded border border-white/15 bg-black/20"
+																/>
+																<input
+																	type="text"
+																	inputMode="text"
+																	maxLength={7}
+																	value={inputValue}
+																	onChange={(e) => {
+																		const raw = e.currentTarget.value.toUpperCase()
+																		setSelectedPartColorInputs((prev) => ({ ...prev, [partName]: raw }))
+																		const normalized = normalizeHexColor(raw)
+																		if (!normalized) return
+																		const newPartColors = {
+																			...selectedObject.partColors,
+																			[partName]: normalized,
+																		}
+																		updateSelected((o) => ({ ...o, partColors: newPartColors }))
+																	}}
+																	onBlur={() => {
+																		const stable = (selectedObject.partColors?.[partName] ?? defaultColor).toUpperCase()
+																		setSelectedPartColorInputs((prev) => ({ ...prev, [partName]: stable }))
+																	}}
+																	className="h-10 w-3/5 rounded border border-white/15 bg-black/30 pl-2"
+																	placeholder="#RRGGBB"
+																/>
+															</div>
 														</label>
 													</div>
 												)
@@ -817,7 +940,7 @@ export default function BuilderPage() {
 								<button
 									type="button"
 									onClick={removeSelected}
-									className="w-full rounded-md border border-red-400/50 bg-red-500/20 px-3 py-2 text-sm text-red-100 mt-5"
+									className="w-full rounded-md border border-red-400/50 bg-red-500/20 px-3 py-2 text-sm text-red-100 mt-10"
 								>
 									Verwijder
 								</button>
@@ -835,6 +958,7 @@ export default function BuilderPage() {
 						)}
 					</div>
 
+					{/* nav buttons */}
 					<div className="border-t border-white/10 p-4">
 						{step === 1 && (
 							<Button onClick={() => setStep(2)} disabled={!canGoToStep2} className="w-full">
