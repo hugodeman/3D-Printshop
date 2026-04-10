@@ -45,8 +45,6 @@ type PlacedObject = {
 
 const PREVIEW_SCALE_MULTIPLIER = 20
 const DEFAULT_SPAWN_POSITION: Vec3 = [0, 0, 0]
-const POSITION_MIN = -1
-const POSITION_MAX = 1
 const POSITION_STEP = 0.05
 const ROTATION_MIN = -3.14
 const ROTATION_MAX = 3.14
@@ -125,6 +123,21 @@ function GLTFObject({
 		const clone = gltf.scene.clone(true)
 		applyModelTint(clone, tintColor, partColors)
 
+		if (isSelected) {
+			clone.traverse((node) => {
+				const mesh = node as Mesh
+				if (!mesh.isMesh || !mesh.material) return
+				const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+				materials.forEach((mat) => {
+					const m = mat as Material & { emissive?: Color; emissiveIntensity?: number }
+					if (m.emissive) {
+						m.emissive.set(0xff8c00)
+						m.emissiveIntensity = 0.25
+					}
+				})
+			})
+		}
+
 		// Add userData for raycasting
 		if (instanceId) {
 			clone.traverse((node) => {
@@ -144,7 +157,7 @@ function GLTFObject({
 					const m = mat as Material & { emissive?: Color; emissiveIntensity?: number }
 					if (m.emissive) {
 						m.emissive.set("#FF8C00")
-						m.emissiveIntensity = 0.5
+						m.emissiveIntensity = 0.2
 					}
 				})
 			})
@@ -279,6 +292,8 @@ export default function BuilderPage() {
 	const canGoToCheckout = canGoToStep2 && placedObjects.length > 0
 	const selectedScaleLimits = useMemo(() => getAssetScaleLimits(selectedObjectAsset), [selectedObjectAsset])
 	const platformSizeScaleMultiplier = selectedPlatformSize / BASE_PLATFORM_SIZE_CM
+	const positionMin = -(selectedPlatformSize / BASE_PLATFORM_SIZE_CM)
+	const positionMax = selectedPlatformSize / BASE_PLATFORM_SIZE_CM
 
 	function addObject(asset: ModelAsset) {
 		if (asset.kind !== "decoration") return
@@ -646,14 +661,14 @@ export default function BuilderPage() {
 										<P>Positie X</P>
 										<input
 											type="number"
-											min={POSITION_MIN}
-											max={POSITION_MAX}
+											min={positionMin}
+											max={positionMax}
 											step={POSITION_STEP}
 											value={selectedObject.position[0].toFixed(2)}
 											onChange={(e) => {
 												const value = toNumber(e.currentTarget.value)
 												if (value === null) return
-												const x = clamp(value, POSITION_MIN, POSITION_MAX)
+												const x = clamp(value, positionMin, positionMax)
 												updateSelected((o) => ({ ...o, position: [x, o.position[1], o.position[2]] }))
 											}}
 											className="w-20 rounded border border-white/15 bg-black/30 px-2 py-1 text-right text-xs"
@@ -661,8 +676,8 @@ export default function BuilderPage() {
 									</div>
 									<input
 										type="range"
-										min={POSITION_MIN}
-										max={POSITION_MAX}
+										min={positionMin}
+										max={positionMax}
 										step={POSITION_STEP}
 										value={selectedObject.position[0]}
 										onChange={(e) => {
@@ -678,14 +693,14 @@ export default function BuilderPage() {
 										<P>Positie Z</P>
 										<input
 											type="number"
-											min={POSITION_MIN}
-											max={POSITION_MAX}
+											min={positionMin}
+											max={positionMax}
 											step={POSITION_STEP}
 											value={selectedObject.position[2].toFixed(2)}
 											onChange={(e) => {
 												const value = toNumber(e.currentTarget.value)
 												if (value === null) return
-												const z = clamp(value, POSITION_MIN, POSITION_MAX)
+												const z = clamp(value, positionMin, positionMax)
 												updateSelected((o) => ({ ...o, position: [o.position[0], o.position[1], z] }))
 											}}
 											className="w-20 rounded border border-white/15 bg-black/30 px-2 py-1 text-right text-xs"
@@ -693,8 +708,8 @@ export default function BuilderPage() {
 									</div>
 									<input
 										type="range"
-										min={POSITION_MIN}
-										max={POSITION_MAX}
+										min={positionMin}
+										max={positionMax}
 										step={POSITION_STEP}
 										value={selectedObject.position[2]}
 										onChange={(e) => {
@@ -768,6 +783,36 @@ export default function BuilderPage() {
 										className="slider w-full appearance-none rounded-lg bg-[#98CEAA]/65 p-2"
  									/>
 								</label>
+
+								{selectedObjectAsset?.partColors && Object.keys(selectedObjectAsset.partColors).length > 0 && (
+									<div className="border-t border-white/10 pt-5 mt-5">
+										<P className="mb-3 font-medium">Kleuren</P>
+										<div className="space-y-3">
+											{Object.entries(selectedObjectAsset.partColors).map(([partName, defaultColor]) => {
+												const currentColor = selectedObject.partColors?.[partName] ?? defaultColor
+												return (
+													<div key={partName} className="flex items-center gap-2">
+														<label className="flex-1">
+															<P className="mb-1 text-xs capitalize">{partName}</P>
+															<input
+																type="color"
+																value={currentColor}
+																onChange={(e) => {
+																	const newPartColors = {
+																		...selectedObject.partColors,
+																		[partName]: e.currentTarget.value,
+																	}
+																	updateSelected((o) => ({ ...o, partColors: newPartColors }))
+																}}
+																className="h-8 w-full cursor-pointer rounded border border-white/15"
+															/>
+														</label>
+													</div>
+												)
+											})}
+										</div>
+									</div>
+								)}
 
 								<button
 									type="button"
