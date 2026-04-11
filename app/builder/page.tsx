@@ -12,6 +12,8 @@ import { Color, type Material, type Mesh, type Object3D, Raycaster, Vector2, typ
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import {H2, H3, P} from "@/components/ui/Typography"
+import { SliderInput } from "@/components/builder/SliderInput"
+import { ColorInput } from "@/components/builder/ColorInput"
 
 import { saveBuilderCheckoutDraft } from "@/lib/builder-checkout-draft"
 import { useBuilderStore } from "@/lib/builder-store"
@@ -50,7 +52,6 @@ const POSITION_STEP = 0.05
 const ROTATION_MIN = 0
 const ROTATION_MAX = 2 * Math.PI
 const ROTATION_STEP = 0.02
-const ROTATION_DISPLAY_STEP = 1
 const SCALE_MIN = 0.5
 const SCALE_MAX = 3
 const SCALE_STEP = 0.05
@@ -99,11 +100,6 @@ function applyModelTint(root: Object3D, defaultColor: string, partColors?: PartC
 
 function clamp(value: number, min: number, max: number) {
 	return Math.min(Math.max(value, min), max)
-}
-
-function toNumber(value: string) {
-	const next = Number(value)
-	return Number.isFinite(next) ? next : null
 }
 
 function normalizeHexColor(value: string) {
@@ -681,35 +677,14 @@ export default function BuilderPage() {
 
 										<div className="mt-3 border-t border-white/10 pt-4">
 											<H3 className="mb-5 mt-3 ">Kleur platform</H3>
-											<div className="flex items-center gap-2">
-												<input
-													type="color"
-													value={selectedPlatformColor}
-													onChange={(e) => {
-														const next = e.currentTarget.value.toUpperCase()
-														setSelectedPlatformColor(next)
-														setSelectedPlatformColorInput(next)
-													}}
-													className="h-10 w-50 cursor-pointer rounded border border-white/15 bg-black/20"
-												/>
-												<input
-													type="text"
-													inputMode="text"
-													maxLength={7}
-													value={selectedPlatformColorInput}
-													onChange={(e) => {
-														const raw = e.currentTarget.value.toUpperCase()
-														setSelectedPlatformColorInput(raw)
-														const normalized = normalizeHexColor(raw)
-														if (normalized) setSelectedPlatformColor(normalized)
-													}}
-													onBlur={() => {
-														setSelectedPlatformColorInput(selectedPlatformColor)
-													}}
-													className="h-10 w-3/5 rounded border border-white/15 bg-black/30 pl-2"
-													placeholder="#RRGGBB"
-												/>
-											</div>
+											<ColorInput
+												label=""
+												value={selectedPlatformColor}
+												onChange={setSelectedPlatformColor}
+												inputValue={selectedPlatformColorInput}
+												onInputChange={setSelectedPlatformColorInput}
+												onBlur={() => setSelectedPlatformColorInput(selectedPlatformColor)}
+											/>
 										</div>
 									</div>
 								)}
@@ -717,7 +692,7 @@ export default function BuilderPage() {
 						) : (
 							// step 2, selected
 							<>
-
+								{/* Sliders */}
 								{selectedObject ? (
 							<div className="flex flex-col gap-5">
 								<div className={"flex justify-between mr-2 mb-8 mt-3"}>
@@ -725,150 +700,57 @@ export default function BuilderPage() {
 									<H3>{selectedObjectAsset?.name}</H3>
 								</div>
 
-								<label className="block text-xs">
-									<div className="mb-1 mr-2 flex items-center justify-between">
-										<P className={"pl-1"}>Positie X</P>
-										<input
-											type="number"
-											min={positionMin}
-											max={positionMax}
-											step={POSITION_STEP}
-											value={selectedObject.position[0].toFixed(2)}
-											onChange={(e) => {
-												const value = toNumber(e.currentTarget.value)
-												if (value === null) return
-												const x = clamp(value, positionMin, positionMax)
-												updateSelected((o) => ({ ...o, position: [x, o.position[1], o.position[2]] }))
-											}}
-											className="w-20 rounded border border-white/15 bg-black/30 px-2 py-1 text-right"
-										/>
-									</div>
-									<input
-										type="range"
-										min={positionMin}
-										max={positionMax}
-										step={POSITION_STEP}
-										value={selectedObject.position[0]}
-										onChange={(e) => {
-											const x = Number(e.currentTarget.value)
-											updateSelected((o) => ({ ...o, position: [x, o.position[1], o.position[2]] }))
-										}}
-										className="slider w-full appearance-none rounded-lg bg-[#98CEAA]/65 p-1"
- 									/>
-									<div className="text-xs text-white/50 mr-2 flex items-center justify-between mt-1">
-										<span>{positionMin.toFixed(2)}</span>
-										<span>{positionMax.toFixed(2)}</span>
-									</div>
-								</label>
+								<SliderInput
+									label="Positie X"
+									value={selectedObject.position[0]}
+									onChange={(x) => {
+										const clamped = clamp(x, positionMin, positionMax)
+										updateSelected((o) => ({ ...o, position: [clamped, o.position[1], o.position[2]] }))
+									}}
+									min={positionMin}
+									max={positionMax}
+									step={POSITION_STEP}
+								/>
 
-								<label className="block text-xs">
-									<div className="mb-1 mr-2 flex items-center justify-between">
-										<P className={"pl-1"}>Positie Z</P>
-										<input
-											type="number"
-											min={positionMin}
-											max={positionMax}
-											step={POSITION_STEP}
-											value={selectedObject.position[2].toFixed(2)}
-											onChange={(e) => {
-												const value = toNumber(e.currentTarget.value)
-												if (value === null) return
-												const z = clamp(value, positionMin, positionMax)
-												updateSelected((o) => ({ ...o, position: [o.position[0], o.position[1], z] }))
-											}}
-											className="w-20 rounded border border-white/15 bg-black/30 px-2 py-1 text-right"
-										/>
-									</div>
-									<input
-										type="range"
-										min={positionMin}
-										max={positionMax}
-										step={POSITION_STEP}
-										value={selectedObject.position[2]}
-										onChange={(e) => {
-											const z = Number(e.currentTarget.value)
-											updateSelected((o) => ({ ...o, position: [o.position[0], o.position[1], z] }))
-										}}
-										className="slider w-full appearance-none rounded-lg bg-[#98CEAA]/65 p-1"
- 									/>
-									<div className="text-xs text-white/50 mr-2 flex items-center justify-between mt-1">
-										<span>{positionMin.toFixed(2)}</span>
-										<span>{positionMax.toFixed(2)}</span>
-									</div>
-								</label>
+								<SliderInput
+									label="Positie Z"
+									value={selectedObject.position[2]}
+									onChange={(z) => {
+										const clamped = clamp(z, positionMin, positionMax)
+										updateSelected((o) => ({ ...o, position: [o.position[0], o.position[1], clamped] }))
+									}}
+									min={positionMin}
+									max={positionMax}
+									step={POSITION_STEP}
+								/>
 
-								<label className="block text-xs">
-									<div className="mb-1 mr-2 flex items-center justify-between">
-										<P className={"pl-1"}>Rotatie Y</P>
-										<input
-											type="number"
-											min={0}
-											max={360}
-											step={ROTATION_DISPLAY_STEP}
-											value={radiansToDegrees(selectedObject.rotationY)}
-											onChange={(e) => {
-												const value = toNumber(e.currentTarget.value)
-												if (value === null) return
-												const rotationY = clamp(degreesToRadians(value), ROTATION_MIN, ROTATION_MAX)
-												updateSelected((o) => ({ ...o, rotationY }))
-											}}
-											className="w-20 rounded border border-white/15 bg-black/30 px-2 py-1 text-right"
-										/>
-									</div>
-									<input
-										type="range"
-										min={ROTATION_MIN}
-										max={ROTATION_MAX}
-										step={ROTATION_STEP}
-										value={selectedObject.rotationY}
-										onChange={(e) => {
-											const rotationY = clamp(Number(e.currentTarget.value), ROTATION_MIN, ROTATION_MAX)
-											updateSelected((o) => ({ ...o, rotationY }))
-										}}
-										className="slider w-full appearance-none rounded-lg bg-[#98CEAA]/65 p-1"
- 									/>
-									<div className="text-xs text-white/50 mr-2 flex items-center justify-between mt-1">
-										<span>0°</span>
-										<span>360°</span>
-									</div>
-								</label>
+								<SliderInput
+									label="Rotatie Y"
+									value={selectedObject.rotationY}
+									onChange={(rotationY) => {
+										const clamped = clamp(rotationY, ROTATION_MIN, ROTATION_MAX)
+										updateSelected((o) => ({ ...o, rotationY: clamped }))
+									}}
+									min={ROTATION_MIN}
+									max={ROTATION_MAX}
+									step={ROTATION_STEP}
+									displayFormat={(rad) => radiansToDegrees(rad).toString()}
+									parseDisplay={(deg) => degreesToRadians(Number(deg))}
+									displayMinMax={(v) => (v === ROTATION_MIN ? "0°" : "360°")}
+								/>
 
-								<label className="block text-xs">
-									<div className="mb-1 mr-2 flex items-center justify-between">
-										<P className={"pl-1"}>Schaal</P>
-										<input
-											type="number"
-											min={selectedScaleLimits.min}
-											max={selectedScaleLimits.max}
-											step={SCALE_STEP}
-											value={selectedObject.scale.toFixed(2)}
-											onChange={(e) => {
-												const value = toNumber(e.currentTarget.value)
-												if (value === null) return
-												const scale = clamp(value, selectedScaleLimits.min, selectedScaleLimits.max)
-												updateSelected((o) => ({ ...o, scale }))
-											}}
-											className="w-20 rounded border border-white/15 bg-black/30 px-2 py-1 text-right"
-										/>
-									</div>
-									<input
-										type="range"
-										min={selectedScaleLimits.min}
-										max={selectedScaleLimits.max}
-										step={SCALE_STEP}
-										value={selectedObject.scale}
-										onChange={(e) => {
-											const scale = clamp(Number(e.currentTarget.value), selectedScaleLimits.min, selectedScaleLimits.max)
-											updateSelected((o) => ({ ...o, scale }))
-										}}
-										className="slider w-full appearance-none rounded-lg bg-[#98CEAA]/65 p-1"
- 									/>
-									<div className="text-xs text-white/50 mr-2 flex items-center justify-between mt-1">
-										<span>{selectedScaleLimits.min}</span>
-										<span>{selectedScaleLimits.max}</span>
-									</div>
-								</label>
-
+								<SliderInput
+									label="Schaal"
+									value={selectedObject.scale}
+									onChange={(scale) => {
+										const clamped = clamp(scale, selectedScaleLimits.min, selectedScaleLimits.max)
+										updateSelected((o) => ({ ...o, scale: clamped }))
+									}}
+									min={selectedScaleLimits.min}
+									max={selectedScaleLimits.max}
+									step={SCALE_STEP}
+								/>
+								{/* colors */}
 								{selectedObjectAsset?.partColors && Object.keys(selectedObjectAsset.partColors).length > 0 && (
 									<div className="border-t border-white/10 pt-5 mt-5 ">
 										<H3 className="mb-3 font-medium">Kleuren</H3>
@@ -878,50 +760,26 @@ export default function BuilderPage() {
 												const inputKey = `${selectedObject.instanceId}:${partName}`
 												const inputValue = selectedPartColorInputs[inputKey] ?? currentColor.toUpperCase()
 												return (
-													<div key={partName} className="flex items-center gap-2 pl-2 pr-2">
-														<label className="flex-1">
-															<P className="mb-3 mt-2 capitalize">{partName}</P>
-															<div className="flex items-center gap-2">
-																<input
-																	type="color"
-																	value={currentColor}
-																	onChange={(e) => {
-																		const next = e.currentTarget.value.toUpperCase()
-																		setSelectedPartColorInputs((prev) => ({ ...prev, [inputKey]: next }))
-																		const newPartColors = {
-																			...selectedObject.partColors,
-																			[partName]: next,
-																		}
-																		updateSelected((o) => ({ ...o, partColors: newPartColors }))
-																	}}
-																	className="h-10 w-50 cursor-pointer rounded border border-white/15 bg-black/20"
-																/>
-																<input
-																	type="text"
-																	inputMode="text"
-																	maxLength={7}
-																	value={inputValue}
-																	onChange={(e) => {
-																		const raw = e.currentTarget.value.toUpperCase()
-																		setSelectedPartColorInputs((prev) => ({ ...prev, [inputKey]: raw }))
-																		const normalized = normalizeHexColor(raw)
-																		if (!normalized) return
-																		const newPartColors = {
-																			...selectedObject.partColors,
-																			[partName]: normalized,
-																		}
-																		updateSelected((o) => ({ ...o, partColors: newPartColors }))
-																	}}
-																	onBlur={() => {
-																		const stable = (selectedObject.partColors?.[partName] ?? defaultColor).toUpperCase()
-																		setSelectedPartColorInputs((prev) => ({ ...prev, [inputKey]: stable }))
-																	}}
-																	className="h-10 w-3/5 rounded border border-white/15 bg-black/30 pl-2"
-																	placeholder="#RRGGBB"
-																/>
-															</div>
-														</label>
-													</div>
+													<ColorInput
+														key={partName}
+														label={partName}
+														value={currentColor}
+														onChange={(next) => {
+															const newPartColors = {
+																...selectedObject.partColors,
+																[partName]: next,
+															}
+															updateSelected((o) => ({ ...o, partColors: newPartColors }))
+														}}
+														inputValue={inputValue}
+														onInputChange={(raw) => {
+															setSelectedPartColorInputs((prev) => ({ ...prev, [inputKey]: raw }))
+														}}
+														onBlur={() => {
+															const stable = (selectedObject.partColors?.[partName] ?? defaultColor).toUpperCase()
+															setSelectedPartColorInputs((prev) => ({ ...prev, [inputKey]: stable }))
+														}}
+													/>
 												)
 											})}
 										</div>
