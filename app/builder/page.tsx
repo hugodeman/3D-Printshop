@@ -14,6 +14,7 @@ import { Icon } from "@/components/ui/Icon"
 import {H2, H3, P} from "@/components/ui/Typography"
 import { SliderInput } from "@/components/builder/SliderInput"
 import { ColorInput } from "@/components/builder/ColorInput"
+import { SceneHelp } from "@/components/builder/SceneHelp"
 
 import { saveBuilderCheckoutDraft } from "@/lib/builder-checkout-draft"
 import { useBuilderStore } from "@/lib/builder-store"
@@ -328,6 +329,7 @@ export default function BuilderPage() {
 	const [outlineSelection, setOutlineSelection] = useState<Object3D[] | null>(null)
 	const [hierarchyOpen, setHierarchyOpen] = useState(true)
 	const [isCapturing, setIsCapturing] = useState(false)
+	const [showGrid, setShowGrid] = useState(true)
 	const [captureCanvas, setCaptureCanvas] = useState<(() => string | null) | null>(null)
 	const handleCaptureReady = useCallback((nextCapture: (() => string | null) | null) => {
 		// Store function-as-value, not as updater
@@ -599,10 +601,10 @@ export default function BuilderPage() {
 					</div>
 
 					{/* Canvas */}
-					<div className="flex-1">
+					<div className="relative flex-1">
 						<Canvas
 							camera={{ position: [4.5, 4.5, 4.5], fov: 46 }}
-										dpr={1}
+							dpr={1}
 							gl={{ preserveDrawingBuffer: true }}
 						>
 							<color attach="background" args={["#1F2126"]} />
@@ -613,7 +615,7 @@ export default function BuilderPage() {
 								onReady={handleCaptureReady}
 							/>
 
-							{!isCapturing && (
+							{!isCapturing && showGrid && (
 								<Grid
 									args={[20, 20]}
 									cellSize={0.2}
@@ -678,6 +680,19 @@ export default function BuilderPage() {
 
 							<OrbitControls makeDefault minDistance={1.5} maxDistance={30} />
 						</Canvas>
+
+						{/*help knop*/}
+						<SceneHelp />
+
+						<button
+							type="button"
+							onClick={() => setShowGrid((prev) => !prev)}
+							className="absolute z-10 flex items-center justify-center rounded-full border border-white/20 bg-[#1F2126]/80 backdrop-blur-sm transition hover:bg-[#2A2D31] bottom-[clamp(0.75rem,2vh,1.5rem)] right-[clamp(0.75rem,2vw,1.5rem)] h-[clamp(2.75rem,5vmin,3.75rem)] w-[clamp(2.75rem,5vmin,3.75rem)]"
+							aria-label={showGrid ? "Verberg grid" : "Toon grid"}
+							title={showGrid ? "Verberg grid" : "Toon grid"}
+						>
+							<Icon name="Grid" size={22} color={showGrid ? "#FFFFFF" : "#98CEAA"} className="h-[clamp(1rem,2.2vmin,1.4rem)] w-[clamp(1rem,2.2vmin,1.4rem)]" />
+						</button>
 					</div>
 				</div>
 
