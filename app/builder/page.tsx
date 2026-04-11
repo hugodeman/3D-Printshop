@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import {H2, H3, P} from "@/components/ui/Typography"
 import { saveBuilderCheckoutDraft } from "@/lib/builder-checkout-draft"
+import { readBuilderSceneDraft, saveBuilderSceneDraft } from "@/lib/builder-scene-draft"
 
 import rawModelAssets from "./model-assets.json"
 
@@ -45,6 +46,16 @@ type PlacedObject = {
 	partColors?: PartColors
 }
 
+type InitialBuilderState = {
+	step: BuilderStep
+	selectedPlatformId: string | null
+	selectedPlatformColor: string
+	selectedPlatformSize: 10 | 15 | 20
+	placedObjects: PlacedObject[]
+	selectedId: string | null
+	nextId: number
+}
+
 const PREVIEW_SCALE_MULTIPLIER = 20
 const DEFAULT_SPAWN_POSITION: Vec3 = [0, 0, 0]
 const POSITION_STEP = 0.05
@@ -57,6 +68,7 @@ const SCALE_MAX = 3
 const SCALE_STEP = 0.05
 const BASE_PLATFORM_SIZE_CM = 10
 const DEG_PER_RAD = 180 / Math.PI
+const DEFAULT_PLATFORM_COLOR = "#228B22"
 
 function radiansToDegrees(rad: number) {
 	return Math.round(rad * DEG_PER_RAD)
@@ -67,6 +79,7 @@ function degreesToRadians(deg: number) {
 }
 
 const modelAssets = rawModelAssets as ModelAsset[]
+const modelAssetsById = new Map(modelAssets.map((asset) => [asset.id, asset]))
 
 for (const asset of modelAssets) {
 	useGLTF.preload(asset.modelPath)
@@ -111,6 +124,86 @@ function getAssetScaleLimits(asset: ModelAsset | null | undefined): ScaleLimits 
 	const min = asset?.scaleLimits?.min ?? SCALE_MIN
 	const max = asset?.scaleLimits?.max ?? SCALE_MAX
 	return { min: Math.min(min, max), max: Math.max(min, max) }
+}
+
+function buildInitialBuilderState(): InitialBuilderState {
+	const fallback: InitialBuilderState = {
+		step: 1,
+		selectedPlatformId: null,
+		selectedPlatformColor: DEFAULT_PLATFORM_COLOR,
+		selectedPlatformSize: 10,
+		placedObjects: [],
+		selectedId: null,
+		nextId: 0,
+	}
+
+	const draft = readBuilderSceneDraft()
+	if (!draft || draft.version !== 1) return fallback
+
+	const validPlatformId = draft.selectedPlatformId && modelAssetsById.has(draft.selectedPlatformId)
+	const selectedPlatformId = validPlatformId ? draft.selectedPlatformId : null
+	const selectedPlatformColor = normalizeHexColor(draft.selectedPlatformColor) ?? DEFAULT_PLATFORM_COLOR
+	const selectedPlatformSize = draft.selectedPlatformSize === 15 || draft.selectedPlatformSize === 20 ? draft.selectedPlatformSize : 10
+
+	const placedObjects = (draft.placedObjects ?? [])
+		.filter((obj) => modelAssetsById.has(obj.assetId))
+		.map((obj) => {
+			const asset = modelAssetsById.get(obj.assetId) ?? null
+			const limits = getAssetScaleLimits(asset)
+			const color = normalizeHexColor(obj.color) ?? (normalizeHexColor(asset?.color ?? "") ?? "#FFFFFF")
+			const partColors = obj.partColors
+				? Object.fromEntries(
+						Object.entries(obj.partColors)
+							.map(([partName, partColor]) => [partName, normalizeHexColor(partColor)])
+							.filter((entry): entry is [string, string] => Boolean(entry[1])),
+					)
+				: undefined
+
+			return {
+				instanceId: obj.instanceId,
+				assetId: obj.assetId,
+				position: [
+					Number.isFinite(obj.position?.[0]) ? obj.position[0] : 0,
+					Number.isFinite(obj.position?.[1]) ? obj.position[1] : 0,
+					Number.isFinite(obj.position?.[2]) ? obj.position[2] : 0,
+				] as Vec3,
+				rotationY: clamp(Number(obj.rotationY) || 0, ROTATION_MIN, ROTATION_MAX),
+				scale: clamp(Number(obj.scale) || 1, limits.min, limits.max),
+				color,
+				partColors,
+			}
+		})
+
+	const selectedId = placedObjects.some((obj) => obj.instanceId === draft.selectedId)
+		? draft.selectedId
+		: null
+
+	const computedNextId = placedObjects.reduce((maxId, obj) => {
+		const suffix = Number(obj.instanceId.split("-").pop())
+		return Number.isFinite(suffix) ? Math.max(maxId, suffix) : maxId
+	}, 0)
+
+	const nextId = Number.isFinite(draft.nextId)
+		? Math.max(Number(draft.nextId), computedNextId)
+		: computedNextId
+
+	return {
+		step: draft.step === 2 && selectedPlatformId ? 2 : 1,
+		selectedPlatformId,
+		selectedPlatformColor,
+		selectedPlatformSize,
+		placedObjects,
+		selectedId,
+		nextId,
+	}
+}
+
+let initialBuilderStateCache: InitialBuilderState | null = null
+
+function getInitialBuilderState() {
+	if (initialBuilderStateCache) return initialBuilderStateCache
+	initialBuilderStateCache = buildInitialBuilderState()
+	return initialBuilderStateCache
 }
 
 function GLTFObject({
@@ -287,17 +380,18 @@ function ClickHandler({
 
 export default function BuilderPage() {
 	const router = useRouter()
-	const [step, setStep] = useState<BuilderStep>(1)
-	const [selectedPlatformId, setSelectedPlatformId] = useState<string | null>(null)
-	const [selectedPlatformColor, setSelectedPlatformColor] = useState("#228B22")
-	const [selectedPlatformColorInput, setSelectedPlatformColorInput] = useState("#228B22")
-	const [selectedPlatformSize, setSelectedPlatformSize] = useState<10 | 15 | 20>(10)
-	const [placedObjects, setPlacedObjects] = useState<PlacedObject[]>([])
-	const [selectedId, setSelectedId] = useState<string | null>(null)
+
+	const [step, setStep] = useState<BuilderStep>(() => getInitialBuilderState().step)
+	const [selectedPlatformId, setSelectedPlatformId] = useState<string | null>(() => getInitialBuilderState().selectedPlatformId)
+	const [selectedPlatformColor, setSelectedPlatformColor] = useState(() => getInitialBuilderState().selectedPlatformColor)
+	const [selectedPlatformColorInput, setSelectedPlatformColorInput] = useState(() => getInitialBuilderState().selectedPlatformColor)
+	const [selectedPlatformSize, setSelectedPlatformSize] = useState<10 | 15 | 20>(() => getInitialBuilderState().selectedPlatformSize)
+	const [placedObjects, setPlacedObjects] = useState<PlacedObject[]>(() => getInitialBuilderState().placedObjects)
+	const [selectedId, setSelectedId] = useState<string | null>(() => getInitialBuilderState().selectedId)
 	const [selectedPartColorInputs, setSelectedPartColorInputs] = useState<Record<string, string>>({})
 	const [outlineSelection, setOutlineSelection] = useState<Object3D[] | null>(null)
 	const [hierarchyOpen, setHierarchyOpen] = useState(true)
-	const nextId = useRef(0)
+	const nextId = useRef(getInitialBuilderState().nextId)
 
 	const platformAssets = useMemo(() => modelAssets.filter((a) => a.kind === "platform"), [])
 	const decorationAssets = useMemo(() => modelAssets.filter((a) => a.kind === "decoration"), [])
@@ -329,21 +423,28 @@ export default function BuilderPage() {
 	const positionMax = (selectedPlatformSize / BASE_PLATFORM_SIZE_CM) - 0.1
 
 	useEffect(() => {
-		if (!selectedObject || !selectedObjectAsset?.partColors) {
-			// eslint-disable-next-line react-hooks/set-state-in-effect
-			setSelectedPartColorInputs({})
-			return
-		}
-
-		const nextInputs: Record<string, string> = {}
-		for (const [partName, defaultColor] of Object.entries(selectedObjectAsset.partColors)) {
-			nextInputs[partName] = (selectedObject.partColors?.[partName] ?? defaultColor).toUpperCase()
-		}
-		setSelectedPartColorInputs(nextInputs)
-	}, [selectedId, selectedObject, selectedObjectAsset])
+		saveBuilderSceneDraft({
+			version: 1,
+			step,
+			selectedPlatformId,
+			selectedPlatformColor,
+			selectedPlatformSize,
+			placedObjects,
+			selectedId,
+			nextId: nextId.current,
+			updatedAt: new Date().toISOString(),
+		})
+	}, [
+		step,
+		selectedPlatformId,
+		selectedPlatformColor,
+		selectedPlatformSize,
+		placedObjects,
+		selectedId,
+	])
 
 	function selectPlatform(asset: ModelAsset) {
-		const normalizedColor = normalizeHexColor(asset.color) ?? "#228B22"
+		const normalizedColor = normalizeHexColor(asset.color) ?? DEFAULT_PLATFORM_COLOR
 		setSelectedPlatformId(asset.id)
 		setSelectedPlatformColor(normalizedColor)
 		setSelectedPlatformColorInput(normalizedColor)
@@ -440,7 +541,7 @@ export default function BuilderPage() {
 						</button>
 
 						{hierarchyOpen && (
-							<div className="border-t border-white/10 px-3 pb-3 pt-2">
+							<div className="max-h-64 overflow-y-auto overscroll-contain border-t border-white/10 px-3 pb-3 pt-2 scrollbar-hide">
 								<P className="text-white/60">Platform: {selectedPlatform?.name ?? "Nog niet gekozen"}</P>
 								<div className="mt-2 space-y-1">
 									{hierarchyRows.length === 0 ? (
@@ -911,7 +1012,8 @@ export default function BuilderPage() {
 										<div className="space-y-3">
 											{Object.entries(selectedObjectAsset.partColors).map(([partName, defaultColor]) => {
 												const currentColor = selectedObject.partColors?.[partName] ?? defaultColor
-												const inputValue = selectedPartColorInputs[partName] ?? currentColor.toUpperCase()
+												const inputKey = `${selectedObject.instanceId}:${partName}`
+												const inputValue = selectedPartColorInputs[inputKey] ?? currentColor.toUpperCase()
 												return (
 													<div key={partName} className="flex items-center gap-2 pl-2 pr-2">
 														<label className="flex-1">
@@ -922,7 +1024,7 @@ export default function BuilderPage() {
 																	value={currentColor}
 																	onChange={(e) => {
 																		const next = e.currentTarget.value.toUpperCase()
-																		setSelectedPartColorInputs((prev) => ({ ...prev, [partName]: next }))
+																		setSelectedPartColorInputs((prev) => ({ ...prev, [inputKey]: next }))
 																		const newPartColors = {
 																			...selectedObject.partColors,
 																			[partName]: next,
@@ -938,7 +1040,7 @@ export default function BuilderPage() {
 																	value={inputValue}
 																	onChange={(e) => {
 																		const raw = e.currentTarget.value.toUpperCase()
-																		setSelectedPartColorInputs((prev) => ({ ...prev, [partName]: raw }))
+																		setSelectedPartColorInputs((prev) => ({ ...prev, [inputKey]: raw }))
 																		const normalized = normalizeHexColor(raw)
 																		if (!normalized) return
 																		const newPartColors = {
@@ -949,7 +1051,7 @@ export default function BuilderPage() {
 																	}}
 																	onBlur={() => {
 																		const stable = (selectedObject.partColors?.[partName] ?? defaultColor).toUpperCase()
-																		setSelectedPartColorInputs((prev) => ({ ...prev, [partName]: stable }))
+																		setSelectedPartColorInputs((prev) => ({ ...prev, [inputKey]: stable }))
 																	}}
 																	className="h-10 w-3/5 rounded border border-white/15 bg-black/30 pl-2"
 																	placeholder="#RRGGBB"
