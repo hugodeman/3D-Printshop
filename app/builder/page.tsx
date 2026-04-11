@@ -48,13 +48,23 @@ type PlacedObject = {
 const PREVIEW_SCALE_MULTIPLIER = 20
 const DEFAULT_SPAWN_POSITION: Vec3 = [0, 0, 0]
 const POSITION_STEP = 0.05
-const ROTATION_MIN = -3.14
-const ROTATION_MAX = 3.14
+const ROTATION_MIN = 0
+const ROTATION_MAX = 2 * Math.PI
 const ROTATION_STEP = 0.02
+const ROTATION_DISPLAY_STEP = 1
 const SCALE_MIN = 0.5
 const SCALE_MAX = 3
 const SCALE_STEP = 0.05
 const BASE_PLATFORM_SIZE_CM = 10
+const DEG_PER_RAD = 180 / Math.PI
+
+function radiansToDegrees(rad: number) {
+	return Math.round(rad * DEG_PER_RAD)
+}
+
+function degreesToRadians(deg: number) {
+	return deg / DEG_PER_RAD
+}
 
 const modelAssets = rawModelAssets as ModelAsset[]
 
@@ -315,8 +325,8 @@ export default function BuilderPage() {
 	const canGoToCheckout = canGoToStep2 && placedObjects.length > 0
 	const selectedScaleLimits = useMemo(() => getAssetScaleLimits(selectedObjectAsset), [selectedObjectAsset])
 	const platformSizeScaleMultiplier = selectedPlatformSize / BASE_PLATFORM_SIZE_CM
-	const positionMin = -(selectedPlatformSize / BASE_PLATFORM_SIZE_CM)
-	const positionMax = selectedPlatformSize / BASE_PLATFORM_SIZE_CM
+	const positionMin = -(selectedPlatformSize / BASE_PLATFORM_SIZE_CM) + 0.1
+	const positionMax = (selectedPlatformSize / BASE_PLATFORM_SIZE_CM) - 0.1
 
 	useEffect(() => {
 		if (!selectedObject || !selectedObjectAsset?.partColors) {
@@ -781,6 +791,10 @@ export default function BuilderPage() {
 										}}
 										className="slider w-full appearance-none rounded-lg bg-[#98CEAA]/65 p-1"
  									/>
+									<div className="text-xs text-white/50 mr-2 flex items-center justify-between mt-1">
+										<span>{positionMin.toFixed(2)}</span>
+										<span>{positionMax.toFixed(2)}</span>
+									</div>
 								</label>
 
 								<label className="block text-xs">
@@ -813,6 +827,10 @@ export default function BuilderPage() {
 										}}
 										className="slider w-full appearance-none rounded-lg bg-[#98CEAA]/65 p-1"
  									/>
+									<div className="text-xs text-white/50 mr-2 flex items-center justify-between mt-1">
+										<span>{positionMin.toFixed(2)}</span>
+										<span>{positionMax.toFixed(2)}</span>
+									</div>
 								</label>
 
 								<label className="block text-xs">
@@ -820,14 +838,14 @@ export default function BuilderPage() {
 										<P className={"pl-1"}>Rotatie Y</P>
 										<input
 											type="number"
-											min={ROTATION_MIN}
-											max={ROTATION_MAX}
-											step={ROTATION_STEP}
-											value={selectedObject.rotationY.toFixed(2)}
+											min={0}
+											max={360}
+											step={ROTATION_DISPLAY_STEP}
+											value={radiansToDegrees(selectedObject.rotationY)}
 											onChange={(e) => {
 												const value = toNumber(e.currentTarget.value)
 												if (value === null) return
-												const rotationY = clamp(value, ROTATION_MIN, ROTATION_MAX)
+												const rotationY = clamp(degreesToRadians(value), ROTATION_MIN, ROTATION_MAX)
 												updateSelected((o) => ({ ...o, rotationY }))
 											}}
 											className="w-20 rounded border border-white/15 bg-black/30 px-2 py-1 text-right"
@@ -845,6 +863,10 @@ export default function BuilderPage() {
 										}}
 										className="slider w-full appearance-none rounded-lg bg-[#98CEAA]/65 p-1"
  									/>
+									<div className="text-xs text-white/50 mr-2 flex items-center justify-between mt-1">
+										<span>0°</span>
+										<span>360°</span>
+									</div>
 								</label>
 
 								<label className="block text-xs">
@@ -877,6 +899,10 @@ export default function BuilderPage() {
 										}}
 										className="slider w-full appearance-none rounded-lg bg-[#98CEAA]/65 p-1"
  									/>
+									<div className="text-xs text-white/50 mr-2 flex items-center justify-between mt-1">
+										<span>{selectedScaleLimits.min}</span>
+										<span>{selectedScaleLimits.max}</span>
+									</div>
 								</label>
 
 								{selectedObjectAsset?.partColors && Object.keys(selectedObjectAsset.partColors).length > 0 && (
@@ -976,5 +1002,3 @@ export default function BuilderPage() {
 		</main>
 	)
 }
-
-
