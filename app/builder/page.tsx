@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useMemo, useRef, useState, useEffect } from "react"
+import { Suspense, useMemo, useRef, useState, useEffect, useCallback } from "react"
 import { Canvas, useThree } from "@react-three/fiber"
 import { OrbitControls, Grid, useGLTF } from "@react-three/drei"
 import { EffectComposer, Outline } from "@react-three/postprocessing"
@@ -67,7 +67,7 @@ function degreesToRadians(deg: number) {
 	return deg / DEG_PER_RAD
 }
 
-const modelAssets = rawModelAssets as ModelAsset[]
+const modelAssets = rawModelAssets as unknown as ModelAsset[]
 const platformAssets = modelAssets.filter((asset) => asset.kind === "platform")
 const decorationAssets = modelAssets.filter((asset) => asset.kind === "decoration")
 const assetsById = new Map(modelAssets.map((asset) => [asset.id, asset]))
@@ -189,6 +189,25 @@ function GLTFObject({
 	)
 }
 
+// Registers a canvas capture function via a ref so the parent can take a screenshot
+function CanvasCaptureSetup({
+	onReady,
+}: {
+	onReady: (capture: (() => string | null) | null) => void
+}) {
+	const { gl } = useThree()
+
+	useEffect(() => {
+		// PNG keeps the captured preview lossless and avoids JPEG blur artifacts.
+		onReady(() => gl.domElement.toDataURL("image/png"))
+		return () => {
+			onReady(null)
+		}
+	}, [gl, onReady])
+
+	return null
+}
+
 function ClickHandler({
 	placedObjects,
 	onSelectDecoration,
@@ -308,6 +327,12 @@ export default function BuilderPage() {
 	const [selectedPartColorInputs, setSelectedPartColorInputs] = useState<Record<string, string>>({})
 	const [outlineSelection, setOutlineSelection] = useState<Object3D[] | null>(null)
 	const [hierarchyOpen, setHierarchyOpen] = useState(true)
+	const [isCapturing, setIsCapturing] = useState(false)
+	const [captureCanvas, setCaptureCanvas] = useState<(() => string | null) | null>(null)
+	const handleCaptureReady = useCallback((nextCapture: (() => string | null) | null) => {
+		// Store function-as-value, not as updater
+		setCaptureCanvas(() => nextCapture)
+	}, [])
 
 	const selectedPlatform = selectedPlatformId ? (assetsById.get(selectedPlatformId) ?? null) : null
 	const selectedObject = placedObjects.find((o) => o.instanceId === selectedId) ?? null
@@ -355,8 +380,24 @@ export default function BuilderPage() {
 		setOutlineSelection(null)
 	}
 
-	function goToCheckoutOverview() {
+	async function goToCheckoutOverview() {
 		if (!selectedPlatform) return
+
+		let previewImage: string | undefined
+		try {
+			// Hide the grid, wait 2 frames so R3F renders a clean frame without it, then capture
+			setIsCapturing(true)
+			await new Promise<void>((resolve) => {
+				requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+			})
+
+			previewImage = captureCanvas?.() ?? undefined
+		} catch {
+			// If capture fails, continue to checkout without preview image
+			previewImage = undefined
+		} finally {
+			setIsCapturing(false)
+		}
 
 		saveBuilderCheckoutDraft({
 			platformId: selectedPlatform.id,
@@ -372,6 +413,7 @@ export default function BuilderPage() {
 			})),
 			totalItems: placedObjects.length,
 			createdAt: new Date().toISOString(),
+			previewImage,
 		})
 
 		router.push("/checkout/overview")
@@ -505,7 +547,7 @@ export default function BuilderPage() {
 									id: 1,
 									label: "Platform",
 									done: step > 1,
-									current: step === 1,
+									isCurrent: step === 1,
 									onClick: () => setStep(1),
 									disabled: false,
 								},
@@ -513,7 +555,7 @@ export default function BuilderPage() {
 									id: 2,
 									label: "Decoraties",
 									done: step > 2,
-									current: step === 2,
+									isCurrent: step === 2,
 									onClick: () => setStep(2),
 									disabled: !canGoToStep2,
 								},
@@ -521,14 +563,14 @@ export default function BuilderPage() {
 									id: 3,
 									label: "Bestellen",
 									done: false,
-									current: false,
+									isCurrent: false,
 									onClick: goToCheckoutOverview,
 									disabled: !canGoToCheckout,
 								},
 							].map((s, index) => {
 								const stateClasses = s.done
 									? "!bg-[#6D8F78]/80 !text-[#1F2126] hover:!bg-[#6D8F78]"
-									: s.current
+									: s.isCurrent
 										? "!bg-[#98CEAA] !text-[#1F2126]"
 										: "!bg-[#CAC4D0]/50 !text-[#1F2126]/70"
 
@@ -536,13 +578,13 @@ export default function BuilderPage() {
 									<div key={s.id} className="flex items-center gap-10">
 										{index > 0 && <Icon name="Minus" size={30} color="#ffffff99" />}
 										<Button
-											variant={s.current ? "primary" : "secondary"}
-											isActive={s.current}
+											variant={s.isCurrent ? "primary" : "secondary"}
+											isActive={s.isCurrent}
 											disabled={s.disabled}
 											onClick={s.onClick}
 											className={`flex items-center gap-4 px-3 py-2 rounded-full! text-[#1F2126]! ${stateClasses}`}
 											style={
-												s.current
+												s.isCurrent
 													? { boxShadow: "0 10px 15px rgba(179,234,197,0.15)" }
 													: undefined
 											}
@@ -560,21 +602,29 @@ export default function BuilderPage() {
 					<div className="flex-1">
 						<Canvas
 							camera={{ position: [4.5, 4.5, 4.5], fov: 46 }}
+										dpr={1}
+							gl={{ preserveDrawingBuffer: true }}
 						>
 							<color attach="background" args={["#1F2126"]} />
 							<ambientLight intensity={0.5} />
 							<directionalLight position={[6, 9, 4]} intensity={1.2} />
 
-							<Grid
-								args={[20, 20]}
-								cellSize={0.2}
-								cellThickness={0.5}
-								sectionSize={1}
-								sectionThickness={1}
-								fadeDistance={18}
-								fadeStrength={1}
-								infiniteGrid
+							<CanvasCaptureSetup
+								onReady={handleCaptureReady}
 							/>
+
+							{!isCapturing && (
+								<Grid
+									args={[20, 20]}
+									cellSize={0.2}
+									cellThickness={0.5}
+									sectionSize={1}
+									sectionThickness={1}
+									fadeDistance={18}
+									fadeStrength={1}
+									infiniteGrid
+								/>
+							)}
 
 							<Suspense fallback={null}>
 								{selectedPlatform && (

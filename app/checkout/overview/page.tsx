@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {H1, H2, H3, P} from "@/components/ui/Typography"
@@ -54,6 +55,7 @@ export default function CheckoutPage() {
 							Terug naar builder
 						</Link>
 
+						{/*steps*/}
 						<div className="flex items-center gap-10 justify-self-center">
 							{steps.map((step, index) => {
 								const isCurrent = step.id === 3
@@ -86,10 +88,23 @@ export default function CheckoutPage() {
 
 					{/* MAIN CARD + OVERLAY */}
 					<div className="relative mt-10 min-h-0 h-3/4 w-full flex-1 lg:overflow-visible">
-						<div className="min-h-0 h-full flex-1 rounded-4xl border border-white/20 bg-white/2 p-4 shadow-[0_0_30px_rgba(0,0,0,0.45)] lg:pr-28">
-							<H3>Decoraties</H3>
-							{/* image van de build */}
-							{/* knop voor bekijken in 3D */}
+						<div className="h-full flex-1 flex flex-col rounded-4xl border border-white/20 bg-white/2 p-4 shadow-[0_0_30px_rgba(0,0,0,0.45)] lg:pr-28">
+							{/* Preview foto van de build */}
+							{data.previewImage ? (
+								<div className="relative flex-1 min-h-0 overflow-hidden rounded-xl">
+									<Image
+										src={data.previewImage}
+										alt="Jouw creatie"
+										fill
+										className="object-cover rounded-xl"
+										unoptimized
+									/>
+								</div>
+							) : (
+								<div className="flex-1 min-h-0 flex items-center justify-center rounded-xl border border-white/10 bg-white/5">
+									<P className="text-white/40">Geen preview beschikbaar</P>
+								</div>
+							)}
 						</div>
 
 						<div className="mt-6 flex flex-col rounded-3xl border border-white/10 bg-white/2 p-5 shadow-[-12px_0_40px_0px_rgba(0,0,0,0.6)] backdrop-blur-xl lg:absolute lg:-right-60 lg:top-20 lg:bottom-20 lg:z-10 lg:mt-0 lg:w-100">

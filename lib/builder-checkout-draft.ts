@@ -14,6 +14,7 @@ export type BuilderCheckoutDraft = {
 	decorations: BuilderCheckoutDecorationDraft[]
 	totalItems: number
 	createdAt: string
+	previewImage?: string
 }
 
 const BUILDER_CHECKOUT_DRAFT_KEY = "builder-checkout-draft"
