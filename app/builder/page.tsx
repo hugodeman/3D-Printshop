@@ -12,8 +12,9 @@ import { Color, type Material, type Mesh, type Object3D, Raycaster, Vector2, typ
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import {H2, H3, P} from "@/components/ui/Typography"
+
 import { saveBuilderCheckoutDraft } from "@/lib/builder-checkout-draft"
-import { readBuilderSceneDraft, saveBuilderSceneDraft } from "@/lib/builder-scene-draft"
+import { useBuilderStore } from "@/lib/builder-store"
 
 import rawModelAssets from "./model-assets.json"
 
@@ -34,8 +35,6 @@ type ModelAsset = {
 	scaleLimits?: ScaleLimits
 }
 
-type BuilderStep = 1 | 2
-
 type PlacedObject = {
 	instanceId: string
 	assetId: string
@@ -46,18 +45,7 @@ type PlacedObject = {
 	partColors?: PartColors
 }
 
-type InitialBuilderState = {
-	step: BuilderStep
-	selectedPlatformId: string | null
-	selectedPlatformColor: string
-	selectedPlatformSize: 10 | 15 | 20
-	placedObjects: PlacedObject[]
-	selectedId: string | null
-	nextId: number
-}
-
 const PREVIEW_SCALE_MULTIPLIER = 20
-const DEFAULT_SPAWN_POSITION: Vec3 = [0, 0, 0]
 const POSITION_STEP = 0.05
 const ROTATION_MIN = 0
 const ROTATION_MAX = 2 * Math.PI
@@ -79,18 +67,22 @@ function degreesToRadians(deg: number) {
 }
 
 const modelAssets = rawModelAssets as ModelAsset[]
-const modelAssetsById = new Map(modelAssets.map((asset) => [asset.id, asset]))
+const platformAssets = modelAssets.filter((asset) => asset.kind === "platform")
+const decorationAssets = modelAssets.filter((asset) => asset.kind === "decoration")
+const assetsById = new Map(modelAssets.map((asset) => [asset.id, asset]))
 
 for (const asset of modelAssets) {
 	useGLTF.preload(asset.modelPath)
 }
 
+// Clones a material and applies a tint color if possible
 function tintMaterial(material: Material, color: string) {
 	const clone = material.clone() as Material & { color?: Color }
 	if (clone.color) clone.color.set(color)
 	return clone
 }
 
+// Traverses a model's scene graph and applies tinting to all mesh materials based on the provided colors
 function applyModelTint(root: Object3D, defaultColor: string, partColors?: PartColors) {
 	root.traverse((node) => {
 		const mesh = node as Mesh
@@ -124,86 +116,6 @@ function getAssetScaleLimits(asset: ModelAsset | null | undefined): ScaleLimits 
 	const min = asset?.scaleLimits?.min ?? SCALE_MIN
 	const max = asset?.scaleLimits?.max ?? SCALE_MAX
 	return { min: Math.min(min, max), max: Math.max(min, max) }
-}
-
-function buildInitialBuilderState(): InitialBuilderState {
-	const fallback: InitialBuilderState = {
-		step: 1,
-		selectedPlatformId: null,
-		selectedPlatformColor: DEFAULT_PLATFORM_COLOR,
-		selectedPlatformSize: 10,
-		placedObjects: [],
-		selectedId: null,
-		nextId: 0,
-	}
-
-	const draft = readBuilderSceneDraft()
-	if (!draft || draft.version !== 1) return fallback
-
-	const validPlatformId = draft.selectedPlatformId && modelAssetsById.has(draft.selectedPlatformId)
-	const selectedPlatformId = validPlatformId ? draft.selectedPlatformId : null
-	const selectedPlatformColor = normalizeHexColor(draft.selectedPlatformColor) ?? DEFAULT_PLATFORM_COLOR
-	const selectedPlatformSize = draft.selectedPlatformSize === 15 || draft.selectedPlatformSize === 20 ? draft.selectedPlatformSize : 10
-
-	const placedObjects = (draft.placedObjects ?? [])
-		.filter((obj) => modelAssetsById.has(obj.assetId))
-		.map((obj) => {
-			const asset = modelAssetsById.get(obj.assetId) ?? null
-			const limits = getAssetScaleLimits(asset)
-			const color = normalizeHexColor(obj.color) ?? (normalizeHexColor(asset?.color ?? "") ?? "#FFFFFF")
-			const partColors = obj.partColors
-				? Object.fromEntries(
-						Object.entries(obj.partColors)
-							.map(([partName, partColor]) => [partName, normalizeHexColor(partColor)])
-							.filter((entry): entry is [string, string] => Boolean(entry[1])),
-					)
-				: undefined
-
-			return {
-				instanceId: obj.instanceId,
-				assetId: obj.assetId,
-				position: [
-					Number.isFinite(obj.position?.[0]) ? obj.position[0] : 0,
-					Number.isFinite(obj.position?.[1]) ? obj.position[1] : 0,
-					Number.isFinite(obj.position?.[2]) ? obj.position[2] : 0,
-				] as Vec3,
-				rotationY: clamp(Number(obj.rotationY) || 0, ROTATION_MIN, ROTATION_MAX),
-				scale: clamp(Number(obj.scale) || 1, limits.min, limits.max),
-				color,
-				partColors,
-			}
-		})
-
-	const selectedId = placedObjects.some((obj) => obj.instanceId === draft.selectedId)
-		? draft.selectedId
-		: null
-
-	const computedNextId = placedObjects.reduce((maxId, obj) => {
-		const suffix = Number(obj.instanceId.split("-").pop())
-		return Number.isFinite(suffix) ? Math.max(maxId, suffix) : maxId
-	}, 0)
-
-	const nextId = Number.isFinite(draft.nextId)
-		? Math.max(Number(draft.nextId), computedNextId)
-		: computedNextId
-
-	return {
-		step: draft.step === 2 && selectedPlatformId ? 2 : 1,
-		selectedPlatformId,
-		selectedPlatformColor,
-		selectedPlatformSize,
-		placedObjects,
-		selectedId,
-		nextId,
-	}
-}
-
-let initialBuilderStateCache: InitialBuilderState | null = null
-
-function getInitialBuilderState() {
-	if (initialBuilderStateCache) return initialBuilderStateCache
-	initialBuilderStateCache = buildInitialBuilderState()
-	return initialBuilderStateCache
 }
 
 function GLTFObject({
@@ -380,22 +292,26 @@ function ClickHandler({
 
 export default function BuilderPage() {
 	const router = useRouter()
-
-	const [step, setStep] = useState<BuilderStep>(() => getInitialBuilderState().step)
-	const [selectedPlatformId, setSelectedPlatformId] = useState<string | null>(() => getInitialBuilderState().selectedPlatformId)
-	const [selectedPlatformColor, setSelectedPlatformColor] = useState(() => getInitialBuilderState().selectedPlatformColor)
-	const [selectedPlatformColorInput, setSelectedPlatformColorInput] = useState(() => getInitialBuilderState().selectedPlatformColor)
-	const [selectedPlatformSize, setSelectedPlatformSize] = useState<10 | 15 | 20>(() => getInitialBuilderState().selectedPlatformSize)
-	const [placedObjects, setPlacedObjects] = useState<PlacedObject[]>(() => getInitialBuilderState().placedObjects)
-	const [selectedId, setSelectedId] = useState<string | null>(() => getInitialBuilderState().selectedId)
+	// Scene state (Zustand)
+	const step = useBuilderStore((state) => state.step)
+	const selectedPlatformId = useBuilderStore((state) => state.selectedPlatformId)
+	const selectedPlatformColor = useBuilderStore((state) => state.selectedPlatformColor)
+	const selectedPlatformSize = useBuilderStore((state) => state.selectedPlatformSize)
+	const placedObjects = useBuilderStore((state) => state.placedObjects)
+	const selectedId = useBuilderStore((state) => state.selectedId)
+	const setStep = useBuilderStore((state) => state.setStep)
+	const selectPlatformInStore = useBuilderStore((state) => state.selectPlatform)
+	const setSelectedPlatformColor = useBuilderStore((state) => state.setSelectedPlatformColor)
+	const setSelectedPlatformSize = useBuilderStore((state) => state.setSelectedPlatformSize)
+	const addObjectToStore = useBuilderStore((state) => state.addObject)
+	const updateSelectedInStore = useBuilderStore((state) => state.updateSelected)
+	const removeSelectedFromStore = useBuilderStore((state) => state.removeSelected)
+	const setSelectedId = useBuilderStore((state) => state.setSelectedId)
+	// UI-only state
+	const [selectedPlatformColorInput, setSelectedPlatformColorInput] = useState(selectedPlatformColor)
 	const [selectedPartColorInputs, setSelectedPartColorInputs] = useState<Record<string, string>>({})
 	const [outlineSelection, setOutlineSelection] = useState<Object3D[] | null>(null)
 	const [hierarchyOpen, setHierarchyOpen] = useState(true)
-	const nextId = useRef(getInitialBuilderState().nextId)
-
-	const platformAssets = useMemo(() => modelAssets.filter((a) => a.kind === "platform"), [])
-	const decorationAssets = useMemo(() => modelAssets.filter((a) => a.kind === "decoration"), [])
-	const assetsById = useMemo(() => new Map(modelAssets.map((a) => [a.id, a])), [])
 
 	const selectedPlatform = selectedPlatformId ? (assetsById.get(selectedPlatformId) ?? null) : null
 	const selectedObject = placedObjects.find((o) => o.instanceId === selectedId) ?? null
@@ -413,86 +329,33 @@ export default function BuilderPage() {
 				label: `${assetsById.get(obj.assetId)?.name ?? "Onbekend"} ${currentCount}`,
 			}
 		})
-	}, [placedObjects, assetsById])
+	}, [placedObjects])
 
 	const canGoToStep2 = Boolean(selectedPlatformId)
 	const canGoToCheckout = canGoToStep2 && placedObjects.length > 0
-	const selectedScaleLimits = useMemo(() => getAssetScaleLimits(selectedObjectAsset), [selectedObjectAsset])
+	const selectedScaleLimits = getAssetScaleLimits(selectedObjectAsset)
 	const platformSizeScaleMultiplier = selectedPlatformSize / BASE_PLATFORM_SIZE_CM
 	const positionMin = -(selectedPlatformSize / BASE_PLATFORM_SIZE_CM) + 0.1
 	const positionMax = (selectedPlatformSize / BASE_PLATFORM_SIZE_CM) - 0.1
 
-	useEffect(() => {
-		saveBuilderSceneDraft({
-			version: 1,
-			step,
-			selectedPlatformId,
-			selectedPlatformColor,
-			selectedPlatformSize,
-			placedObjects,
-			selectedId,
-			nextId: nextId.current,
-			updatedAt: new Date().toISOString(),
-		})
-	}, [
-		step,
-		selectedPlatformId,
-		selectedPlatformColor,
-		selectedPlatformSize,
-		placedObjects,
-		selectedId,
-	])
-
 	function selectPlatform(asset: ModelAsset) {
 		const normalizedColor = normalizeHexColor(asset.color) ?? DEFAULT_PLATFORM_COLOR
-		setSelectedPlatformId(asset.id)
-		setSelectedPlatformColor(normalizedColor)
+		selectPlatformInStore(asset.id, normalizedColor)
 		setSelectedPlatformColorInput(normalizedColor)
 	}
 
 	function addObject(asset: ModelAsset) {
 		if (asset.kind !== "decoration") return
-
-		nextId.current += 1
-		const instanceId = `${asset.id}-${nextId.current}`
-
-		setPlacedObjects((prev) => {
-			const position = asset.spawnPosition ?? DEFAULT_SPAWN_POSITION
-			const scaleLimits = getAssetScaleLimits(asset)
-
-			return [
-				...prev,
-				{
-					instanceId,
-					assetId: asset.id,
-					position,
-					rotationY: 0,
-					scale: clamp(1, scaleLimits.min, scaleLimits.max),
-					color: asset.color,
-					partColors: asset.partColors,
-				},
-			]
-		})
-
-		setSelectedId(instanceId)
+		addObjectToStore(asset.id)
 	}
 
 	function updateSelected(updater: (o: PlacedObject) => PlacedObject) {
 		if (!selectedId) return
-		setPlacedObjects((prev) =>
-			prev.map((o) => {
-				if (o.instanceId !== selectedId) return o
-				const next = updater(o)
-				const limits = getAssetScaleLimits(assetsById.get(next.assetId) ?? null)
-				return { ...next, scale: clamp(next.scale, limits.min, limits.max) }
-			}),
-		)
+		updateSelectedInStore(updater)
 	}
 
 	function removeSelected() {
-		if (!selectedId) return
-		setPlacedObjects((prev) => prev.filter((o) => o.instanceId !== selectedId))
-		setSelectedId(null)
+		removeSelectedFromStore()
 		setOutlineSelection(null)
 	}
 
