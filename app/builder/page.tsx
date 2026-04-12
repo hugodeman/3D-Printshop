@@ -16,6 +16,7 @@ import { SliderInput } from "@/components/builder/SliderInput"
 import { ColorInput } from "@/components/builder/ColorInput"
 import { SceneHelp } from "@/components/builder/SceneHelp"
 import { StepButtons } from "@/components/builder/StepButtons"
+import { BuilderIntroModal } from "@/components/builder/BuilderIntroModal"
 
 import { saveBuilderCheckoutDraft } from "@/lib/builder-checkout-draft"
 import { useBuilderStore } from "@/lib/builder-store"
@@ -60,6 +61,7 @@ const SCALE_STEP = 0.05
 const BASE_PLATFORM_SIZE_CM = 10
 const DEG_PER_RAD = 180 / Math.PI
 const DEFAULT_PLATFORM_COLOR = "#228B22"
+const BUILDER_INTRO_SEEN_KEY = "builder-intro-seen-v1"
 
 function radiansToDegrees(rad: number) {
 	return Math.round(rad * DEG_PER_RAD)
@@ -331,10 +333,19 @@ export default function BuilderPage() {
 	const [hierarchyOpen, setHierarchyOpen] = useState(true)
 	const [isCapturing, setIsCapturing] = useState(false)
 	const [showGrid, setShowGrid] = useState(true)
+	const [isIntroOpen, setIsIntroOpen] = useState(false)
 	const [captureCanvas, setCaptureCanvas] = useState<(() => string | null) | null>(null)
 	const handleCaptureReady = useCallback((nextCapture: (() => string | null) | null) => {
 		// Store function-as-value, not as updater
 		setCaptureCanvas(() => nextCapture)
+	}, [])
+	useEffect(() => {
+		const hasSeenIntro = window.localStorage.getItem(BUILDER_INTRO_SEEN_KEY)
+		if (!hasSeenIntro) setIsIntroOpen(true)
+	}, [])
+	const closeIntro = useCallback(() => {
+		window.localStorage.setItem(BUILDER_INTRO_SEEN_KEY, "1")
+		setIsIntroOpen(false)
 	}, [])
 
 	const selectedPlatform = selectedPlatformId ? (assetsById.get(selectedPlatformId) ?? null) : null
@@ -450,6 +461,7 @@ export default function BuilderPage() {
 
 	return (
 		<main className="h-[calc(100vh-120px)] bg-[#1A1C1E] text-white">
+			<BuilderIntroModal isOpen={isIntroOpen} onCloseAction={closeIntro} />
 			<div className="grid h-full grid-cols-[260px_1fr_300px] gap-4">
 
 				{/* Left Sidebar */}
@@ -570,7 +582,7 @@ export default function BuilderPage() {
 
 					{/* Step Buttons */}
 					<div className="flex justify-center p-4">
-									<StepButtons steps={stepItems} />
+						<StepButtons steps={stepItems} onInfoClick={() => setIsIntroOpen(true)} />
 					</div>
 
 					{/* Canvas */}
