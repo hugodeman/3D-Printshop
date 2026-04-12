@@ -15,6 +15,7 @@ import {H2, H3, P} from "@/components/ui/Typography"
 import { SliderInput } from "@/components/builder/SliderInput"
 import { ColorInput } from "@/components/builder/ColorInput"
 import { SceneHelp } from "@/components/builder/SceneHelp"
+import { StepButtons } from "@/components/builder/StepButtons"
 
 import { saveBuilderCheckoutDraft } from "@/lib/builder-checkout-draft"
 import { useBuilderStore } from "@/lib/builder-store"
@@ -360,6 +361,32 @@ export default function BuilderPage() {
 	const platformSizeScaleMultiplier = selectedPlatformSize / BASE_PLATFORM_SIZE_CM
 	const positionMin = -(selectedPlatformSize / BASE_PLATFORM_SIZE_CM) + 0.1
 	const positionMax = (selectedPlatformSize / BASE_PLATFORM_SIZE_CM) - 0.1
+	const stepItems = [
+		{
+			id: 1,
+			label: "Platform",
+			done: step > 1,
+			isCurrent: step === 1,
+			onClick: () => setStep(1),
+			disabled: false,
+		},
+		{
+			id: 2,
+			label: "Decoraties",
+			done: step > 2,
+			isCurrent: step === 2,
+			onClick: () => setStep(2),
+			disabled: !canGoToStep2,
+		},
+		{
+			id: 3,
+			label: "Bestellen",
+			done: false,
+			isCurrent: false,
+			onClick: goToCheckoutOverview,
+			disabled: !canGoToCheckout,
+		},
+	]
 
 	function selectPlatform(asset: ModelAsset) {
 		const normalizedColor = normalizeHexColor(asset.color) ?? DEFAULT_PLATFORM_COLOR
@@ -543,61 +570,7 @@ export default function BuilderPage() {
 
 					{/* Step Buttons */}
 					<div className="flex justify-center p-4">
-						<div className="mb-2 flex items-center gap-10">
-							{[
-								{
-									id: 1,
-									label: "Platform",
-									done: step > 1,
-									isCurrent: step === 1,
-									onClick: () => setStep(1),
-									disabled: false,
-								},
-								{
-									id: 2,
-									label: "Decoraties",
-									done: step > 2,
-									isCurrent: step === 2,
-									onClick: () => setStep(2),
-									disabled: !canGoToStep2,
-								},
-								{
-									id: 3,
-									label: "Bestellen",
-									done: false,
-									isCurrent: false,
-									onClick: goToCheckoutOverview,
-									disabled: !canGoToCheckout,
-								},
-							].map((s, index) => {
-								const stateClasses = s.done
-									? "!bg-[#6D8F78]/80 !text-[#1F2126] hover:!bg-[#6D8F78]"
-									: s.isCurrent
-										? "!bg-[#98CEAA] !text-[#1F2126]"
-										: "!bg-[#CAC4D0]/50 !text-[#1F2126]/70"
-
-								return (
-									<div key={s.id} className="flex items-center gap-10">
-										{index > 0 && <Icon name="Minus" size={30} color="#ffffff99" />}
-										<Button
-											variant={s.isCurrent ? "primary" : "secondary"}
-											isActive={s.isCurrent}
-											disabled={s.disabled}
-											onClick={s.onClick}
-											className={`flex items-center gap-4 px-3 py-2 rounded-full! text-[#1F2126]! ${stateClasses}`}
-											style={
-												s.isCurrent
-													? { boxShadow: "0 10px 15px rgba(179,234,197,0.15)" }
-													: undefined
-											}
-										>
-											{s.done && <Icon name="CircleCheck" color="#B3EAC5" size={22} />}
-											<H3 className="text-contrast">Stap {s.id}: {s.label}</H3>
-										</Button>
-									</div>
-								)
-							})}
-						</div>
+									<StepButtons steps={stepItems} />
 					</div>
 
 					{/* Canvas */}

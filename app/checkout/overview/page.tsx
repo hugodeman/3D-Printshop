@@ -7,10 +7,13 @@ import { useRouter } from "next/navigation"
 import {H1, H2, H3, P} from "@/components/ui/Typography"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
+import { StepButtons } from "@/components/builder/StepButtons"
+import { useBuilderStore } from "@/lib/builder-store"
 import { readBuilderCheckoutDraft, subscribeBuilderCheckoutDraft, type BuilderCheckoutDraft } from "@/lib/builder-checkout-draft"
 
 export default function CheckoutPage() {
 	const router = useRouter()
+	const setStep = useBuilderStore((state) => state.setStep)
 	const [data, setData] = useState<BuilderCheckoutDraft | null>(() => readBuilderCheckoutDraft())
 
 	useEffect(() => {
@@ -35,9 +38,27 @@ export default function CheckoutPage() {
 	const totalItems = data.decorations.length
 
 	const steps = [
-		{ id: 1, label: "Platform", done: true },
-		{ id: 2, label: "Decoraties", done: true },
-		{ id: 3, label: "Bestellen", done: false },
+		{
+			id: 1,
+			label: "Platform",
+			done: true,
+			isCurrent: false,
+			onClick: () => {
+				setStep(1)
+				router.push("/builder")
+			},
+		},
+		{
+			id: 2,
+			label: "Decoraties",
+			done: true,
+			isCurrent: false,
+			onClick: () => {
+				setStep(2)
+				router.push("/builder")
+			},
+		},
+		{ id: 3, label: "Bestellen", done: false, isCurrent: true },
 	]
 
 	return (
@@ -55,33 +76,8 @@ export default function CheckoutPage() {
 							Terug naar builder
 						</Link>
 
-						{/*steps*/}
-						<div className="flex items-center gap-10 justify-self-center">
-							{steps.map((step, index) => {
-								const isCurrent = step.id === 3
-								const stateClasses = step.done
-									? "!bg-[#6D8F78]/80 !text-[#1F2126] hover:!bg-[#6D8F78]"
-									: isCurrent
-										? "!bg-[#98CEAA] !text-[#1F2126]"
-									: ""
-
-								return (
-									<div key={step.id} className="flex items-center gap-10">
-										{index > 0 ? (
-											<Icon name="Minus" size={30} color="#ffffff99" />
-										) : null}
-										<Button
-											variant={isCurrent ? "primary" : "secondary"}
-											isActive={isCurrent}
-											className={`flex items-center gap-4 px-3 py-2 rounded-full! text-[#1F2126]! ${stateClasses}`}
-											style={isCurrent ? { boxShadow: "0 10px 15px rgba(179, 234, 197, 0.15)" } : undefined}
-										>
-											{step.done ? <Icon name="CircleCheck" color="#B3EAC5" size={22} /> : null}
-											<H3 className={"text-contrast"}>Stap {step.id}: {step.label}</H3>
-										</Button>
-									</div>
-								)
-							})}
+						<div className="justify-self-center">
+							<StepButtons steps={steps} />
 						</div>
 						<div />
 					</div>
