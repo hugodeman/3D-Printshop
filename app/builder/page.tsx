@@ -20,6 +20,11 @@ import { BuilderIntroModal } from "@/components/builder/BuilderIntroModal"
 import { BuilderResetConfirmModal } from "@/components/builder/BuilderResetConfirmModal"
 
 import { saveBuilderCheckoutDraft } from "@/lib/builder-checkout-draft"
+import {
+	BASE_PLATFORM_SIZE_CM,
+	getDecorationModelScale,
+	getPlatformModelScaleVector,
+} from "@/lib/builder-scene-scale"
 import { useBuilderStore } from "@/lib/builder-store"
 
 import rawModelAssets from "./model-assets.json"
@@ -51,7 +56,6 @@ type PlacedObject = {
 	partColors?: PartColors
 }
 
-const PREVIEW_SCALE_MULTIPLIER = 20
 const POSITION_STEP = 0.05
 const ROTATION_MIN = 0
 const ROTATION_MAX = 2 * Math.PI
@@ -59,7 +63,6 @@ const ROTATION_STEP = 0.02
 const SCALE_MIN = 0.5
 const SCALE_MAX = 3
 const SCALE_STEP = 0.05
-const BASE_PLATFORM_SIZE_CM = 10
 const DEG_PER_RAD = 180 / Math.PI
 const DEFAULT_PLATFORM_COLOR = "#228B22"
 const BUILDER_INTRO_SEEN_KEY = "builder-intro-seen-v1"
@@ -175,12 +178,8 @@ function GLTFObject({
 	}, [onReady, scene])
 
 	const previewScale: number | Vec3 = scaleVector
-		? [
-				PREVIEW_SCALE_MULTIPLIER * scaleVector[0],
-				PREVIEW_SCALE_MULTIPLIER * scaleVector[1],
-				PREVIEW_SCALE_MULTIPLIER * scaleVector[2],
-			]
-		: PREVIEW_SCALE_MULTIPLIER * (scale ?? 1)
+		? scaleVector
+		: getDecorationModelScale(scale ?? 1)
 
 	return (
 		<group
@@ -379,7 +378,6 @@ export default function BuilderPage() {
 	const canGoToCheckout = canGoToStep2 && placedObjects.length > 0
 	const canClearScene = Boolean(selectedPlatformId) || placedObjects.length > 0
 	const selectedScaleLimits = getAssetScaleLimits(selectedObjectAsset)
-	const platformSizeScaleMultiplier = selectedPlatformSize / BASE_PLATFORM_SIZE_CM
 	const positionMin = -(selectedPlatformSize / BASE_PLATFORM_SIZE_CM) + 0.1
 	const positionMax = (selectedPlatformSize / BASE_PLATFORM_SIZE_CM) - 0.1
 	const stepItems = [
@@ -464,6 +462,8 @@ export default function BuilderPage() {
 		saveBuilderCheckoutDraft({
 			platformId: selectedPlatform.id,
 			platformName: selectedPlatform.name,
+			platformSize: selectedPlatformSize,
+			platformColor: selectedPlatformColor,
 			decorations: placedObjects.map((obj) => ({
 				instanceId: obj.instanceId,
 				assetId: obj.assetId,
@@ -472,6 +472,7 @@ export default function BuilderPage() {
 				rotationY: obj.rotationY,
 				scale: obj.scale,
 				color: obj.color,
+				partColors: obj.partColors,
 			})),
 			totalItems: placedObjects.length,
 			createdAt: new Date().toISOString(),
@@ -651,7 +652,7 @@ export default function BuilderPage() {
 									<GLTFObject
 										modelPath={selectedPlatform.modelPath}
 										position={selectedPlatform.spawnPosition ?? [0, 0, 0]}
-										scaleVector={[platformSizeScaleMultiplier, 1, platformSizeScaleMultiplier]}
+										scaleVector={getPlatformModelScaleVector(selectedPlatformSize)}
 										tintColor={selectedPlatformColor}
 									/>
 								)}

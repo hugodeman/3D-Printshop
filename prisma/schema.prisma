@@ -69,6 +69,8 @@ model BuilderItem {
   id           String     @id @default(cuid())
   userId       String
   imageUrl     String?
+  /// Internal print file (STL/3MF) — not exposed publicly, served via /api/orders/[id]/print-file
+  printFileUrl String?
   deliveryTime Int?
   configJson   Json
   createdAt    DateTime   @default(now())

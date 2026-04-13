@@ -6,11 +6,14 @@ export type BuilderCheckoutDecorationDraft = {
 	rotationY: number
 	scale: number
 	color: string
+	partColors?: Record<string, string>
 }
 
 export type BuilderCheckoutDraft = {
 	platformId: string
 	platformName: string
+	platformSize: 10 | 15 | 20
+	platformColor: string
 	decorations: BuilderCheckoutDecorationDraft[]
 	totalItems: number
 	createdAt: string
