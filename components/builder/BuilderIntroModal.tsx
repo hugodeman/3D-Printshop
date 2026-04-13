@@ -19,8 +19,14 @@ export function BuilderIntroModal({ isOpen, onCloseAction }: BuilderIntroModalPr
 	if (!isOpen) return null
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-			<div className="w-full max-w-3xl rounded-2xl border border-white/10 bg-[#1A1C1E] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
+		<div
+			className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+			onClick={onCloseAction}
+		>
+			<div
+				className="w-full max-w-3xl rounded-2xl border border-white/10 bg-[#1A1C1E] shadow-[0_20px_60px_rgba(0,0,0,0.55)]"
+				onClick={(event) => event.stopPropagation()}
+			>
 				<div className="h-2 w-full rounded-t-2xl bg-[#98CEAA]" />
 				<div className="p-6 md:p-8">
 					<div className="mb-10 flex items-start justify-between gap-4">

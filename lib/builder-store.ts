@@ -2,7 +2,7 @@
 
 import { create } from "zustand"
 
-import { readBuilderSceneDraft, saveBuilderSceneDraft } from "@/lib/builder-scene-draft"
+import { clearBuilderSceneDraft, readBuilderSceneDraft, saveBuilderSceneDraft } from "@/lib/builder-scene-draft"
 import rawModelAssets from "@/app/builder/model-assets.json"
 
 type PartColors = Record<string, string>
@@ -49,6 +49,7 @@ type BuilderStore = InitialBuilderState & {
 	updateSelected: (updater: (obj: PlacedObject) => PlacedObject) => void
 	removeSelected: () => void
 	setSelectedId: (id: string | null) => void
+	resetScene: () => void
 }
 
 const DEFAULT_PLATFORM_COLOR = "#228B22"
@@ -78,9 +79,8 @@ function getAssetScaleLimits(asset: ModelAsset | null | undefined): ScaleLimits 
 	return { min: Math.min(min, max), max: Math.max(min, max) }
 }
 
-// Read and sanitize stored draft so invalid data cannot break the builder.
-function buildInitialBuilderState(): InitialBuilderState {
-	const fallback: InitialBuilderState = {
+function createDefaultBuilderState(): InitialBuilderState {
+	return {
 		step: 1,
 		selectedPlatformId: null,
 		selectedPlatformColor: DEFAULT_PLATFORM_COLOR,
@@ -89,6 +89,11 @@ function buildInitialBuilderState(): InitialBuilderState {
 		selectedId: null,
 		nextId: 0,
 	}
+}
+
+// Read and sanitize stored draft so invalid data cannot break the builder.
+function buildInitialBuilderState(): InitialBuilderState {
+	const fallback = createDefaultBuilderState()
 
 	const draft = readBuilderSceneDraft()
 	if (!draft || draft.version !== 1) return fallback
@@ -248,6 +253,10 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
 	setSelectedId: (id) => {
 		set({ selectedId: id })
 		persistScene(get())
+	},
+	resetScene: () => {
+		clearBuilderSceneDraft()
+		set(createDefaultBuilderState())
 	},
 }))
 

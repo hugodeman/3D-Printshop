@@ -42,4 +42,9 @@ export function readBuilderSceneDraft() {
 	return parseBuilderSceneDraft(window.localStorage.getItem(BUILDER_SCENE_DRAFT_KEY))
 }
 
+export function clearBuilderSceneDraft() {
+	if (typeof window === "undefined") return
+	window.localStorage.removeItem(BUILDER_SCENE_DRAFT_KEY)
+}
+
 

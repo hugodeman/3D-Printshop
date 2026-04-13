@@ -14,9 +14,11 @@ type StepItem = {
 type StepButtonsProps = {
 	steps: StepItem[]
 	onInfoClick?: () => void
+	onClearClick?: () => void
+	clearDisabled?: boolean
 }
 
-export function StepButtons({ steps, onInfoClick }: StepButtonsProps) {
+export function StepButtons({ steps, onInfoClick, onClearClick, clearDisabled }: StepButtonsProps) {
 	return (
 		<div className="relative mb-2 flex w-full items-center justify-center">
 			<div className="flex items-center gap-10">
@@ -46,16 +48,33 @@ export function StepButtons({ steps, onInfoClick }: StepButtonsProps) {
 				})}
 			</div>
 
-			{onInfoClick && (
-				<button
-					type="button"
-					onClick={onInfoClick}
-					className="absolute right-1 flex h-13 w-13 items-center justify-center rounded-full border border-[#98CEAA]/40 bg-[#1F2126]/90 transition hover:bg-[#2A2D31]"
-					aria-label="Toon builder uitleg"
-					title="Toon builder uitleg"
-				>
-					<Icon name="Info" size={24} color="#98CEAA" />
-				</button>
+			{(onClearClick || onInfoClick) && (
+				<div className="absolute right-1 flex items-center gap-10">
+					{onClearClick && (
+						<button
+							type="button"
+							onClick={onClearClick}
+							disabled={clearDisabled}
+							className="flex h-13 w-13 items-center justify-center rounded-full border border-red-300/40 bg-[#1F2126]/90 transition enabled:hover:bg-[#2A2D31] disabled:cursor-not-allowed disabled:opacity-50"
+							aria-label="Leeg scene"
+							title="Leeg scene"
+						>
+							<Icon name="Trash2" size={22} color="#FCA5A5" />
+						</button>
+					)}
+
+					{onInfoClick && (
+						<button
+							type="button"
+							onClick={onInfoClick}
+							className="flex h-13 w-13 items-center justify-center rounded-full border border-[#98CEAA]/40 bg-[#1F2126]/90 transition hover:bg-[#2A2D31]"
+							aria-label="Toon builder uitleg"
+							title="Toon builder uitleg"
+						>
+							<Icon name="Info" size={24} color="#98CEAA" />
+						</button>
+					)}
+				</div>
 			)}
 		</div>
 	)

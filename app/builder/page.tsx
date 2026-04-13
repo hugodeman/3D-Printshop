@@ -17,6 +17,7 @@ import { ColorInput } from "@/components/builder/ColorInput"
 import { SceneHelp } from "@/components/builder/SceneHelp"
 import { StepButtons } from "@/components/builder/StepButtons"
 import { BuilderIntroModal } from "@/components/builder/BuilderIntroModal"
+import { BuilderResetConfirmModal } from "@/components/builder/BuilderResetConfirmModal"
 
 import { saveBuilderCheckoutDraft } from "@/lib/builder-checkout-draft"
 import { useBuilderStore } from "@/lib/builder-store"
@@ -326,6 +327,7 @@ export default function BuilderPage() {
 	const updateSelectedInStore = useBuilderStore((state) => state.updateSelected)
 	const removeSelectedFromStore = useBuilderStore((state) => state.removeSelected)
 	const setSelectedId = useBuilderStore((state) => state.setSelectedId)
+	const resetScene = useBuilderStore((state) => state.resetScene)
 	// UI-only state
 	const [selectedPlatformColorInput, setSelectedPlatformColorInput] = useState(selectedPlatformColor)
 	const [selectedPartColorInputs, setSelectedPartColorInputs] = useState<Record<string, string>>({})
@@ -334,6 +336,7 @@ export default function BuilderPage() {
 	const [isCapturing, setIsCapturing] = useState(false)
 	const [showGrid, setShowGrid] = useState(true)
 	const [isIntroOpen, setIsIntroOpen] = useState(false)
+	const [isClearModalOpen, setIsClearModalOpen] = useState(false)
 	const [captureCanvas, setCaptureCanvas] = useState<(() => string | null) | null>(null)
 	const handleCaptureReady = useCallback((nextCapture: (() => string | null) | null) => {
 		// Store function-as-value, not as updater
@@ -374,6 +377,7 @@ export default function BuilderPage() {
 
 	const canGoToStep2 = Boolean(selectedPlatformId)
 	const canGoToCheckout = canGoToStep2 && placedObjects.length > 0
+	const canClearScene = Boolean(selectedPlatformId) || placedObjects.length > 0
 	const selectedScaleLimits = getAssetScaleLimits(selectedObjectAsset)
 	const platformSizeScaleMultiplier = selectedPlatformSize / BASE_PLATFORM_SIZE_CM
 	const positionMin = -(selectedPlatformSize / BASE_PLATFORM_SIZE_CM) + 0.1
@@ -426,6 +430,18 @@ export default function BuilderPage() {
 		setOutlineSelection(null)
 	}
 
+	const handleClearScene = useCallback(() => {
+		setIsClearModalOpen(true)
+	}, [])
+
+	const confirmClearScene = useCallback(() => {
+		resetScene()
+		setOutlineSelection(null)
+		setSelectedPartColorInputs({})
+		setSelectedPlatformColorInput(DEFAULT_PLATFORM_COLOR)
+		setIsClearModalOpen(false)
+	}, [resetScene])
+
 	async function goToCheckoutOverview() {
 		if (!selectedPlatform) return
 
@@ -468,6 +484,11 @@ export default function BuilderPage() {
 	return (
 		<main className="h-[calc(100vh-120px)] bg-[#1A1C1E] text-white">
 			<BuilderIntroModal isOpen={isIntroOpen} onCloseAction={closeIntro} />
+			<BuilderResetConfirmModal
+				isOpen={isClearModalOpen}
+				onCancelAction={() => setIsClearModalOpen(false)}
+				onConfirmAction={confirmClearScene}
+			/>
 			<div className="grid h-full grid-cols-[260px_1fr_300px] gap-4">
 
 				{/* Left Sidebar */}
@@ -589,7 +610,12 @@ export default function BuilderPage() {
 
 					{/* Step Buttons */}
 					<div className="flex justify-center p-4">
-						<StepButtons steps={stepItems} onInfoClick={() => setIsIntroOpen(true)} />
+						<StepButtons
+							steps={stepItems}
+							onClearClick={handleClearScene}
+							clearDisabled={!canClearScene}
+							onInfoClick={() => setIsIntroOpen(true)}
+						/>
 					</div>
 
 					{/* Canvas */}
