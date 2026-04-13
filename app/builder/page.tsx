@@ -348,6 +348,12 @@ export default function BuilderPage() {
 		setIsIntroOpen(false)
 	}, [])
 
+	useEffect(() => {
+		if (step !== 1) return
+		setSelectedId(null)
+		setOutlineSelection(null)
+	}, [step, setSelectedId])
+
 	const selectedPlatform = selectedPlatformId ? (assetsById.get(selectedPlatformId) ?? null) : null
 	const selectedObject = placedObjects.find((o) => o.instanceId === selectedId) ?? null
 	const selectedObjectAsset = selectedObject ? assetsById.get(selectedObject.assetId) : null
@@ -493,11 +499,12 @@ export default function BuilderPage() {
 											<button
 												key={row.instanceId}
 												type="button"
-												onClick={() => setSelectedId(row.instanceId)}
+													onClick={() => step === 2 && setSelectedId(row.instanceId)}
+													disabled={step !== 2}
 												className={`block w-full rounded px-2 py-1 text-left ${
 													selectedId === row.instanceId
 														? "bg-[#98CEAA] text-black"
-														: "bg-black/25 text-white/80"
+															: "bg-black/25 text-white/80"
 												}`}
 											>
 												- {row.label}
@@ -641,14 +648,16 @@ export default function BuilderPage() {
 									)
 								})}
 
-								<ClickHandler
-									placedObjects={placedObjects}
-									onSelectDecoration={setSelectedId}
-									onClearSelection={() => {
-										setSelectedId(null)
-										setOutlineSelection(null)
-									}}
-								/>
+								{step === 2 && (
+									<ClickHandler
+										placedObjects={placedObjects}
+										onSelectDecoration={setSelectedId}
+										onClearSelection={() => {
+											setSelectedId(null)
+											setOutlineSelection(null)
+										}}
+									/>
+								)}
 							</Suspense>
 
 							<EffectComposer multisampling={4} autoClear={false}>
