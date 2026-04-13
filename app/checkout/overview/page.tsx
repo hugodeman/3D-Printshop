@@ -15,14 +15,42 @@ export default function CheckoutPage() {
 	const router = useRouter()
 	const setStep = useBuilderStore((state) => state.setStep)
 	const [data, setData] = useState<BuilderCheckoutDraft | null>(() => readBuilderCheckoutDraft())
+	const [isOrdering, setIsOrdering] = useState(false)
+	const [orderError, setOrderError] = useState<string | null>(null)
 
 	useEffect(() => {
-		// Subscribe to changes
 		return subscribeBuilderCheckoutDraft(() => {
-			const updatedDraft = readBuilderCheckoutDraft()
-			setData(updatedDraft)
+			setData(readBuilderCheckoutDraft())
 		})
 	}, [])
+
+	async function handleOrder() {
+		if (!data) return
+		setIsOrdering(true)
+		setOrderError(null)
+
+		try {
+			const response = await fetch("/api/orders/builder", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(data),
+			})
+
+			const result = await response.json() as { checkoutUrl?: string; error?: string }
+
+			if (!response.ok || !result.checkoutUrl) {
+				setOrderError(result.error ?? "Bestelling mislukt, probeer opnieuw.")
+				return
+			}
+
+			// Redirect to Mollie checkout
+			window.location.href = result.checkoutUrl
+		} catch {
+			setOrderError("Netwerkfout, probeer opnieuw.")
+		} finally {
+			setIsOrdering(false)
+		}
+	}
 
 	if (!data) {
 		return (
@@ -36,6 +64,10 @@ export default function CheckoutPage() {
 	}
 
 	const totalItems = data.decorations.length
+	// Pricing mirrors the server: M=€20, L=€25, XL=€30, +€5 per decoration
+	const PLATFORM_PRICE: Record<number, number> = { 10: 20, 15: 25, 20: 30 }
+	const platformPrice = PLATFORM_PRICE[data.platformSize ?? 10] ?? 20
+	const totalPrice = (platformPrice + totalItems * 5).toFixed(2)
 
 	const steps = [
 		{
@@ -127,14 +159,22 @@ export default function CheckoutPage() {
 							<div className="border-t border-white/10">
 								<div className="flex justify-between text-lg mt-12">
 									<H3>Totaal Prijs</H3>
-									{/*bereking tijd * volume*/}
-									<H2>€ 50,00</H2>
+									{/*bereking platform + decoraties*/}
+									<H2>€ {totalPrice}</H2>
 								</div>
 							</div>
 
-							<Button className="mt-auto w-full flex justify-center gap-4" onClick={() => router.push("/checkout/payment")}>
+							{orderError && (
+								<P className="mt-3 text-red-400">{orderError}</P>
+							)}
+
+							<Button
+								className="mt-auto w-full flex justify-center gap-4"
+								onClick={handleOrder}
+								disabled={isOrdering}
+							>
 								<Icon name="ShoppingBag" size={20} color="#1F2126" />
-								<H3 className={"text-contrast"}>Bestellen</H3>
+								<H3 className={"text-contrast"}>{isOrdering ? "Verwerken..." : "Bestellen"}</H3>
 							</Button>
 						</div>
 					</div>

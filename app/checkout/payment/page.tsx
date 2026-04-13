@@ -1,71 +1,165 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
-import { useSyncExternalStore } from "react"
-import {
-	readBuilderCheckoutDraft,
-	subscribeBuilderCheckoutDraft,
-	type BuilderCheckoutDraft,
-} from "@/lib/builder-checkout-draft"
+import { useSearchParams } from "next/navigation"
+import { H2, H3, P } from "@/components/ui/Typography"
+import { Button } from "@/components/ui/Button"
+import { Icon } from "@/components/ui/Icon"
+
+type OrderStatus = "PENDING" | "PAID" | "COMPLETED"
+
+type OrderResult = {
+	id: string
+	status: OrderStatus
+	total: string
+}
 
 export default function CheckoutPaymentPage() {
-	const draft = useSyncExternalStore<BuilderCheckoutDraft | null>(
-		subscribeBuilderCheckoutDraft,
-		readBuilderCheckoutDraft,
-		() => null,
-	)
+	const searchParams = useSearchParams()
+	const orderId = searchParams.get("orderId")
+	const isMockPayment = searchParams.get("mock") === "1"
+	const [order, setOrder] = useState<OrderResult | null>(null)
+	const [loading, setLoading] = useState(true)
+	const [error, setError] = useState<string | null>(null)
+	const [isSimulating, setIsSimulating] = useState(false)
 
-	if (!draft) {
+	async function fetchOrder(nextOrderId: string) {
+		const res = await fetch(`/api/orders/${nextOrderId}`)
+		if (!res.ok) {
+			throw new Error("ORDER_NOT_FOUND")
+		}
+		return (await res.json()) as OrderResult
+	}
+
+	async function simulateMockPaymentSuccess() {
+		if (!orderId) return
+		setIsSimulating(true)
+		setError(null)
+
+		try {
+			const res = await fetch(`/api/orders/${orderId}/mock-pay`, { method: "POST" })
+			if (!res.ok) {
+				const result = (await res.json()) as { error?: string }
+				setError(result.error ?? "Mock betaling mislukt.")
+				return
+			}
+
+			const updated = await fetchOrder(orderId)
+			setOrder(updated)
+		} catch {
+			setError("Kon mock betaling niet uitvoeren.")
+		} finally {
+			setIsSimulating(false)
+		}
+	}
+
+	useEffect(() => {
+		if (!orderId) {
+			setLoading(false)
+			return
+		}
+
+		// Poll the order status briefly — Mollie may not have fired the webhook yet
+		let attempts = 0
+		const poll = async () => {
+			try {
+				const data = await fetchOrder(orderId)
+				setOrder(data)
+				setLoading(false)
+				// If still pending and we haven't polled too many times, retry
+				if (data.status === "PENDING" && attempts < 5) {
+					attempts++
+					setTimeout(poll, 2000)
+				}
+			} catch {
+				setError("Kon bestelling niet ophalen.")
+				setLoading(false)
+			}
+		}
+		void poll()
+	}, [orderId])
+
+	if (!orderId) {
 		return (
-			<section className="space-y-4">
-				<h2 className="text-h2">Betalen</h2>
-				<p className="text-p text-white/75">Er is nog geen builder-bestelling klaar om te betalen.</p>
-				<Link
-					href="/builder"
-					className="inline-flex rounded-md border border-black/30 bg-[#98CEAA] px-4 py-2 text-sm text-black"
-				>
-					Terug naar builder
+			<section className="flex h-[calc(100vh-120px)] flex-col items-center justify-center gap-4 bg-[#1A1C1E] text-white">
+				<H3>Geen bestelling gevonden</H3>
+				<Link href="/builder">
+					<Button>Terug naar builder</Button>
 				</Link>
 			</section>
 		)
 	}
 
+	const printFileDownloadUrl = `/api/orders/${orderId}/print-file`
+
 	return (
-		<section className="space-y-6">
-			<div>
-				<h2 className="text-h2">Betalen</h2>
-				<p className="mt-2 text-p text-white/75">
-					Hier komt straks je Mollie-koppeling. Voor nu zie je alvast welke builder-configuratie wordt afgerekend.
-				</p>
-			</div>
+		<section className="flex h-[calc(100vh-120px)] flex-col items-center justify-center gap-6 bg-[#1A1C1E] text-white">
+			{isMockPayment && !loading && (
+				<div className="flex flex-col items-center gap-3 rounded-xl border border-amber-300/20 bg-amber-400/10 px-4 py-3 text-amber-200">
+					<P>Dev modus: Mollie is niet geconfigureerd, dus dit is een lokale betaalfallback.</P>
+					{order?.status === "PENDING" && (
+						<Button
+							onClick={simulateMockPaymentSuccess}
+							disabled={isSimulating}
+							className="min-w-56"
+						>
+							{isSimulating ? "Verwerken..." : "Simuleer betaling gelukt"}
+						</Button>
+					)}
+					{order && (
+						<Link href={printFileDownloadUrl} target="_blank" rel="noreferrer">
+							<Button variant="secondary" className="min-w-56">
+								<Icon name="Download" size={18} color="#FFFFFF" />
+								Test download printbestand
+							</Button>
+						</Link>
+					)}
+				</div>
+			)}
 
-			<div className="rounded-md border border-black/20 bg-black/20 p-4">
-				<p className="text-sm font-medium">Bestelsamenvatting</p>
-				<p className="mt-2 text-sm text-white/80">Platform: {draft.platformName}</p>
-				<p className="mt-1 text-sm text-white/80">Aantal decoraties: {draft.totalItems}</p>
-				<ul className="mt-3 space-y-1 text-sm text-white/75">
-					{draft.decorations.map((decoration) => (
-						<li key={decoration.instanceId}>- {decoration.name}</li>
-					))}
-				</ul>
-			</div>
+			{loading && (
+				<>
+					<Icon name="LoaderCircle" size={40} color="#98CEAA" className="animate-spin" />
+					<P className="text-white/70">Betaalstatus ophalen…</P>
+				</>
+			)}
 
-			<div className="flex flex-wrap gap-3">
-				<Link
-					href="/builder"
-					className="inline-flex rounded-md border border-black/30 bg-black/25 px-4 py-2 text-sm"
-				>
-					Terug naar builder
-				</Link>
-				<Link
-					href="/checkout/overview"
-					className="inline-flex rounded-md border border-black/30 bg-[#98CEAA] px-4 py-2 text-sm text-black"
-				>
-					Simuleer afgeronde betaling
-				</Link>
-			</div>
+			{!loading && error && (
+				<>
+					<Icon name="CircleX" size={40} color="#FCA5A5" />
+					<H3>{error}</H3>
+					<Link href="/builder"><Button>Terug naar builder</Button></Link>
+				</>
+			)}
+
+			{!loading && order && order.status === "PAID" && (
+				<>
+					<Icon name="CircleCheck" size={56} color="#98CEAA" />
+					<H2>Betaling gelukt!</H2>
+					<P className="text-white/70">Je bestelling #{order.id.slice(0, 8)} is ontvangen.</P>
+					<P className="text-white/70">Totaal betaald: €&nbsp;{order.total}</P>
+					<Link href="/"><Button>Terug naar home</Button></Link>
+				</>
+			)}
+
+			{!loading && order && order.status === "PENDING" && (
+				<>
+					<Icon name="Clock" size={56} color="#f59e0b" />
+					<H2>Betaling in behandeling</H2>
+					<P className="text-white/70">We wachten op bevestiging van je betaling.</P>
+				</>
+			)}
+
+			{!loading && order && order.status === "COMPLETED" && (
+				<>
+					<Icon name="Package" size={56} color="#98CEAA" />
+					<H2>Bestelling voltooid!</H2>
+					<P className="text-white/70">Je 3D print is onderweg.</P>
+					<Link href="/"><Button>Terug naar home</Button></Link>
+				</>
+			)}
 		</section>
 	)
 }
-
 
