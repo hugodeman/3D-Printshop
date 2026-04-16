@@ -15,7 +15,7 @@ export function Button({
   ...props
 }: ButtonProps) {
   const baseClasses =
-    "px-6 py-3 text-p font-medium border border-black button-shadow transition-colors rounded-lg";
+    "px-6 py-3 text-p font-medium border border-black button-shadow transition-colors rounded-lg cursor-pointer";
 
   const variantClasses = {
     primary: "bg-button-primary text-contrast",

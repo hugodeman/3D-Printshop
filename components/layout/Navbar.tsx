@@ -65,8 +65,8 @@ export function Navbar({ className = "" }: NavbarProps) {
         ) : (
           <Button
             variant="primary"
-            isActive={pathname === "/login"}
-            onClick={() => window.location.href = "/login"}
+            isActive={pathname === "/auth/login"}
+            onClick={() => window.location.href = "/auth/login"}
             className="w-48"
           >
             Login

@@ -23,7 +23,7 @@ export function Input({
   const sizeClasses = {
     lg: "w-full",
     // Small variant is approximately 45% of the large input width.
-    sm: "w-62",
+    sm: "w-70",
   };
 
   return (
