@@ -8,9 +8,12 @@ function getMollieApiKey() {
 	return process.env.MOLLIE_API_KEY?.trim() ?? ""
 }
 
+
+// Until APIkey, disable Mollie
 export function isMollieConfigured() {
 	const apiKey = getMollieApiKey()
-	return apiKey.startsWith("test_") || apiKey.startsWith("live_")
+	const mollieEnabled = process.env.ENABLE_MOLLIE === "true"
+	return mollieEnabled && (apiKey.startsWith("test_") || apiKey.startsWith("live_"))
 }
 
 export function getMollieClient() {
