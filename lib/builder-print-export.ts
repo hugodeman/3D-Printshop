@@ -158,8 +158,8 @@ async function buildExportScene(config: BuilderCheckoutDraft) {
 }
 
 function collectTriangleMeshData(scene: THREE.Scene) {
-	// 3MF is written in millimeters. Our working units are centimeters (1 unit = 10 mm).
-	const MM_PER_UNIT = 10
+	// 3MF is written in millimeters. Our working units are centimeters (1 unit = 50 mm).
+	const MM_PER_UNIT = 50
 	const vertices: Array<[number, number, number]> = []
 	const triangles: Array<[number, number, number]> = []
 
