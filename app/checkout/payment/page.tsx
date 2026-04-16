@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { H2, H3, P } from "@/components/ui/Typography"
@@ -15,7 +15,7 @@ type OrderResult = {
 	total: string
 }
 
-export default function CheckoutPaymentPage() {
+function CheckoutPaymentContent() {
 	const searchParams = useSearchParams()
 	const orderId = searchParams.get("orderId")
 	const isMockPayment = searchParams.get("mock") === "1"
@@ -163,3 +163,6 @@ export default function CheckoutPaymentPage() {
 	)
 }
 
+export default function CheckoutPaymentPage() {
+	return <Suspense fallback={null}><CheckoutPaymentContent /></Suspense>
+}
