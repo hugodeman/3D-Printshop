@@ -20,7 +20,7 @@ type BackgroundOverlayProps = {
 
 export function BackgroundOverlay({ children, className = '' }: BackgroundOverlayProps) {
   return (
-    <div className={`bg-overlay p-6 ${className}`}>
+    <div className={`bg-overlay p-6 mb-8 py-10 flex flex-col justify-center items-center text-center gap-5 ${className}`}>
       {children}
     </div>
   );

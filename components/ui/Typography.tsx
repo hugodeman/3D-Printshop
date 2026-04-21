@@ -34,3 +34,11 @@ export function P({ children, className }: Props) {
         </p>
     )
 }
+
+export function ErrorText({ children, className }: Props) {
+    return (
+        <p className={`text-p text-red-400 mt-1 ${className}`}>
+            {children}
+        </p>
+    )
+}

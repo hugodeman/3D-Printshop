@@ -2,7 +2,7 @@
 
 import React, { useState } from "react"
 import { BackgroundMain, BackgroundOverlay, BackgroundContrast2 } from "@/components/ui/Background"
-import {H1, H2, P} from "@/components/ui/Typography"
+import {H1, H2, P, ErrorText} from "@/components/ui/Typography"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
 
@@ -171,7 +171,7 @@ export default function RegisterPage() {
                     onChange={(e) => updateField("email", e.target.value)}
                     placeholder="Email"
                   />
-                  {errors.email && <P className="text-red-400 mt-1 text-sm">{errors.email}</P>}
+                   {errors.email && <ErrorText>{errors.email}</ErrorText>}
                 </div>
 
                 <div>
@@ -184,7 +184,7 @@ export default function RegisterPage() {
                     onChange={(e) => updateField("emailConfirm", e.target.value)}
                     placeholder="Herhaal Email"
                   />
-                  {errors.emailConfirm && <P className="text-red-400 mt-1 text-sm">{errors.emailConfirm}</P>}
+                   {errors.emailConfirm && <ErrorText>{errors.emailConfirm}</ErrorText>}
                 </div>
 
                 <div>
@@ -197,7 +197,7 @@ export default function RegisterPage() {
                     onChange={(e) => updateField("password", e.target.value)}
                     placeholder="Wachtwoord"
                   />
-                  {errors.password && <P className="text-red-400 mt-1 text-sm">{errors.password}</P>}
+                   {errors.password && <ErrorText>{errors.password}</ErrorText>}
                 </div>
 
                 <div>
@@ -210,7 +210,7 @@ export default function RegisterPage() {
                     onChange={(e) => updateField("passwordConfirm", e.target.value)}
                     placeholder="Herhaal Wachtwoord"
                   />
-                  {errors.passwordConfirm && <P className="text-red-400 mt-1 text-sm">{errors.passwordConfirm}</P>}
+                   {errors.passwordConfirm && <ErrorText>{errors.passwordConfirm}</ErrorText>}
                 </div>
               </div>
             </div>
@@ -238,7 +238,7 @@ export default function RegisterPage() {
                         </option>
                     ))}
                   </select>
-                  {errors.country && <P className="text-red-400 mt-1 text-sm">{errors.country}</P>}
+                   {errors.country && <ErrorText>{errors.country}</ErrorText>}
                 </div>
 
                 <div className="flex justify-between">
@@ -252,7 +252,7 @@ export default function RegisterPage() {
                       placeholder="Voornaam"
                       inputSize="sm"
                     />
-                    {errors.firstName && <P className="text-red-400 mt-1 text-sm">{errors.firstName}</P>}
+                     {errors.firstName && <ErrorText>{errors.firstName}</ErrorText>}
                   </div>
 
                   <div>
@@ -265,7 +265,7 @@ export default function RegisterPage() {
                       placeholder="Achternaam"
                       inputSize="sm"
                     />
-                    {errors.lastName && <P className="text-red-400 mt-1 text-sm">{errors.lastName}</P>}
+                     {errors.lastName && <ErrorText>{errors.lastName}</ErrorText>}
                   </div>
                 </div>
 
@@ -278,7 +278,7 @@ export default function RegisterPage() {
                     onChange={(e) => updateField("street", e.target.value)}
                     placeholder="Adres"
                   />
-                  {errors.street && <P className="text-red-400 mt-1 text-sm">{errors.street}</P>}
+                   {errors.street && <ErrorText>{errors.street}</ErrorText>}
                 </div>
 
                 <div className="gap-6">
@@ -306,7 +306,7 @@ export default function RegisterPage() {
                       placeholder="Postcode"
                       inputSize="sm"
                     />
-                    {errors.postal && <P className="text-red-400 mt-1 text-sm">{errors.postal}</P>}
+                     {errors.postal && <ErrorText>{errors.postal}</ErrorText>}
                   </div>
 
                   <div>
@@ -319,7 +319,7 @@ export default function RegisterPage() {
                       placeholder="Woonplaats"
                       inputSize="sm"
                     />
-                    {errors.city && <P className="text-red-400 mt-1 text-sm">{errors.city}</P>}
+                     {errors.city && <ErrorText>{errors.city}</ErrorText>}
                   </div>
                 </div>
               </div>
