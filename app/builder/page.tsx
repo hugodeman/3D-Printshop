@@ -8,6 +8,7 @@ import { BlendFunction } from "postprocessing"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { Color, type Material, type Mesh, type Object3D, Raycaster, Vector2, type Group as THREE_Group } from "three"
+import * as THREE from "three"
 
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
@@ -18,6 +19,8 @@ import { SceneHelp } from "@/components/builder/SceneHelp"
 import { StepButtons } from "@/components/builder/StepButtons"
 import { BuilderIntroModal } from "@/components/builder/BuilderIntroModal"
 import { BuilderResetConfirmModal } from "@/components/builder/BuilderResetConfirmModal"
+import ImageTo3D from "@/components/builder/ImageTo3D"
+import CustomObject from "@/components/builder/CustomObject"
 
 import { saveBuilderCheckoutDraft } from "@/lib/builder-checkout-draft"
 import {
@@ -323,6 +326,7 @@ export default function BuilderPage() {
 	const setSelectedPlatformColor = useBuilderStore((state) => state.setSelectedPlatformColor)
 	const setSelectedPlatformSize = useBuilderStore((state) => state.setSelectedPlatformSize)
 	const addObjectToStore = useBuilderStore((state) => state.addObject)
+	const addCustomObjectToStore = useBuilderStore((state) => state.addCustomObject)
 	const updateSelectedInStore = useBuilderStore((state) => state.updateSelected)
 	const removeSelectedFromStore = useBuilderStore((state) => state.removeSelected)
 	const setSelectedId = useBuilderStore((state) => state.setSelectedId)
@@ -367,15 +371,18 @@ export default function BuilderPage() {
 			const currentCount = (countsByAssetId.get(obj.assetId) ?? 0) + 1
 			countsByAssetId.set(obj.assetId, currentCount)
 
+			const asset = assetsById.get(obj.assetId)
+			const name = asset?.name ?? obj.customName ?? "Custom Object"
+
 			return {
 				instanceId: obj.instanceId,
-				label: `${assetsById.get(obj.assetId)?.name ?? "Onbekend"} ${currentCount}`,
+				label: `${name} ${currentCount}`,
 			}
 		})
 	}, [placedObjects])
 
 	const canGoToStep2 = Boolean(selectedPlatformId)
-	const canGoToCheckout = canGoToStep2 && placedObjects.length > 0
+	const canGoToCheckout = canGoToStep2 && placedObjects.filter((obj) => obj.assetId !== 'custom-object').length > 0
 	const canClearScene = Boolean(selectedPlatformId) || placedObjects.length > 0
 	const selectedScaleLimits = getAssetScaleLimits(selectedObjectAsset)
 	const positionMin = -(selectedPlatformSize / BASE_PLATFORM_SIZE_CM) + 0.1
@@ -464,17 +471,19 @@ export default function BuilderPage() {
 			platformName: selectedPlatform.name,
 			platformSize: selectedPlatformSize,
 			platformColor: selectedPlatformColor,
-			decorations: placedObjects.map((obj) => ({
-				instanceId: obj.instanceId,
-				assetId: obj.assetId,
-				name: assetsById.get(obj.assetId)?.name ?? "Onbekend",
-				position: obj.position,
-				rotationY: obj.rotationY,
-				scale: obj.scale,
-				color: obj.color,
-				partColors: obj.partColors,
-			})),
-			totalItems: placedObjects.length,
+			decorations: placedObjects
+				.filter((obj) => obj.assetId !== 'custom-object') // Exclude custom objects from checkout
+				.map((obj) => ({
+					instanceId: obj.instanceId,
+					assetId: obj.assetId,
+					name: assetsById.get(obj.assetId)?.name ?? "Onbekend",
+					position: obj.position,
+					rotationY: obj.rotationY,
+					scale: obj.scale,
+					color: obj.color,
+					partColors: obj.partColors,
+				})),
+			totalItems: placedObjects.filter((obj) => obj.assetId !== 'custom-object').length, // Exclude custom objects from count
 			createdAt: new Date().toISOString(),
 			previewImage,
 		})
@@ -592,6 +601,11 @@ export default function BuilderPage() {
 										</button>
 									))}
 								</div>
+
+								{/* Image to 3D Upload */}
+								<div className="border-t border-white/10 pt-4 mt-4">
+									<ImageTo3D onAddToScene={addCustomObjectToStore} />
+								</div>
 							</div>
 						)}
 					</div>
@@ -659,20 +673,51 @@ export default function BuilderPage() {
 
 								{placedObjects.map((obj) => {
 									const asset = assetsById.get(obj.assetId)
-									if (!asset) return null
-									return (
-										<GLTFObject
-											key={obj.instanceId}
-											instanceId={obj.instanceId}
-											modelPath={asset.modelPath}
-											position={obj.position}
-											rotationY={obj.rotationY}
-											scale={obj.scale}
-											tintColor={obj.color}
-											partColors={obj.partColors}
-											onReady={selectedId === obj.instanceId ? setOutlineSelection : undefined}
-										/>
-									)
+									if (asset) {
+										// Regular GLTF object
+										return (
+											<GLTFObject
+												key={obj.instanceId}
+												instanceId={obj.instanceId}
+												modelPath={asset.modelPath}
+												position={obj.position}
+												rotationY={obj.rotationY}
+												scale={obj.scale}
+												tintColor={obj.color}
+												partColors={obj.partColors}
+												onReady={selectedId === obj.instanceId ? setOutlineSelection : undefined}
+											/>
+										)
+									} else if (obj.customGeometry) {
+										// Custom object from image
+										const geometry = new THREE.BufferGeometry()
+										geometry.setAttribute('position', new THREE.Float32BufferAttribute(obj.customGeometry.vertices, 3))
+										if (obj.customGeometry.indices) {
+											geometry.setIndex(obj.customGeometry.indices)
+										}
+										if (obj.customGeometry.normals) {
+											geometry.setAttribute('normal', new THREE.Float32BufferAttribute(obj.customGeometry.normals, 3))
+										}
+										if (obj.customGeometry.uvs) {
+											geometry.setAttribute('uv', new THREE.Float32BufferAttribute(obj.customGeometry.uvs, 2))
+										}
+										geometry.computeBoundingBox()
+										geometry.computeVertexNormals()
+
+										return (
+											<CustomObject
+												key={obj.instanceId}
+												geometry={geometry}
+												position={obj.position}
+												rotationY={obj.rotationY}
+												scale={obj.scale}
+												color={obj.color}
+												instanceId={obj.instanceId}
+												onReady={selectedId === obj.instanceId ? setOutlineSelection : undefined}
+											/>
+										)
+									}
+									return null
 								})}
 
 								{step === 2 && (
@@ -783,7 +828,7 @@ export default function BuilderPage() {
 							<div className="flex flex-col gap-5">
 								<div className={"flex justify-between mr-2 mb-8 mt-3"}>
 									<H3>Geselecteerd:</H3>
-									<H3>{selectedObjectAsset?.name}</H3>
+									<H3>{selectedObjectAsset?.name ?? selectedObject?.customName ?? "Custom Object"}</H3>
 								</div>
 
 								<SliderInput

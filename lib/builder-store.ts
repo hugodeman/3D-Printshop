@@ -1,6 +1,7 @@
 "use client"
 
 import { create } from "zustand"
+import * as THREE from "three"
 
 import { clearBuilderSceneDraft, readBuilderSceneDraft, saveBuilderSceneDraft } from "@/lib/builder-scene-draft"
 import rawModelAssets from "@/app/builder/model-assets.json"
@@ -28,6 +29,13 @@ export type PlacedObject = {
 	scale: number
 	color: string
 	partColors?: PartColors
+	customGeometry?: {
+		vertices: number[]
+		indices?: number[]
+		normals?: number[]
+		uvs?: number[]
+	}
+	customName?: string
 }
 
 type InitialBuilderState = {
@@ -46,6 +54,7 @@ type BuilderStore = InitialBuilderState & {
 	setSelectedPlatformColor: (color: string) => void
 	setSelectedPlatformSize: (size: 10 | 15 | 20) => void
 	addObject: (assetId: string) => void
+	addCustomObject: (geometry: THREE.BufferGeometry, name: string, color?: string) => void
 	updateSelected: (updater: (obj: PlacedObject) => PlacedObject) => void
 	removeSelected: () => void
 	setSelectedId: (id: string | null) => void
@@ -225,6 +234,44 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
 		})
 		persistScene(get())
 	},
+	addCustomObject: (geometry, name, color) => {
+		set((state) => {
+			const nextId = state.nextId + 1
+			const instanceId = `custom-${nextId}`
+
+			// Extract geometry data for serialization
+			const positionAttribute = geometry.getAttribute('position')
+			const normalAttribute = geometry.getAttribute('normal')
+			const uvAttribute = geometry.getAttribute('uv')
+			const indexAttribute = geometry.getIndex()
+
+			const customGeometry = {
+				vertices: Array.from(positionAttribute.array),
+				indices: indexAttribute ? Array.from(indexAttribute.array) : undefined,
+				normals: normalAttribute ? Array.from(normalAttribute.array) : undefined,
+				uvs: uvAttribute ? Array.from(uvAttribute.array) : undefined,
+			}
+
+			return {
+				nextId,
+				selectedId: instanceId,
+				placedObjects: [
+					...state.placedObjects,
+					{
+						instanceId,
+						assetId: 'custom-object', // Special asset ID for custom objects
+						position: [0, 0.5, 0], // Higher position for custom objects
+						rotationY: 0,
+						scale: 1,
+						color: color || '#FFFFFF',
+						customGeometry,
+						customName: name,
+					},
+				],
+			}
+		})
+		persistScene(get())
+	},
 	updateSelected: (updater) => {
 		set((state) => {
 			if (!state.selectedId) return {}
@@ -259,6 +306,4 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
 		set(createDefaultBuilderState())
 	},
 }))
-
-
 
