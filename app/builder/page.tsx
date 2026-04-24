@@ -21,6 +21,7 @@ import { BuilderIntroModal } from "@/components/builder/BuilderIntroModal"
 import { BuilderResetConfirmModal } from "@/components/builder/BuilderResetConfirmModal"
 import ImageTo3D from "@/components/builder/ImageTo3D"
 import CustomObject from "@/components/builder/CustomObject"
+import { MeasurementTool, MeasurementDisplay } from "@/components/builder/MeasurementTool"
 
 import { saveBuilderCheckoutDraft } from "@/lib/builder-checkout-draft"
 import {
@@ -341,6 +342,8 @@ export default function BuilderPage() {
 	const [isIntroOpen, setIsIntroOpen] = useState(false)
 	const [isClearModalOpen, setIsClearModalOpen] = useState(false)
 	const [captureCanvas, setCaptureCanvas] = useState<(() => string | null) | null>(null)
+	const [measurementActive, setMeasurementActive] = useState(false)
+	const [lastMeasurement, setLastMeasurement] = useState<number | null>(null)
 	const handleCaptureReady = useCallback((nextCapture: (() => string | null) | null) => {
 		// Store function-as-value, not as updater
 		setCaptureCanvas(() => nextCapture)
@@ -372,7 +375,7 @@ export default function BuilderPage() {
 			countsByAssetId.set(obj.assetId, currentCount)
 
 			const asset = assetsById.get(obj.assetId)
-			const name = asset?.name ?? obj.customName ?? "Custom Object"
+			const name = asset?.name ?? "Figurine"
 
 			return {
 				instanceId: obj.instanceId,
@@ -581,6 +584,11 @@ export default function BuilderPage() {
 
 						{step === 2 && (
 							<div className="flex flex-col gap-3">
+								{/* Image to 3D Upload */}
+								<div className="border-b border-white/10 mt-2 pb-4 mb-4">
+									<ImageTo3D onAddToScene={addCustomObjectToStore} />
+								</div>
+
 								<H2>Voeg decoraties toe</H2>
 								<div className="grid grid-cols-2 gap-2">
 									{decorationAssets.map((asset) => (
@@ -600,11 +608,6 @@ export default function BuilderPage() {
 											<P className="mt-1 text-xs">{asset.name}</P>
 										</button>
 									))}
-								</div>
-
-								{/* Image to 3D Upload */}
-								<div className="border-t border-white/10 pt-4 mt-4">
-									<ImageTo3D onAddToScene={addCustomObjectToStore} />
 								</div>
 							</div>
 						)}
@@ -633,13 +636,14 @@ export default function BuilderPage() {
 						/>
 					</div>
 
-					{/* Canvas */}
-					<div className="relative flex-1">
-						<Canvas
-							camera={{ position: [4.5, 4.5, 4.5], fov: 46 }}
-							dpr={1}
-							gl={{ preserveDrawingBuffer: true }}
-						>
+				{/* Canvas */}
+				<div className="relative flex-1">
+					<MeasurementDisplay distance={lastMeasurement} isActive={measurementActive} />
+					<Canvas
+						camera={{ position: [4.5, 4.5, 4.5], fov: 46 }}
+						dpr={1}
+						gl={{ preserveDrawingBuffer: true }}
+					>
 							<color attach="background" args={["#1F2126"]} />
 							<ambientLight intensity={0.5} />
 							<directionalLight position={[6, 9, 4]} intensity={1.2} />
@@ -668,6 +672,14 @@ export default function BuilderPage() {
 										position={selectedPlatform.spawnPosition ?? [0, 0, 0]}
 										scaleVector={getPlatformModelScaleVector(selectedPlatformSize)}
 										tintColor={selectedPlatformColor}
+									/>
+								)}
+
+								{/* Measurement Tool */}
+								{step === 2 && (
+									<MeasurementTool
+										enabled={measurementActive}
+										onMeasure={setLastMeasurement}
 									/>
 								)}
 
@@ -747,18 +759,29 @@ export default function BuilderPage() {
 							<OrbitControls makeDefault minDistance={1.5} maxDistance={30} />
 						</Canvas>
 
-						{/*help knop*/}
-						<SceneHelp />
+					{/*help knop*/}
+					<SceneHelp />
 
-						<button
-							type="button"
-							onClick={() => setShowGrid((prev) => !prev)}
-							className="absolute z-10 flex items-center justify-center rounded-full border border-white/20 bg-[#1F2126]/80 backdrop-blur-sm transition hover:bg-[#2A2D31] bottom-[clamp(0.75rem,2vh,1.5rem)] right-[clamp(0.75rem,2vw,1.5rem)] h-[clamp(2.75rem,5vmin,3.75rem)] w-[clamp(2.75rem,5vmin,3.75rem)]"
-							aria-label={showGrid ? "Verberg grid" : "Toon grid"}
-							title={showGrid ? "Verberg grid" : "Toon grid"}
-						>
-							<Icon name="Grid" size={22} color={showGrid ? "#FFFFFF" : "#98CEAA"} className="h-[clamp(1rem,2.2vmin,1.4rem)] w-[clamp(1rem,2.2vmin,1.4rem)]" />
-						</button>
+					<button
+						type="button"
+						onClick={() => setShowGrid((prev) => !prev)}
+						className="absolute z-10 flex items-center justify-center rounded-full border border-white/20 bg-[#1F2126]/80 backdrop-blur-sm transition hover:bg-[#2A2D31] bottom-[clamp(0.75rem,2vh,1.5rem)] right-[clamp(0.75rem,2vw,1.5rem)] h-[clamp(2.75rem,5vmin,3.75rem)] w-[clamp(2.75rem,5vmin,3.75rem)]"
+						aria-label={showGrid ? "Verberg grid" : "Toon grid"}
+						title={showGrid ? "Verberg grid" : "Toon grid"}
+					>
+						<Icon name="Grid" size={22} color={showGrid ? "#FFFFFF" : "#98CEAA"} className="h-[clamp(1rem,2.2vmin,1.4rem)] w-[clamp(1rem,2.2vmin,1.4rem)]" />
+					</button>
+
+					<button
+						type="button"
+						onClick={() => setMeasurementActive((prev) => !prev)}
+						className="absolute z-10 flex items-center justify-center rounded-full border border-white/20 bg-[#1F2126]/80 backdrop-blur-sm transition hover:bg-[#2A2D31] bottom-[clamp(0.75rem,2vh,1.5rem)] right-[clamp(5.5rem,11vw,6.5rem)] h-[clamp(2.75rem,5vmin,3.75rem)] w-[clamp(2.75rem,5vmin,3.75rem)]"
+						aria-label={measurementActive ? "Meet modus uit" : "Meet modus aan"}
+						title={measurementActive ? "Meet modus uit" : "Meet modus aan"}
+						disabled={step !== 2}
+					>
+						<Icon name="Ruler" size={22} color={measurementActive ? "#FF1493" : "#98CEAA"} className="h-[clamp(1rem,2.2vmin,1.4rem)] w-[clamp(1rem,2.2vmin,1.4rem)]" />
+					</button>
 					</div>
 				</div>
 
@@ -828,7 +851,7 @@ export default function BuilderPage() {
 							<div className="flex flex-col gap-5">
 								<div className={"flex justify-between mr-2 mb-8 mt-3"}>
 									<H3>Geselecteerd:</H3>
-									<H3>{selectedObjectAsset?.name ?? selectedObject?.customName ?? "Custom Object"}</H3>
+									<H3>{selectedObjectAsset?.name ?? "Figurine"}</H3>
 								</div>
 
 								<SliderInput

@@ -1,6 +1,6 @@
 "use client"
 
-import {useCallback, useRef, useState, useEffect} from "react"
+import React, {useCallback, useRef, useState, useEffect} from "react"
 import * as THREE from "three"
 import Image from "next/image"
 import {H3, P} from "@/components/ui/Typography"
@@ -46,7 +46,6 @@ export default function ImageTo3D({ onAddToScene }: ImageTo3DProps) {
         // Check if script is already in document
         const existingScript = document.querySelector('script[src*="opencv.js"]')
         if (existingScript) {
-          console.log('OpenCV script already in document, waiting for load...')
           return
         }
 
@@ -83,7 +82,6 @@ export default function ImageTo3D({ onAddToScene }: ImageTo3DProps) {
     setError(null)
 
     try {
-      console.log('Starting image processing for file:', file.name)
       const domImg = document.createElement('img')
       const canvas = canvasRef.current!
 
@@ -102,8 +100,6 @@ export default function ImageTo3D({ onAddToScene }: ImageTo3DProps) {
       const width = Math.floor(domImg.width * resizeScale)
       const height = Math.floor(domImg.height * resizeScale)
 
-      console.log('Resized to:', width, 'x', height, 'scale:', resizeScale)
-
       canvas.width = width
       canvas.height = height
 
@@ -115,33 +111,26 @@ export default function ImageTo3D({ onAddToScene }: ImageTo3DProps) {
       const src = window.cv.matFromImageData(imageData)
 
       // Convert to grayscale
-      console.log('Converting to grayscale...')
       const gray = new window.cv.Mat()
       window.cv.cvtColor(src, gray, window.cv.COLOR_RGBA2GRAY)
 
       // Apply bilateral filter to smooth while preserving edges
-      console.log('Applying bilateral filter...')
       const blurred = new window.cv.Mat()
       window.cv.bilateralFilter(gray, blurred, 9, 75, 75)
 
       // Apply Canny edge detection
-      console.log('Applying Canny edge detection...')
       const edges = new window.cv.Mat()
       window.cv.Canny(blurred, edges, 50, 150)
 
       // Dilate to connect nearby edges
-      console.log('Dilating edges...')
       const dilated = new window.cv.Mat()
       const kernel = window.cv.getStructuringElement(window.cv.MORPH_ELLIPSE, new window.cv.Size(5, 5))
       window.cv.dilate(edges, dilated, kernel, new window.cv.Point(-1, -1), 2)
 
       // Find contours
-      console.log('Finding contours...')
       const contours = new window.cv.MatVector()
       const hierarchy = new window.cv.Mat()
       window.cv.findContours(dilated, contours, hierarchy, window.cv.RETR_EXTERNAL, window.cv.CHAIN_APPROX_SIMPLE)
-
-      console.log('Found', contours.size(), 'contours')
 
       if (contours.size() === 0) {
         throw new Error("Geen objecten gevonden in de afbeelding. Probeer een afbeelding met duidelijker randen.")
@@ -161,23 +150,9 @@ export default function ImageTo3D({ onAddToScene }: ImageTo3DProps) {
         contour.delete()
       }
 
-      console.log('Largest contour area:', largestContourArea)
-
       // Approximate the largest contour with Douglas-Peucker
-      console.log('Approximating contour with Douglas-Peucker...')
       const largestContour = contours.get(largestContourIdx)
-      console.log('Raw contour has', largestContour.rows, 'points')
 
-      // DEBUG: Log raw OpenCV contour data
-      console.log('Raw OpenCV contour data (first 10 points):')
-      for (let i = 0; i < Math.min(10, largestContour.rows); i++) {
-        const ptr = largestContour.intPtr(i)
-        const x = ptr[0]
-        const y = ptr[1]
-        console.log(`Point ${i}: (${x}, ${y})`)
-      }
-
-      // Skip Douglas-Peucker for now to see raw contour
       const approxContour = largestContour.clone() // Use raw contour instead of approximated
 
       // Convert OpenCV contour to Three.js Vector2 array
@@ -189,12 +164,8 @@ export default function ImageTo3D({ onAddToScene }: ImageTo3DProps) {
         const x = rawX / width - 0.5
         const y = -(rawY / height - 0.5)
 
-        console.log(`Converting point ${i}: (${rawX}, ${rawY}) -> (${x.toFixed(3)}, ${y.toFixed(3)})`)
         contourPoints.push(new THREE.Vector2(x, y))
       }
-
-      console.log('Extracted', contourPoints.length, 'contour points')
-      console.log('First few points:', contourPoints.slice(0, 5).map(p => `(${p.x.toFixed(3)}, ${p.y.toFixed(3)})`))
 
       if (contourPoints.length < 5) {
         throw new Error("Object te klein. Probeer een grotere of duidelijker afbeelding.")
@@ -202,17 +173,8 @@ export default function ImageTo3D({ onAddToScene }: ImageTo3DProps) {
 
       // Ensure the contour is closed (first and last points should be the same)
       if (contourPoints.length > 0 && !contourPoints[0].equals(contourPoints[contourPoints.length - 1])) {
-        console.log('Closing contour by adding first point to end')
         contourPoints.push(contourPoints[0].clone())
       }
-
-      console.log('Final contour points:', contourPoints.length)
-      console.log('Shape bounds check:')
-      const minX = Math.min(...contourPoints.map(p => p.x))
-      const maxX = Math.max(...contourPoints.map(p => p.x))
-      const minY = Math.min(...contourPoints.map(p => p.y))
-      const maxY = Math.max(...contourPoints.map(p => p.y))
-      console.log(`X range: ${minX.toFixed(3)} to ${maxX.toFixed(3)}, Y range: ${minY.toFixed(3)} to ${maxY.toFixed(3)}`)
 
       // Clean up OpenCV Mats
       src.delete()
@@ -227,19 +189,15 @@ export default function ImageTo3D({ onAddToScene }: ImageTo3DProps) {
       contours.delete()
 
       // Create 3D geometry from contours
-      console.log('Creating 3D geometry from', contourPoints.length, 'contour points')
-
       let geometry: THREE.ExtrudeGeometry
       try {
         const shape = new THREE.Shape(contourPoints)
-        console.log('Shape created successfully')
-
+        
         // Try without beveling first
         geometry = new THREE.ExtrudeGeometry(shape, {
           depth: 0.2, // Increased depth
           bevelEnabled: false, // Disable beveling
         })
-        console.log('ExtrudeGeometry created successfully (no beveling)')
 
         // If that didn't work, try with minimal beveling
         if (geometry.attributes.position.count === 0) {
@@ -251,22 +209,10 @@ export default function ImageTo3D({ onAddToScene }: ImageTo3DProps) {
             bevelSize: 0.001,
             bevelSegments: 1,
           })
-          console.log('ExtrudeGeometry created with minimal beveling')
         }
-      } catch (shapeError) {
-        console.error('Failed to create shape/geometry:', shapeError)
-        // Fallback: create a simple box as test
-        console.log('Creating fallback box geometry...')
-        geometry = new THREE.BoxGeometry(1, 1, 0.2) as unknown as THREE.ExtrudeGeometry
+      } catch (err) {
+        console.error('Error creating geometry from contour:', err)
         throw new Error("Kon geen geldige 3D vorm maken van de contour. Probeer een afbeelding met duidelijker object randen.")
-      }
-
-      console.log('Geometry created with', geometry.attributes.position.count, 'vertices')
-
-      if (geometry.attributes.position.count === 0) {
-        console.error('Geometry still has 0 vertices, creating fallback box')
-        geometry = new THREE.BoxGeometry(1, 1, 0.2) as unknown as THREE.ExtrudeGeometry
-        console.log('Fallback box created with', geometry.attributes.position.count, 'vertices')
       }
 
       // Center the geometry
@@ -283,8 +229,6 @@ export default function ImageTo3D({ onAddToScene }: ImageTo3DProps) {
       const geometryScale = maxDim > 2 ? 2 / maxDim : 1
       geometry.scale(geometryScale, geometryScale, geometryScale)
 
-      console.log('Geometry scaled and centered, final size:', size.x * geometryScale, size.y * geometryScale, size.z * geometryScale)
-
       const fileName = file.name.replace(/\.[^/.]+$/, "") // Remove extension
       onAddToScene(geometry, `${fileName} (Custom)`)
 
@@ -295,8 +239,6 @@ export default function ImageTo3D({ onAddToScene }: ImageTo3DProps) {
       const previewCtx = previewCanvas.getContext("2d")!
       previewCtx.drawImage(domImg, 0, 0, 200, 200)
       setPreviewImage(previewCanvas.toDataURL())
-
-      console.log('Processing complete')
 
     } catch (err) {
       console.error('Error during image processing:', err)
