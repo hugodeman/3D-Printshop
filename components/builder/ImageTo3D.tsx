@@ -3,7 +3,7 @@
 import React, {useCallback, useRef, useState, useEffect} from "react"
 import * as THREE from "three"
 import Image from "next/image"
-import {H3, P} from "@/components/ui/Typography"
+import {H2, P} from "@/components/ui/Typography"
 import {Icon} from "@/components/ui/Icon"
 
 // OpenCV will be loaded from window.cv
@@ -279,20 +279,20 @@ export default function ImageTo3D({ onAddToScene }: ImageTo3DProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <H3>Upload je eigen afbeelding</H3>
-      <P className="text-white/70 text-sm">
-        Upload een afbeelding om deze om te zetten naar een 3D model. Gebruik afbeeldingen met duidelijke contrasten voor het beste resultaat.
+      <H2>Upload je figurine(s)</H2>
+      <P className="text-white/70">
+        Upload een afbeelding om deze om te zetten naar een 3D model. Gebruik afbeeldingen met duidelijke contrasten voor het beste resultaat. Zorg ervoor dat de afbeelding vierkant is.
       </P>
 
       {!cvReady && (
         <div className="flex items-center justify-center gap-2 p-4 bg-blue-500/20 border border-blue-500/50 rounded-lg">
           <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-500/30 border-t-blue-500"></div>
-          <P className="text-blue-400 text-sm">OpenCV laden...</P>
+          <P className="text-blue-400">OpenCV laden...</P>
         </div>
       )}
 
       <div
-        className="border-2 border-dashed border-white/30 rounded-lg p-8 text-center hover:border-white/50 transition-colors cursor-pointer"
+        className="border-2 border-dashed border-[#98CEAA]/40 rounded-lg p-8 text-center hover:border-[#98CEAA]/80 transition-colors cursor-pointer"
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onClick={() => fileInputRef.current?.click()}
@@ -319,7 +319,7 @@ export default function ImageTo3D({ onAddToScene }: ImageTo3DProps) {
           </div>
         ) : (
           <div className="flex flex-col items-center gap-4">
-            <Icon name="Upload" size={48} color="#ffffff60" />
+            <Icon name="Upload" size={48} color="#98CEAA" />
             <div>
               <P className="text-white/90 font-medium">Sleep een afbeelding hierheen</P>
               <P className="text-white/60 text-sm">of klik om te selecteren</P>

@@ -15,7 +15,6 @@ import { Icon } from "@/components/ui/Icon"
 import {H2, H3, P} from "@/components/ui/Typography"
 import { SliderInput } from "@/components/builder/SliderInput"
 import { ColorInput } from "@/components/builder/ColorInput"
-import { SceneHelp } from "@/components/builder/SceneHelp"
 import { StepButtons } from "@/components/builder/StepButtons"
 import { BuilderIntroModal } from "@/components/builder/BuilderIntroModal"
 import { BuilderResetConfirmModal } from "@/components/builder/BuilderResetConfirmModal"
@@ -440,6 +439,23 @@ export default function BuilderPage() {
 		setIsClearModalOpen(false)
 	}, [resetScene])
 
+	type HelpItem = {
+		icon: string
+		label: string
+		iconWidthClassName?: string
+	}
+
+	const [isOpen, setIsOpen] = useState(false)
+
+	const helpItems = useMemo<HelpItem[]>(() => [
+		{ icon: "Mouse", label: "Linker muisklik + slepen: scene draaien" },
+		{ icon: "SquareChevronUp", label: "Ctrl + klik + slepen: scene schuiven" },
+		{ icon: "MoveVertical", label: "Scrollen: zoomen" },
+		{ icon: "MousePointerClick", label: "Klik op modellen om te selecteren" },
+		{ icon: "Sliders", label: "Gebruik sliders om het model aan te passen" },
+		{ icon: "Paintbrush2", label: "Gebruik kleurbalken om kleur aan te passen" },
+	], [])
+
 	async function goToCheckoutOverview() {
 		if (!selectedPlatform) return
 
@@ -497,11 +513,11 @@ export default function BuilderPage() {
 				{/* Left Sidebar */}
 				<div className="flex flex-col overflow-hidden bg-white/5">
 					{/* Hierarchy */}
-					<div className="shrink-0 border-b border-white/10 ">
+					<div className="shrink-0 border-b border-white/10">
 						<button
 							type="button"
 							onClick={() => setHierarchyOpen((o) => !o)}
-							className="flex w-full items-center justify-between p-3 text-left"
+							className="flex w-full items-center justify-between p-3 text-left hover:cursor-pointer"
 						>
 							<P className="font-medium text-white/90">Hierarchy</P>
 							<Icon
@@ -514,7 +530,7 @@ export default function BuilderPage() {
 
 						{hierarchyOpen && (
 							<div className="max-h-64 overflow-y-auto overscroll-contain border-t border-white/10 px-3 pb-3 pt-2 scrollbar-hide">
-								<P className="text-white/60">Platform: {selectedPlatform?.name ?? "Nog niet gekozen"}</P>
+								<P className="text-white/80">Platform: {selectedPlatform?.name ?? "Nog niet gekozen"}</P>
 								<div className="mt-2 space-y-1">
 									{hierarchyRows.length === 0 ? (
 										<P className="text-white/40">- Geen decoraties</P>
@@ -525,7 +541,7 @@ export default function BuilderPage() {
 												type="button"
 													onClick={() => step === 2 && setSelectedId(row.instanceId)}
 													disabled={step !== 2}
-												className={`block w-full rounded px-2 py-1 text-left ${
+												className={`block w-full rounded px-2 py-1 text-left hover:cursor-pointer ${
 													selectedId === row.instanceId
 														? "bg-[#98CEAA] text-black"
 															: "bg-black/25 text-white/80"
@@ -552,7 +568,7 @@ export default function BuilderPage() {
 											key={asset.id}
 											type="button"
 											onClick={() => selectPlatform(asset)}
-											className={`rounded-lg border p-2 text-left transition ${active
+											className={`rounded-lg border p-2 text-left transition hover:cursor-pointer ${active
 												? "border-[#98CEAA] bg-[#98CEAA]/10"
 												: "border-white/10 hover:border-white/30"}`}
 										>
@@ -586,7 +602,7 @@ export default function BuilderPage() {
 											key={asset.id}
 											type="button"
 											onClick={() => addObject(asset)}
-											className="rounded-lg border border-white/10 p-2 transition hover:border-[#98CEAA]"
+											className="rounded-lg border border-white/20 p-2 transition hover:border-[#98CEAA] hover:cursor-pointer"
 										>
 											<Image
 												src={asset.thumbnail}
@@ -751,29 +767,74 @@ export default function BuilderPage() {
 							<OrbitControls makeDefault minDistance={1.5} maxDistance={30} />
 						</Canvas>
 
-					{/*help knop*/}
-					<SceneHelp />
+						{isOpen && (
+							<div className="absolute top-3 right-3 z-20 w-[min(92vw,28rem)] rounded-2xl border border-white/20 bg-[#1F2126]/95 p-4 shadow-[0_10px_25px_rgba(0,0,0,0.45)] backdrop-blur-sm">
+								<div className="mb-4 flex items-center justify-between">
+									<div className="ml-2 flex items-center gap-6">
+										<Icon name="Info" size={20} color="#98CEAA" />
+										<H2>Controls</H2>
+									</div>
+									<button
+										type="button"
+										onClick={() => setIsOpen(false)}
+										className="rounded-md px-2 py-1 hover:cursor-pointer"
+										aria-label="Sluit hulp"
+									>
+										<Icon name="X" size={30} color="#FFFFFF" />
+									</button>
+								</div>
 
-					<button
-						type="button"
-						onClick={() => setShowGrid((prev) => !prev)}
-						className="absolute z-10 flex items-center justify-center rounded-full border border-white/20 bg-[#1F2126]/80 backdrop-blur-sm transition hover:bg-[#2A2D31] bottom-[clamp(0.75rem,2vh,1.5rem)] right-[clamp(0.75rem,2vw,1.5rem)] h-[clamp(2.75rem,5vmin,3.75rem)] w-[clamp(2.75rem,5vmin,3.75rem)]"
-						aria-label={showGrid ? "Verberg grid" : "Toon grid"}
-						title={showGrid ? "Verberg grid" : "Toon grid"}
-					>
-						<Icon name="Grid" size={22} color={showGrid ? "#FFFFFF" : "#98CEAA"} className="h-[clamp(1rem,2.2vmin,1.4rem)] w-[clamp(1rem,2.2vmin,1.4rem)]" />
-					</button>
+								<div className="space-y-5">
+									{helpItems.map((item) => (
+										<div key={item.label} className="flex items-center gap-3">
+											<div className={`flex h-10 ${item.iconWidthClassName ?? "w-10"} items-center justify-center rounded-lg bg-white/5`}>
+												<Icon name={item.icon} size={20} color="#98CEAA" />
+											</div>
+											<H3 className="text-white/90">{item.label}</H3>
+										</div>
+									))}
+								</div>
+							</div>
+						)}
 
-					<button
-						type="button"
-						onClick={() => setMeasurementActive((prev) => !prev)}
-						className="absolute z-10 flex items-center justify-center rounded-full border border-white/20 bg-[#1F2126]/80 backdrop-blur-sm transition hover:bg-[#2A2D31] bottom-[clamp(0.75rem,2vh,1.5rem)] right-[clamp(5.5rem,11vw,6.5rem)] h-[clamp(2.75rem,5vmin,3.75rem)] w-[clamp(2.75rem,5vmin,3.75rem)]"
-						aria-label={measurementActive ? "Meet modus uit" : "Meet modus aan"}
-						title={measurementActive ? "Meet modus uit" : "Meet modus aan"}
-						disabled={step !== 2}
-					>
-						<Icon name="Ruler" size={22} color={measurementActive ? "#FF1493" : "#98CEAA"} className="h-[clamp(1rem,2.2vmin,1.4rem)] w-[clamp(1rem,2.2vmin,1.4rem)]" />
-					</button>
+						{/*Interaction buttons*/}
+						<div className="absolute z-10 bottom-[clamp(0.75rem,2vh,1.5rem)] right-[clamp(0.75rem,2vw,1.5rem)] flex flex-col gap-5">
+							<button
+								type="button"
+								onClick={() => setIsOpen((prev) => !prev)}
+								className="flex items-center justify-center rounded-full border border-[#98CEAA]/60 bg-black/20 backdrop-blur-sm transition hover:bg-[#2A2D31] hover:cursor-pointer h-[clamp(3rem,6vmin,5rem)] w-[clamp(3rem,6vmin,5rem)]"
+								aria-label={isOpen ? "Verberg hulp" : "Toon hulp"}
+								title={isOpen ? "Verberg hulp" : "Toon hulp"}
+							>
+								<Icon
+									name="CircleQuestionMark"
+									size={25}
+									color={isOpen ? "#98CEAA" : "#98CEAA"}
+									className="h-[clamp(1.25rem,3vmin,1.75rem)] w-[clamp(1.25rem,3vmin,1.75rem)]"
+								/>
+							</button>
+
+							<button
+								type="button"
+								onClick={() => setMeasurementActive((prev) => !prev)}
+								className="flex items-center justify-center rounded-full border border-[#98CEAA]/60 bg-black/20 backdrop-blur-sm transition hover:bg-[#2A2D31] hover:cursor-pointer bottom-[clamp(0.75rem,2vh,1.5rem)] right-[clamp(5.5rem,11vw,6.5rem)] h-[clamp(3rem,6vmin,5rem)] w-[clamp(3rem,6vmin,5rem)]"
+								aria-label={measurementActive ? "Meet modus uit" : "Meet modus aan"}
+								title={measurementActive ? "Meet modus uit" : "Meet modus aan"}
+								disabled={step !== 2}
+							>
+								<Icon name="Ruler" size={25} color={measurementActive ? "#98CEAA" : "#98CEAA"} className="h-[clamp(1.25rem,3vmin,1.75rem)] w-[clamp(1.25rem,3vmin,1.75rem)]" />
+							</button>
+
+							<button
+								type="button"
+								onClick={() => setShowGrid((prev) => !prev)}
+								className="flex items-center justify-center rounded-full border border-[#98CEAA]/60 bg-black/20 backdrop-blur-sm transition hover:bg-[#2A2D31] hover:cursor-pointer bottom-[clamp(0.75rem,2vh,1.5rem)] right-[clamp(0.75rem,2vw,1.5rem)] h-[clamp(3rem,6vmin,5rem)] w-[clamp(3rem,6vmin,5rem)]"
+								aria-label={showGrid ? "Verberg grid" : "Toon grid"}
+								title={showGrid ? "Verberg grid" : "Toon grid"}
+							>
+								<Icon name="Grid" size={25} color={showGrid ? "#98CEAA" : "#98CEAA"} className="h-[clamp(1.25rem,3vmin,1.75rem)] w-[clamp(1.25rem,3vmin,1.75rem)]" />
+							</button>
+						</div>
 					</div>
 				</div>
 
@@ -789,7 +850,7 @@ export default function BuilderPage() {
 										<div className="mb-4 flex h-22 w-22 items-center justify-center rounded-full border border-white/20 bg-[#D9D9D9]/25">
 											<Icon name="Box" size={34} color="#1F2126" />
 										</div>
-										<P className="max-w-55 text-sm">Kies een platform en selecteer je maat</P>
+										<H3 className="max-w-55">Kies een platform en selecteer je maat</H3>
 									</div>
 								) : (
 									<div className="flex flex-col gap-3">
@@ -992,7 +1053,7 @@ export default function BuilderPage() {
 								<button
 									type="button"
 									onClick={removeSelected}
-									className="w-full rounded-md border border-red-400/50 bg-red-500/20 px-3 py-2 text-sm text-red-100 mt-10"
+									className="w-full rounded-md border border-red-400/50 bg-red-500/20 px-3 py-2 text-sm text-red-100 mt-10 hover:cursor-pointer"
 								>
 									Verwijder
 								</button>
@@ -1003,7 +1064,7 @@ export default function BuilderPage() {
 								<div className="mb-4 flex h-22 w-22 items-center justify-center rounded-full bg-[#D9D9D9]/35 border border-white/20">
 									<Icon name="MousePointerClick" size={34} color="#1F2126" />
 								</div>
-								<P className="max-w-55 text-sm">Selecteer een model om deze aan te passen</P>
+								<H3 className="max-w-55">Selecteer een model om deze aan te passen</H3>
 							</div>
 						)}
 							</>
