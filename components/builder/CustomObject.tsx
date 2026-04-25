@@ -8,7 +8,9 @@ interface CustomObjectProps {
   geometry: THREE.BufferGeometry
   position: [number, number, number]
   rotationY?: number
-  scale?: number
+  rotationZ?: number
+  scaleXY?: number
+  scaleZ?: number
   color?: string
   instanceId?: string
   onReady?: (objects: THREE.Object3D[] | null) => void
@@ -18,7 +20,9 @@ export default function CustomObject({
   geometry,
   position,
   rotationY = 0,
-  scale = 1,
+  rotationZ = 0,
+  scaleXY = 1,
+  scaleZ = 1,
   color = "#FFFFFF",
   instanceId,
   onReady,
@@ -60,8 +64,8 @@ export default function CustomObject({
       geometry={clonedGeometry}
       material={material}
       position={position}
-      rotation={[0, rotationY, 0]}
-      scale={[scale, scale, scale]}
+      rotation={[0, rotationY, rotationZ]}
+      scale={[scaleXY, scaleXY, scaleZ]}
       castShadow
       receiveShadow
     />

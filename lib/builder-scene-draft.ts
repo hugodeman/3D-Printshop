@@ -3,7 +3,10 @@ export type BuilderSceneDraftObject = {
 	assetId: string
 	position: [number, number, number]
 	rotationY: number
+	rotationZ:number
 	scale: number
+	scaleXY: number;
+	scaleZ: number;
 	color: string
 	partColors?: Record<string, string>
 }

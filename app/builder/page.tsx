@@ -29,7 +29,7 @@ import {
 	getDecorationModelScale,
 	getPlatformModelScaleVector,
 } from "@/lib/builder-scene-scale"
-import { useBuilderStore } from "@/lib/builder-store"
+import { useBuilderStore, type PlacedObject } from "@/lib/builder-store"
 
 import rawModelAssets from "./model-assets.json"
 
@@ -48,16 +48,6 @@ type ModelAsset = {
 	partColors?: PartColors
 	spawnPosition?: Vec3
 	scaleLimits?: ScaleLimits
-}
-
-type PlacedObject = {
-	instanceId: string
-	assetId: string
-	position: Vec3
-	rotationY: number
-	scale: number
-	color: string
-	partColors?: PartColors
 }
 
 const POSITION_STEP = 0.05
@@ -722,7 +712,9 @@ export default function BuilderPage() {
 												geometry={geometry}
 												position={obj.position}
 												rotationY={obj.rotationY}
-												scale={obj.scale}
+												rotationZ={obj.rotationZ}
+												scaleXY={obj.scaleXY}
+												scaleZ={obj.scaleZ}
 												color={obj.color}
 												instanceId={obj.instanceId}
 												onReady={selectedId === obj.instanceId ? setOutlineSelection : undefined}
@@ -878,6 +870,21 @@ export default function BuilderPage() {
 									step={POSITION_STEP}
 								/>
 
+								{/* Y Positie — alleen voor custom objects */}
+								{selectedObject.assetId === 'custom-object' && (
+									<SliderInput
+										label="Positie Y"
+										value={selectedObject.position[1]}
+										onChange={(y) => {
+											const clamped = clamp(y, -2, 4)
+											updateSelected((o) => ({ ...o, position: [o.position[0], clamped, o.position[2]] }))
+										}}
+										min={-2}
+										max={4}
+										step={POSITION_STEP}
+									/>
+								)}
+
 								<SliderInput
 									label="Rotatie Y"
 									value={selectedObject.rotationY}
@@ -893,17 +900,59 @@ export default function BuilderPage() {
 									displayMinMax={(v) => (v === ROTATION_MIN ? "0°" : "360°")}
 								/>
 
-								<SliderInput
-									label="Schaal"
-									value={selectedObject.scale}
-									onChange={(scale) => {
-										const clamped = clamp(scale, selectedScaleLimits.min, selectedScaleLimits.max)
-										updateSelected((o) => ({ ...o, scale: clamped }))
+								{/* Rotatie Z — alleen voor custom objects */}
+								{selectedObject.assetId === 'custom-object' && (
+									<SliderInput
+										label="Rotatie Z"
+										value={selectedObject.rotationZ ?? 1}
+										onChange={(rotationZ) => {
+										const clamped = clamp(rotationZ, ROTATION_MIN, ROTATION_MAX)
+										updateSelected((o) => ({ ...o, rotationZ: clamped }))
 									}}
-									min={selectedScaleLimits.min}
-									max={selectedScaleLimits.max}
-									step={SCALE_STEP}
-								/>
+										min={ROTATION_MIN}
+										max={ROTATION_MAX}
+										step={ROTATION_STEP}
+										displayFormat={(rad) => radiansToDegrees(rad).toString()}
+										parseDisplay={(deg) => degreesToRadians(Number(deg))}
+										displayMinMax={(v) => (v === ROTATION_MIN ? "0°" : "360°")}
+									/>
+								)}
+
+								{/* Schaal — gesplitst voor custom objects, uniform voor normale */}
+								{selectedObject.assetId === 'custom-object' ? (
+									<>
+										<SliderInput
+											label="Schaal"
+											value={selectedObject.scaleXY ?? 0}
+											onChange={(v) => updateSelected((o) => ({ ...o, scaleXY: clamp(v, selectedScaleLimits.min, selectedScaleLimits.max) }))}
+											min={selectedScaleLimits.min}
+											max={selectedScaleLimits.max}
+											step={SCALE_STEP}
+										/>
+
+										<SliderInput
+											label="Schaal Z"
+											value={selectedObject.scaleZ ?? 0}
+											onChange={(v) => updateSelected((o) => ({ ...o, scaleZ: clamp(v, selectedScaleLimits.min, selectedScaleLimits.max) }))}
+											min={selectedScaleLimits.min}
+											max={selectedScaleLimits.max}
+											step={SCALE_STEP}
+										/>
+									</>
+								) : (
+									<SliderInput
+										label="Schaal"
+										value={selectedObject.scale}
+										onChange={(scale) => {
+											const clamped = clamp(scale, selectedScaleLimits.min, selectedScaleLimits.max)
+											updateSelected((o) => ({ ...o, scale: clamped }))
+										}}
+										min={selectedScaleLimits.min}
+										max={selectedScaleLimits.max}
+										step={SCALE_STEP}
+									/>
+								)}
+
 								{/* colors */}
 								{selectedObjectAsset?.partColors && Object.keys(selectedObjectAsset.partColors).length > 0 && (
 									<div className="border-t border-white/10 pt-5 mt-5 ">
