@@ -822,7 +822,7 @@ export default function BuilderPage() {
 								title={measurementActive ? "Meet modus uit" : "Meet modus aan"}
 								disabled={step !== 2}
 							>
-								<Icon name="Ruler" size={25} color={measurementActive ? "#d0e3d3" : "#98CEAA"} className="h-[clamp(1.25rem,3vmin,1.75rem)] w-[clamp(1.25rem,3vmin,1.75rem)]" />
+								<Icon name="Ruler" size={25} color={measurementActive ? "#98CEAA" : "#d0e3d3"} className="h-[clamp(1.25rem,3vmin,1.75rem)] w-[clamp(1.25rem,3vmin,1.75rem)]" />
 							</button>
 
 							<button

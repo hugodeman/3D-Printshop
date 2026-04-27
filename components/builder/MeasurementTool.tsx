@@ -14,16 +14,40 @@ interface MeasurementToolProps {
 export function MeasurementTool({ enabled, onMeasure }: MeasurementToolProps) {
   const { camera, gl, scene } = useThree()
   const [measurePoints, setMeasurePoints] = useState<THREE.Vector3[]>([])
+  const [linePoints, setLinePoints] = useState<THREE.Vector3[]>([])
   const [distance, setDistance] = useState<number | null>(null)
   const raycasterRef = useRef(new THREE.Raycaster())
   const mouseRef = useRef(new THREE.Vector2())
+  const pointerStart = useRef<{ x: number; y: number } | null>(null)
+  const CLICK_MOVE_THRESHOLD = 5
 
   useEffect(() => {
     if (!enabled) return
 
-    const handleMouseClick = (e: MouseEvent) => {
-      // Only measure on Shift+Click
-      if (!e.shiftKey) return
+    const handlePointerDown = (e: PointerEvent) => {
+      if (e.button !== 0) return
+      pointerStart.current = { x: e.clientX, y: e.clientY }
+    }
+
+    const handlePointerUp = (e: PointerEvent) => {
+      if (e.button !== 0) return
+      if (!pointerStart.current) return
+
+      const dx = e.clientX - pointerStart.current.x
+      const dy = e.clientY - pointerStart.current.y
+      const moved = Math.sqrt(dx * dx + dy * dy)
+      pointerStart.current = null
+
+      // Dragging → niet meten
+      if (moved > CLICK_MOVE_THRESHOLD) return
+      if (!e.shiftKey) {
+        // Gewone klik zonder shift → reset meting
+        setMeasurePoints([])
+        setLinePoints([])
+        setDistance(null)
+        onMeasure?.(0)
+        return
+      }
 
       const canvas = gl.domElement
       const rect = canvas.getBoundingClientRect()
@@ -32,90 +56,59 @@ export function MeasurementTool({ enabled, onMeasure }: MeasurementToolProps) {
 
       raycasterRef.current.setFromCamera(mouseRef.current, camera)
 
-      // Get all meshes in scene
       const allObjects: THREE.Object3D[] = []
       scene.traverse((obj) => {
-        if (obj instanceof THREE.Mesh) {
-          allObjects.push(obj)
-        }
+        if (obj instanceof THREE.Mesh) allObjects.push(obj)
       })
 
       const intersects = raycasterRef.current.intersectObjects(allObjects, true)
+      if (intersects.length === 0) return
 
-      if (intersects.length > 0) {
-        const point = intersects[0].point.clone()
+      const point = intersects[0].point.clone()
 
-        setMeasurePoints((prev) => {
-          if (prev.length === 0) {
-            // First point
-            return [point]
-          } else if (prev.length === 1) {
-            // Second point - calculate distance on X, Y, or Z axis only
-            const p1 = prev[0]
-            const p2 = point
+      setMeasurePoints((prev) => {
+        if (prev.length === 0) {
+          return [point]
+        } else if (prev.length === 1) {
+          const p1 = prev[0]
 
-            // Determine which axis to measure (X, Y, or Z, whichever is largest difference)
-            const xDiff = Math.abs(p2.x - p1.x)
-            const yDiff = Math.abs(p2.y - p1.y)
-            const zDiff = Math.abs(p2.z - p1.z)
+          const calculatedDistance = p1.distanceTo(point)
 
-            let calculatedDistance: number
+          setDistance(calculatedDistance)
+          onMeasure?.(calculatedDistance)
+          setLinePoints([p1, point])
 
-            if (xDiff >= yDiff && xDiff >= zDiff) {
-              // Measure on X axis (width)
-              calculatedDistance = xDiff
-              console.log("x-as is groter")
-            } else if (yDiff >= xDiff && yDiff >= zDiff) {
-              // Measure on Y axis (height)
-              calculatedDistance = yDiff
-              console.log("y-as is groter")
-            } else {
-              // Measure on Z axis (depth)
-              calculatedDistance = zDiff
-              console.log("z-as is groter")
-            }
-
-            setDistance(calculatedDistance * 5)
-            onMeasure?.(calculatedDistance * 5)
-
-            // Reset after showing measurement
-            setTimeout(() => {
-              setMeasurePoints([])
-              setDistance(null)
-            }, 2000)
-
-            return []
-          }
-          return prev
-        })
-      }
+          // Beide bolletjes blijven staan, klaar voor nieuwe meting
+          return [prev[0], point]
+        }
+        // Na twee punten → begin opnieuw bij dit punt
+        setLinePoints([])
+        setDistance(null)
+        return [point]
+      })
     }
 
-    window.addEventListener("click", handleMouseClick)
-    return () => window.removeEventListener("click", handleMouseClick)
+    const canvas = gl.domElement
+    canvas.addEventListener("pointerdown", handlePointerDown)
+    canvas.addEventListener("pointerup", handlePointerUp)
+    return () => {
+      canvas.removeEventListener("pointerdown", handlePointerDown)
+      canvas.removeEventListener("pointerup", handlePointerUp)
+    }
   }, [enabled, camera, gl.domElement, scene, onMeasure])
 
   return (
-    <group>
-      {/* Show measurement line if we have both points */}
-      {measurePoints.length === 2 && (
-        <Line
-          points={measurePoints}
-          color="#FF1493"
-          lineWidth={4}
-          transparent
-          opacity={0.8}
-        />
-      )}
-
-      {/* Show first measurement point as sphere */}
-      {measurePoints.map((point, idx) => (
-        <mesh key={idx} position={point}>
-          <sphereGeometry args={[0.1, 16, 16]} />
-          <meshBasicMaterial color={idx === 0 ? "#00FF00" : "#FF0000"} />
-        </mesh>
-      ))}
-    </group>
+      <group>
+        {linePoints.length === 2 && (
+            <Line points={linePoints} color="#FF1493" lineWidth={4} transparent opacity={0.8} />
+        )}
+        {measurePoints.map((point, idx) => (
+            <mesh key={idx} position={point}>
+              <sphereGeometry args={[0.1, 16, 16]} />
+              <meshBasicMaterial color={idx === 0 ? "#00FF00" : "#FF0000"} />
+            </mesh>
+        ))}
+      </group>
   )
 }
 
