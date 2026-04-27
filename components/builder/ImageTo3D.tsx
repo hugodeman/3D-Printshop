@@ -29,48 +29,31 @@ export default function ImageTo3D({ onAddToScene }: ImageTo3DProps) {
 
   // Wait for OpenCV to load
   useEffect(() => {
-    // Only load OpenCV once per page load
-    if (cvReady || document.querySelector('script[src*="opencv.js"]')) {
+    // OpenCV is al geladen (component was eerder gemount)
+    if (window.cv && window.cv.Mat) {
+      setCvReady(true)
       return
     }
 
-    const loadOpenCV = async () => {
-      try {
-        // Check if OpenCV is already loaded
+    // Script zit al in de DOM maar is nog niet klaar
+    if (document.querySelector('script[src*="opencv.js"]')) {
+      const interval = setInterval(() => {
         if (window.cv && window.cv.Mat) {
-          console.log('OpenCV already loaded')
           setCvReady(true)
-          return
+          clearInterval(interval)
         }
-
-        // Check if script is already in document
-        const existingScript = document.querySelector('script[src*="opencv.js"]')
-        if (existingScript) {
-          return
-        }
-
-        // Load OpenCV from CDN
-        const script = document.createElement('script')
-        script.src = 'https://docs.opencv.org/4.5.2/opencv.js'
-        script.async = true
-        script.onload = () => {
-          console.log('OpenCV loaded successfully from CDN')
-          setCvReady(true)
-        }
-        script.onerror = () => {
-          console.error('Failed to load OpenCV from CDN')
-          setError('OpenCV kon niet worden geladen van CDN')
-        }
-        document.head.appendChild(script)
-      } catch (err) {
-        console.error('Failed to load OpenCV:', err)
-        setError('OpenCV kon niet worden geladen')
-      }
+      }, 100)
+      return () => clearInterval(interval)
     }
 
-    loadOpenCV()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // Empty dependency array - this effect should only run once on mount
+    // Script nog niet geladen, voeg toe
+    const script = document.createElement('script')
+    script.src = 'https://docs.opencv.org/4.5.2/opencv.js'
+    script.async = true
+    script.onload = () => setCvReady(true)
+    script.onerror = () => setError('OpenCV kon niet worden geladen van CDN')
+    document.head.appendChild(script)
+  }, [])
 
   const processImage = useCallback(async (file: File) => {
     if (!cvReady) {

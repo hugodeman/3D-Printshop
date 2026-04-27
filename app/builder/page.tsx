@@ -809,7 +809,7 @@ export default function BuilderPage() {
 								<Icon
 									name="CircleQuestionMark"
 									size={25}
-									color={isOpen ? "#98CEAA" : "#98CEAA"}
+									color={isOpen ? "#98CEAA" : "#d0e3d3"}
 									className="h-[clamp(1.25rem,3vmin,1.75rem)] w-[clamp(1.25rem,3vmin,1.75rem)]"
 								/>
 							</button>
@@ -822,7 +822,7 @@ export default function BuilderPage() {
 								title={measurementActive ? "Meet modus uit" : "Meet modus aan"}
 								disabled={step !== 2}
 							>
-								<Icon name="Ruler" size={25} color={measurementActive ? "#98CEAA" : "#98CEAA"} className="h-[clamp(1.25rem,3vmin,1.75rem)] w-[clamp(1.25rem,3vmin,1.75rem)]" />
+								<Icon name="Ruler" size={25} color={measurementActive ? "#d0e3d3" : "#98CEAA"} className="h-[clamp(1.25rem,3vmin,1.75rem)] w-[clamp(1.25rem,3vmin,1.75rem)]" />
 							</button>
 
 							<button
@@ -832,7 +832,7 @@ export default function BuilderPage() {
 								aria-label={showGrid ? "Verberg grid" : "Toon grid"}
 								title={showGrid ? "Verberg grid" : "Toon grid"}
 							>
-								<Icon name="Grid" size={25} color={showGrid ? "#98CEAA" : "#98CEAA"} className="h-[clamp(1.25rem,3vmin,1.75rem)] w-[clamp(1.25rem,3vmin,1.75rem)]" />
+								<Icon name="Grid" size={25} color={showGrid ? "#d0e3d3" : "#98CEAA"} className="h-[clamp(1.25rem,3vmin,1.75rem)] w-[clamp(1.25rem,3vmin,1.75rem)]" />
 							</button>
 						</div>
 					</div>
