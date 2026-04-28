@@ -74,8 +74,8 @@ export function MeasurementTool({ enabled, onMeasure }: MeasurementToolProps) {
 
           const calculatedDistance = p1.distanceTo(point)
 
-          setDistance(calculatedDistance)
-          onMeasure?.(calculatedDistance)
+          setDistance(calculatedDistance *5)
+          onMeasure?.(calculatedDistance *5)
           setLinePoints([p1, point])
 
           // Beide bolletjes blijven staan, klaar voor nieuwe meting
@@ -117,7 +117,7 @@ export function MeasurementDisplay({ distance, isActive }: { distance: number | 
 
   return (
     <div className="absolute top-4 left-4 bg-black/80 border border-[#FF1493] rounded-lg p-3 z-50">
-      {distance === null ? (
+      {distance === null || distance === 0 ? (
         <>
           <P className="text-[#FF1493] text-sm font-mono">Meet modus ACTIEF</P>
           <P className="text-white/60 text-xs">Shift + klik voor punt 1</P>
