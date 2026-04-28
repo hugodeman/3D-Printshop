@@ -329,6 +329,7 @@ export default function BuilderPage() {
 	const [isCapturing, setIsCapturing] = useState(false)
 	const [showGrid, setShowGrid] = useState(true)
 	const [isIntroOpen, setIsIntroOpen] = useState(false)
+	const [isOpen, setIsOpen] = useState(false)
 	const [isClearModalOpen, setIsClearModalOpen] = useState(false)
 	const [captureCanvas, setCaptureCanvas] = useState<(() => string | null) | null>(null)
 	const [measurementActive, setMeasurementActive] = useState(false)
@@ -337,10 +338,14 @@ export default function BuilderPage() {
 		// Store function-as-value, not as updater
 		setCaptureCanvas(() => nextCapture)
 	}, [])
+
 	useEffect(() => {
 		const hasSeenIntro = window.localStorage.getItem(BUILDER_INTRO_SEEN_KEY)
+		const hasSeenControls = window.localStorage.getItem(BUILDER_INTRO_SEEN_KEY)
 		if (!hasSeenIntro) setIsIntroOpen(true)
+		if (!hasSeenControls) setIsOpen(true)
 	}, [])
+
 	const closeIntro = useCallback(() => {
 		window.localStorage.setItem(BUILDER_INTRO_SEEN_KEY, "1")
 		setIsIntroOpen(false)
@@ -447,8 +452,6 @@ export default function BuilderPage() {
 		iconWidthClassName?: string
 	}
 
-	const [isOpen, setIsOpen] = useState(false)
-
 	const helpItems = useMemo<HelpItem[]>(() => [
 		{ icon: "Mouse", label: "Linker muisklik + slepen: scene draaien" },
 		{ icon: "SquareChevronUp", label: "Ctrl + klik + slepen: scene schuiven" },
@@ -456,6 +459,7 @@ export default function BuilderPage() {
 		{ icon: "MousePointerClick", label: "Klik op modellen om te selecteren" },
 		{ icon: "Sliders", label: "Gebruik sliders om het model aan te passen" },
 		{ icon: "Paintbrush2", label: "Gebruik kleurbalken om kleur aan te passen" },
+		{ icon: "Ruler", label: "Zet measure aan om 2 punten te meten" },
 	], [])
 
 	async function goToCheckoutOverview() {
