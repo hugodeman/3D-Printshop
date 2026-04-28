@@ -8,16 +8,19 @@ import { BlendFunction } from "postprocessing"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { Color, type Material, type Mesh, type Object3D, Raycaster, Vector2, type Group as THREE_Group } from "three"
+import * as THREE from "three"
 
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import {H2, H3, P} from "@/components/ui/Typography"
 import { SliderInput } from "@/components/builder/SliderInput"
 import { ColorInput } from "@/components/builder/ColorInput"
-import { SceneHelp } from "@/components/builder/SceneHelp"
 import { StepButtons } from "@/components/builder/StepButtons"
 import { BuilderIntroModal } from "@/components/builder/BuilderIntroModal"
 import { BuilderResetConfirmModal } from "@/components/builder/BuilderResetConfirmModal"
+import ImageTo3D from "@/components/builder/ImageTo3D"
+import CustomObject from "@/components/builder/CustomObject"
+import { MeasurementTool, MeasurementDisplay } from "@/components/builder/MeasurementTool"
 
 import { saveBuilderCheckoutDraft } from "@/lib/builder-checkout-draft"
 import {
@@ -25,7 +28,7 @@ import {
 	getDecorationModelScale,
 	getPlatformModelScaleVector,
 } from "@/lib/builder-scene-scale"
-import { useBuilderStore } from "@/lib/builder-store"
+import { useBuilderStore, type PlacedObject } from "@/lib/builder-store"
 
 import rawModelAssets from "./model-assets.json"
 
@@ -44,16 +47,6 @@ type ModelAsset = {
 	partColors?: PartColors
 	spawnPosition?: Vec3
 	scaleLimits?: ScaleLimits
-}
-
-type PlacedObject = {
-	instanceId: string
-	assetId: string
-	position: Vec3
-	rotationY: number
-	scale: number
-	color: string
-	partColors?: PartColors
 }
 
 const POSITION_STEP = 0.05
@@ -323,6 +316,7 @@ export default function BuilderPage() {
 	const setSelectedPlatformColor = useBuilderStore((state) => state.setSelectedPlatformColor)
 	const setSelectedPlatformSize = useBuilderStore((state) => state.setSelectedPlatformSize)
 	const addObjectToStore = useBuilderStore((state) => state.addObject)
+	const addCustomObjectToStore = useBuilderStore((state) => state.addCustomObject)
 	const updateSelectedInStore = useBuilderStore((state) => state.updateSelected)
 	const removeSelectedFromStore = useBuilderStore((state) => state.removeSelected)
 	const setSelectedId = useBuilderStore((state) => state.setSelectedId)
@@ -335,16 +329,23 @@ export default function BuilderPage() {
 	const [isCapturing, setIsCapturing] = useState(false)
 	const [showGrid, setShowGrid] = useState(true)
 	const [isIntroOpen, setIsIntroOpen] = useState(false)
+	const [isOpen, setIsOpen] = useState(false)
 	const [isClearModalOpen, setIsClearModalOpen] = useState(false)
 	const [captureCanvas, setCaptureCanvas] = useState<(() => string | null) | null>(null)
+	const [measurementActive, setMeasurementActive] = useState(false)
+	const [lastMeasurement, setLastMeasurement] = useState<number | null>(null)
 	const handleCaptureReady = useCallback((nextCapture: (() => string | null) | null) => {
 		// Store function-as-value, not as updater
 		setCaptureCanvas(() => nextCapture)
 	}, [])
+
 	useEffect(() => {
 		const hasSeenIntro = window.localStorage.getItem(BUILDER_INTRO_SEEN_KEY)
+		const hasSeenControls = window.localStorage.getItem(BUILDER_INTRO_SEEN_KEY)
 		if (!hasSeenIntro) setIsIntroOpen(true)
+		if (!hasSeenControls) setIsOpen(true)
 	}, [])
+
 	const closeIntro = useCallback(() => {
 		window.localStorage.setItem(BUILDER_INTRO_SEEN_KEY, "1")
 		setIsIntroOpen(false)
@@ -367,15 +368,18 @@ export default function BuilderPage() {
 			const currentCount = (countsByAssetId.get(obj.assetId) ?? 0) + 1
 			countsByAssetId.set(obj.assetId, currentCount)
 
+			const asset = assetsById.get(obj.assetId)
+			const name = asset?.name ?? "Figurine"
+
 			return {
 				instanceId: obj.instanceId,
-				label: `${assetsById.get(obj.assetId)?.name ?? "Onbekend"} ${currentCount}`,
+				label: `${name} ${currentCount}`,
 			}
 		})
 	}, [placedObjects])
 
 	const canGoToStep2 = Boolean(selectedPlatformId)
-	const canGoToCheckout = canGoToStep2 && placedObjects.length > 0
+	const canGoToCheckout = canGoToStep2 && placedObjects.filter((obj) => obj.assetId !== 'custom-object').length > 0
 	const canClearScene = Boolean(selectedPlatformId) || placedObjects.length > 0
 	const selectedScaleLimits = getAssetScaleLimits(selectedObjectAsset)
 	const positionMin = -(selectedPlatformSize / BASE_PLATFORM_SIZE_CM) + 0.1
@@ -409,7 +413,9 @@ export default function BuilderPage() {
 
 	function selectPlatform(asset: ModelAsset) {
 		const normalizedColor = normalizeHexColor(asset.color) ?? DEFAULT_PLATFORM_COLOR
-		selectPlatformInStore(asset.id, normalizedColor)
+		const colorToUse = selectedPlatformColor ?? normalizedColor;
+
+		selectPlatformInStore(asset.id, colorToUse)
 		setSelectedPlatformColorInput(normalizedColor)
 	}
 
@@ -440,15 +446,34 @@ export default function BuilderPage() {
 		setIsClearModalOpen(false)
 	}, [resetScene])
 
+	type HelpItem = {
+		icon: string
+		label: string
+		iconWidthClassName?: string
+	}
+
+	const helpItems = useMemo<HelpItem[]>(() => [
+		{ icon: "Mouse", label: "Linker muisklik + slepen: scene draaien" },
+		{ icon: "SquareChevronUp", label: "Ctrl + klik + slepen: scene schuiven" },
+		{ icon: "MoveVertical", label: "Scrollen: zoomen" },
+		{ icon: "MousePointerClick", label: "Klik op modellen om te selecteren" },
+		{ icon: "Sliders", label: "Gebruik sliders om het model aan te passen" },
+		{ icon: "Paintbrush2", label: "Gebruik kleurbalken om kleur aan te passen" },
+		{ icon: "Ruler", label: "Zet measure aan om 2 punten te meten" },
+	], [])
+
 	async function goToCheckoutOverview() {
 		if (!selectedPlatform) return
 
 		let previewImage: string | undefined
 		try {
 			// Hide the grid, wait 2 frames so R3F renders a clean frame without it, then capture
+			setSelectedId(null)
+			setOutlineSelection(null)
 			setIsCapturing(true)
+
 			await new Promise<void>((resolve) => {
-				requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+				requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
 			})
 
 			previewImage = captureCanvas?.() ?? undefined
@@ -464,17 +489,19 @@ export default function BuilderPage() {
 			platformName: selectedPlatform.name,
 			platformSize: selectedPlatformSize,
 			platformColor: selectedPlatformColor,
-			decorations: placedObjects.map((obj) => ({
-				instanceId: obj.instanceId,
-				assetId: obj.assetId,
-				name: assetsById.get(obj.assetId)?.name ?? "Onbekend",
-				position: obj.position,
-				rotationY: obj.rotationY,
-				scale: obj.scale,
-				color: obj.color,
-				partColors: obj.partColors,
-			})),
-			totalItems: placedObjects.length,
+			decorations: placedObjects
+				.filter((obj) => obj.assetId !== 'custom-object') // Exclude custom objects from checkout
+				.map((obj) => ({
+					instanceId: obj.instanceId,
+					assetId: obj.assetId,
+					name: assetsById.get(obj.assetId)?.name ?? "Onbekend",
+					position: obj.position,
+					rotationY: obj.rotationY,
+					scale: obj.scale,
+					color: obj.color,
+					partColors: obj.partColors,
+				})),
+			totalItems: placedObjects.filter((obj) => obj.assetId !== 'custom-object').length, // Exclude custom objects from count
 			createdAt: new Date().toISOString(),
 			previewImage,
 		})
@@ -495,11 +522,11 @@ export default function BuilderPage() {
 				{/* Left Sidebar */}
 				<div className="flex flex-col overflow-hidden bg-white/5">
 					{/* Hierarchy */}
-					<div className="shrink-0 border-b border-white/10 ">
+					<div className="shrink-0 border-b border-white/10">
 						<button
 							type="button"
 							onClick={() => setHierarchyOpen((o) => !o)}
-							className="flex w-full items-center justify-between p-3 text-left"
+							className="flex w-full items-center justify-between p-3 text-left hover:cursor-pointer"
 						>
 							<P className="font-medium text-white/90">Hierarchy</P>
 							<Icon
@@ -512,7 +539,7 @@ export default function BuilderPage() {
 
 						{hierarchyOpen && (
 							<div className="max-h-64 overflow-y-auto overscroll-contain border-t border-white/10 px-3 pb-3 pt-2 scrollbar-hide">
-								<P className="text-white/60">Platform: {selectedPlatform?.name ?? "Nog niet gekozen"}</P>
+								<P className="text-white/80">Platform: {selectedPlatform?.name ?? "Nog niet gekozen"}</P>
 								<div className="mt-2 space-y-1">
 									{hierarchyRows.length === 0 ? (
 										<P className="text-white/40">- Geen decoraties</P>
@@ -523,7 +550,7 @@ export default function BuilderPage() {
 												type="button"
 													onClick={() => step === 2 && setSelectedId(row.instanceId)}
 													disabled={step !== 2}
-												className={`block w-full rounded px-2 py-1 text-left ${
+												className={`block w-full rounded px-2 py-1 text-left hover:cursor-pointer ${
 													selectedId === row.instanceId
 														? "bg-[#98CEAA] text-black"
 															: "bg-black/25 text-white/80"
@@ -550,7 +577,7 @@ export default function BuilderPage() {
 											key={asset.id}
 											type="button"
 											onClick={() => selectPlatform(asset)}
-											className={`rounded-lg border p-2 text-left transition ${active
+											className={`rounded-lg border p-2 text-left transition hover:cursor-pointer ${active
 												? "border-[#98CEAA] bg-[#98CEAA]/10"
 												: "border-white/10 hover:border-white/30"}`}
 										>
@@ -572,6 +599,11 @@ export default function BuilderPage() {
 
 						{step === 2 && (
 							<div className="flex flex-col gap-3">
+								{/* Image to 3D Upload */}
+								<div className="border-b border-white/10 mt-2 pb-4 mb-4">
+									<ImageTo3D onAddToScene={addCustomObjectToStore} />
+								</div>
+
 								<H2>Voeg decoraties toe</H2>
 								<div className="grid grid-cols-2 gap-2">
 									{decorationAssets.map((asset) => (
@@ -579,7 +611,7 @@ export default function BuilderPage() {
 											key={asset.id}
 											type="button"
 											onClick={() => addObject(asset)}
-											className="rounded-lg border border-white/10 p-2 transition hover:border-[#98CEAA]"
+											className="rounded-lg border border-white/20 p-2 transition hover:border-[#98CEAA] hover:cursor-pointer"
 										>
 											<Image
 												src={asset.thumbnail}
@@ -619,13 +651,14 @@ export default function BuilderPage() {
 						/>
 					</div>
 
-					{/* Canvas */}
-					<div className="relative flex-1">
-						<Canvas
-							camera={{ position: [4.5, 4.5, 4.5], fov: 46 }}
-							dpr={1}
-							gl={{ preserveDrawingBuffer: true }}
-						>
+				{/* Canvas */}
+				<div className="relative flex-1">
+					<MeasurementDisplay distance={lastMeasurement} isActive={measurementActive} />
+					<Canvas
+						camera={{ position: [4.5, 4.5, 4.5], fov: 46 }}
+						dpr={1}
+						gl={{ preserveDrawingBuffer: true }}
+					>
 							<color attach="background" args={["#1F2126"]} />
 							<ambientLight intensity={0.5} />
 							<directionalLight position={[6, 9, 4]} intensity={1.2} />
@@ -657,22 +690,63 @@ export default function BuilderPage() {
 									/>
 								)}
 
+								{/* Measurement Tool */}
+								{step === 2 && (
+									<MeasurementTool
+										enabled={measurementActive}
+										onMeasure={setLastMeasurement}
+									/>
+								)}
+
 								{placedObjects.map((obj) => {
 									const asset = assetsById.get(obj.assetId)
-									if (!asset) return null
-									return (
-										<GLTFObject
-											key={obj.instanceId}
-											instanceId={obj.instanceId}
-											modelPath={asset.modelPath}
-											position={obj.position}
-											rotationY={obj.rotationY}
-											scale={obj.scale}
-											tintColor={obj.color}
-											partColors={obj.partColors}
-											onReady={selectedId === obj.instanceId ? setOutlineSelection : undefined}
-										/>
-									)
+									if (asset) {
+										// Regular GLTF object
+										return (
+											<GLTFObject
+												key={obj.instanceId}
+												instanceId={obj.instanceId}
+												modelPath={asset.modelPath}
+												position={obj.position}
+												rotationY={obj.rotationY}
+												scale={obj.scale}
+												tintColor={obj.color}
+												partColors={obj.partColors}
+												onReady={selectedId === obj.instanceId ? setOutlineSelection : undefined}
+											/>
+										)
+									} else if (obj.customGeometry) {
+										// Custom object from image
+										const geometry = new THREE.BufferGeometry()
+										geometry.setAttribute('position', new THREE.Float32BufferAttribute(obj.customGeometry.vertices, 3))
+										if (obj.customGeometry.indices) {
+											geometry.setIndex(obj.customGeometry.indices)
+										}
+										if (obj.customGeometry.normals) {
+											geometry.setAttribute('normal', new THREE.Float32BufferAttribute(obj.customGeometry.normals, 3))
+										}
+										if (obj.customGeometry.uvs) {
+											geometry.setAttribute('uv', new THREE.Float32BufferAttribute(obj.customGeometry.uvs, 2))
+										}
+										geometry.computeBoundingBox()
+										geometry.computeVertexNormals()
+
+										return (
+											<CustomObject
+												key={obj.instanceId}
+												geometry={geometry}
+												position={obj.position}
+												rotationY={obj.rotationY}
+												rotationZ={obj.rotationZ}
+												scaleXY={obj.scaleXY}
+												scaleZ={obj.scaleZ}
+												color={obj.color}
+												instanceId={obj.instanceId}
+												onReady={selectedId === obj.instanceId ? setOutlineSelection : undefined}
+											/>
+										)
+									}
+									return null
 								})}
 
 								{step === 2 && (
@@ -702,18 +776,74 @@ export default function BuilderPage() {
 							<OrbitControls makeDefault minDistance={1.5} maxDistance={30} />
 						</Canvas>
 
-						{/*help knop*/}
-						<SceneHelp />
+						{isOpen && (
+							<div className="absolute top-3 right-3 z-20 w-[min(92vw,28rem)] rounded-2xl border border-white/20 bg-[#1F2126]/95 p-4 shadow-[0_10px_25px_rgba(0,0,0,0.45)] backdrop-blur-sm">
+								<div className="mb-4 flex items-center justify-between">
+									<div className="ml-2 flex items-center gap-6">
+										<Icon name="Info" size={20} color="#98CEAA" />
+										<H2>Controls</H2>
+									</div>
+									<button
+										type="button"
+										onClick={() => setIsOpen(false)}
+										className="rounded-md px-2 py-1 hover:cursor-pointer"
+										aria-label="Sluit hulp"
+									>
+										<Icon name="X" size={30} color="#FFFFFF" />
+									</button>
+								</div>
 
-						<button
-							type="button"
-							onClick={() => setShowGrid((prev) => !prev)}
-							className="absolute z-10 flex items-center justify-center rounded-full border border-white/20 bg-[#1F2126]/80 backdrop-blur-sm transition hover:bg-[#2A2D31] bottom-[clamp(0.75rem,2vh,1.5rem)] right-[clamp(0.75rem,2vw,1.5rem)] h-[clamp(2.75rem,5vmin,3.75rem)] w-[clamp(2.75rem,5vmin,3.75rem)]"
-							aria-label={showGrid ? "Verberg grid" : "Toon grid"}
-							title={showGrid ? "Verberg grid" : "Toon grid"}
-						>
-							<Icon name="Grid" size={22} color={showGrid ? "#FFFFFF" : "#98CEAA"} className="h-[clamp(1rem,2.2vmin,1.4rem)] w-[clamp(1rem,2.2vmin,1.4rem)]" />
-						</button>
+								<div className="space-y-5">
+									{helpItems.map((item) => (
+										<div key={item.label} className="flex items-center gap-3">
+											<div className={`flex h-10 ${item.iconWidthClassName ?? "w-10"} items-center justify-center rounded-lg bg-white/5`}>
+												<Icon name={item.icon} size={20} color="#98CEAA" />
+											</div>
+											<H3 className="text-white/90">{item.label}</H3>
+										</div>
+									))}
+								</div>
+							</div>
+						)}
+
+						{/*Interaction buttons*/}
+						<div className="absolute z-10 bottom-[clamp(0.75rem,2vh,1.5rem)] right-[clamp(0.75rem,2vw,1.5rem)] flex flex-col gap-5">
+							<button
+								type="button"
+								onClick={() => setIsOpen((prev) => !prev)}
+								className="flex items-center justify-center rounded-full border border-[#98CEAA]/60 bg-black/20 backdrop-blur-sm transition hover:bg-[#2A2D31] hover:cursor-pointer h-[clamp(3rem,6vmin,5rem)] w-[clamp(3rem,6vmin,5rem)]"
+								aria-label={isOpen ? "Verberg hulp" : "Toon hulp"}
+								title={isOpen ? "Verberg hulp" : "Toon hulp"}
+							>
+								<Icon
+									name="CircleQuestionMark"
+									size={25}
+									color={isOpen ? "#98CEAA" : "#d0e3d3"}
+									className="h-[clamp(1.25rem,3vmin,1.75rem)] w-[clamp(1.25rem,3vmin,1.75rem)]"
+								/>
+							</button>
+
+							<button
+								type="button"
+								onClick={() => setMeasurementActive((prev) => !prev)}
+								className="flex items-center justify-center rounded-full border border-[#98CEAA]/60 bg-black/20 backdrop-blur-sm transition hover:bg-[#2A2D31] hover:cursor-pointer bottom-[clamp(0.75rem,2vh,1.5rem)] right-[clamp(5.5rem,11vw,6.5rem)] h-[clamp(3rem,6vmin,5rem)] w-[clamp(3rem,6vmin,5rem)]"
+								aria-label={measurementActive ? "Meet modus uit" : "Meet modus aan"}
+								title={measurementActive ? "Meet modus uit" : "Meet modus aan"}
+								disabled={step !== 2}
+							>
+								<Icon name="Ruler" size={25} color={measurementActive ? "#98CEAA" : "#d0e3d3"} className="h-[clamp(1.25rem,3vmin,1.75rem)] w-[clamp(1.25rem,3vmin,1.75rem)]" />
+							</button>
+
+							<button
+								type="button"
+								onClick={() => setShowGrid((prev) => !prev)}
+								className="flex items-center justify-center rounded-full border border-[#98CEAA]/60 bg-black/20 backdrop-blur-sm transition hover:bg-[#2A2D31] hover:cursor-pointer bottom-[clamp(0.75rem,2vh,1.5rem)] right-[clamp(0.75rem,2vw,1.5rem)] h-[clamp(3rem,6vmin,5rem)] w-[clamp(3rem,6vmin,5rem)]"
+								aria-label={showGrid ? "Verberg grid" : "Toon grid"}
+								title={showGrid ? "Verberg grid" : "Toon grid"}
+							>
+								<Icon name="Grid" size={25} color={showGrid ? "#d0e3d3" : "#98CEAA"} className="h-[clamp(1.25rem,3vmin,1.75rem)] w-[clamp(1.25rem,3vmin,1.75rem)]" />
+							</button>
+						</div>
 					</div>
 				</div>
 
@@ -729,7 +859,7 @@ export default function BuilderPage() {
 										<div className="mb-4 flex h-22 w-22 items-center justify-center rounded-full border border-white/20 bg-[#D9D9D9]/25">
 											<Icon name="Box" size={34} color="#1F2126" />
 										</div>
-										<P className="max-w-55 text-sm">Kies een platform en selecteer je maat</P>
+										<H3 className="max-w-55">Kies een platform en selecteer je maat</H3>
 									</div>
 								) : (
 									<div className="flex flex-col gap-3">
@@ -783,7 +913,7 @@ export default function BuilderPage() {
 							<div className="flex flex-col gap-5">
 								<div className={"flex justify-between mr-2 mb-8 mt-3"}>
 									<H3>Geselecteerd:</H3>
-									<H3>{selectedObjectAsset?.name}</H3>
+									<H3>{selectedObjectAsset?.name ?? "Figurine"}</H3>
 								</div>
 
 								<SliderInput
@@ -810,6 +940,21 @@ export default function BuilderPage() {
 									step={POSITION_STEP}
 								/>
 
+								{/* Y Positie — alleen voor custom objects */}
+								{selectedObject.assetId === 'custom-object' && (
+									<SliderInput
+										label="Positie Y"
+										value={selectedObject.position[1]}
+										onChange={(y) => {
+											const clamped = clamp(y, -2, 4)
+											updateSelected((o) => ({ ...o, position: [o.position[0], clamped, o.position[2]] }))
+										}}
+										min={-2}
+										max={4}
+										step={POSITION_STEP}
+									/>
+								)}
+
 								<SliderInput
 									label="Rotatie Y"
 									value={selectedObject.rotationY}
@@ -825,17 +970,59 @@ export default function BuilderPage() {
 									displayMinMax={(v) => (v === ROTATION_MIN ? "0°" : "360°")}
 								/>
 
-								<SliderInput
-									label="Schaal"
-									value={selectedObject.scale}
-									onChange={(scale) => {
-										const clamped = clamp(scale, selectedScaleLimits.min, selectedScaleLimits.max)
-										updateSelected((o) => ({ ...o, scale: clamped }))
+								{/* Rotatie Z — alleen voor custom objects */}
+								{selectedObject.assetId === 'custom-object' && (
+									<SliderInput
+										label="Rotatie Z"
+										value={selectedObject.rotationZ ?? 1}
+										onChange={(rotationZ) => {
+										const clamped = clamp(rotationZ, ROTATION_MIN, ROTATION_MAX)
+										updateSelected((o) => ({ ...o, rotationZ: clamped }))
 									}}
-									min={selectedScaleLimits.min}
-									max={selectedScaleLimits.max}
-									step={SCALE_STEP}
-								/>
+										min={ROTATION_MIN}
+										max={ROTATION_MAX}
+										step={ROTATION_STEP}
+										displayFormat={(rad) => radiansToDegrees(rad).toString()}
+										parseDisplay={(deg) => degreesToRadians(Number(deg))}
+										displayMinMax={(v) => (v === ROTATION_MIN ? "0°" : "360°")}
+									/>
+								)}
+
+								{/* Schaal — gesplitst voor custom objects, uniform voor normale */}
+								{selectedObject.assetId === 'custom-object' ? (
+									<>
+										<SliderInput
+											label="Schaal"
+											value={selectedObject.scaleXY ?? 0}
+											onChange={(v) => updateSelected((o) => ({ ...o, scaleXY: clamp(v, selectedScaleLimits.min, selectedScaleLimits.max) }))}
+											min={selectedScaleLimits.min}
+											max={selectedScaleLimits.max}
+											step={SCALE_STEP}
+										/>
+
+										<SliderInput
+											label="Schaal Z"
+											value={selectedObject.scaleZ ?? 0}
+											onChange={(v) => updateSelected((o) => ({ ...o, scaleZ: clamp(v, selectedScaleLimits.min, selectedScaleLimits.max) }))}
+											min={selectedScaleLimits.min}
+											max={selectedScaleLimits.max}
+											step={SCALE_STEP}
+										/>
+									</>
+								) : (
+									<SliderInput
+										label="Schaal"
+										value={selectedObject.scale}
+										onChange={(scale) => {
+											const clamped = clamp(scale, selectedScaleLimits.min, selectedScaleLimits.max)
+											updateSelected((o) => ({ ...o, scale: clamped }))
+										}}
+										min={selectedScaleLimits.min}
+										max={selectedScaleLimits.max}
+										step={SCALE_STEP}
+									/>
+								)}
+
 								{/* colors */}
 								{selectedObjectAsset?.partColors && Object.keys(selectedObjectAsset.partColors).length > 0 && (
 									<div className="border-t border-white/10 pt-5 mt-5 ">
@@ -875,7 +1062,7 @@ export default function BuilderPage() {
 								<button
 									type="button"
 									onClick={removeSelected}
-									className="w-full rounded-md border border-red-400/50 bg-red-500/20 px-3 py-2 text-sm text-red-100 mt-10"
+									className="w-full rounded-md border border-red-400/50 bg-red-500/20 px-3 py-2 text-sm text-red-100 mt-10 hover:cursor-pointer"
 								>
 									Verwijder
 								</button>
@@ -886,7 +1073,7 @@ export default function BuilderPage() {
 								<div className="mb-4 flex h-22 w-22 items-center justify-center rounded-full bg-[#D9D9D9]/35 border border-white/20">
 									<Icon name="MousePointerClick" size={34} color="#1F2126" />
 								</div>
-								<P className="max-w-55 text-sm">Selecteer een model om deze aan te passen</P>
+								<H3 className="max-w-55">Selecteer een model om deze aan te passen</H3>
 							</div>
 						)}
 							</>

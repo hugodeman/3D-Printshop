@@ -1,6 +1,7 @@
 "use client"
 
 import { create } from "zustand"
+import * as THREE from "three"
 
 import { clearBuilderSceneDraft, readBuilderSceneDraft, saveBuilderSceneDraft } from "@/lib/builder-scene-draft"
 import rawModelAssets from "@/app/builder/model-assets.json"
@@ -25,9 +26,19 @@ export type PlacedObject = {
 	assetId: string
 	position: Vec3
 	rotationY: number
+	rotationZ: number
 	scale: number
+	scaleXY: number
+	scaleZ: number
 	color: string
 	partColors?: PartColors
+	customGeometry?: {
+		vertices: number[]
+		indices?: number[]
+		normals?: number[]
+		uvs?: number[]
+	}
+	customName?: string
 }
 
 type InitialBuilderState = {
@@ -46,7 +57,8 @@ type BuilderStore = InitialBuilderState & {
 	setSelectedPlatformColor: (color: string) => void
 	setSelectedPlatformSize: (size: 10 | 15 | 20) => void
 	addObject: (assetId: string) => void
-	updateSelected: (updater: (obj: PlacedObject) => PlacedObject) => void
+	addCustomObject: (geometry: THREE.BufferGeometry, name: string, color?: string) => void
+	updateSelected: (updater: (o: PlacedObject) => PlacedObject) => void
 	removeSelected: () => void
 	setSelectedId: (id: string | null) => void
 	resetScene: () => void
@@ -104,7 +116,7 @@ function buildInitialBuilderState(): InitialBuilderState {
 	const selectedPlatformSize = draft.selectedPlatformSize === 15 || draft.selectedPlatformSize === 20 ? draft.selectedPlatformSize : 10
 
 	const placedObjects = (draft.placedObjects ?? [])
-		.filter((obj) => modelAssetsById.has(obj.assetId))
+		.filter((obj) => modelAssetsById.has(obj.assetId) || obj.assetId === "custom-object")
 		.map((obj) => {
 			const asset = modelAssetsById.get(obj.assetId) ?? null
 			const limits = getAssetScaleLimits(asset)
@@ -126,9 +138,14 @@ function buildInitialBuilderState(): InitialBuilderState {
 					Number.isFinite(obj.position?.[2]) ? obj.position[2] : 0,
 				] as Vec3,
 				rotationY: clamp(Number(obj.rotationY) || 0, ROTATION_MIN, ROTATION_MAX),
+				rotationZ: clamp(Number(obj.rotationZ) || 0, ROTATION_MIN, ROTATION_MAX),
 				scale: clamp(Number(obj.scale) || 1, limits.min, limits.max),
+				scaleXY: clamp(Number(obj.scaleXY) || 1, limits.min, limits.max),
+				scaleZ: clamp(Number(obj.scaleZ) || 1, limits.min, limits.max),
 				color,
 				partColors,
+				customGeometry: obj.customGeometry,
+				customName: obj.customName,
 			}
 		})
 
@@ -216,9 +233,53 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
 						assetId: asset.id,
 						position: spawnPosition,
 						rotationY: 0,
+						rotationZ: 0,
 						scale: clamp(1, limits.min, limits.max),
+						scaleXY: clamp(1, limits.min, limits.max),
+						scaleZ: clamp(1, limits.min, limits.max),
 						color: asset.color,
 						partColors: asset.partColors,
+					},
+				],
+			}
+		})
+		persistScene(get())
+	},
+	addCustomObject: (geometry, name, color) => {
+		set((state) => {
+			const nextId = state.nextId + 1
+			const instanceId = `custom-${nextId}`
+
+			// Extract geometry data for serialization
+			const positionAttribute = geometry.getAttribute('position')
+			const normalAttribute = geometry.getAttribute('normal')
+			const uvAttribute = geometry.getAttribute('uv')
+			const indexAttribute = geometry.getIndex()
+
+			const customGeometry = {
+				vertices: Array.from(positionAttribute.array),
+				indices: indexAttribute ? Array.from(indexAttribute.array) : undefined,
+				normals: normalAttribute ? Array.from(normalAttribute.array) : undefined,
+				uvs: uvAttribute ? Array.from(uvAttribute.array) : undefined,
+			}
+
+			return {
+				nextId,
+				selectedId: instanceId,
+				placedObjects: [
+					...state.placedObjects,
+					{
+						instanceId,
+						assetId: 'custom-object', // Special asset ID for custom objects
+						position: [0, 0.5, 0], // Higher position for custom objects
+						rotationY: 0,
+						rotationZ: 0,
+						scale: 1,
+						scaleXY: 1,
+						scaleZ:1,
+						color: color || '#FFFFFF',
+						customGeometry,
+						customName: name,
 					},
 				],
 			}
@@ -233,7 +294,12 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
 				if (obj.instanceId !== state.selectedId) return obj
 				const next = updater(obj)
 				const limits = getAssetScaleLimits(modelAssetsById.get(next.assetId) ?? null)
-				return { ...next, scale: clamp(next.scale, limits.min, limits.max) }
+				return {
+					...next,
+					scale: clamp(next.scale, limits.min, limits.max),
+					scaleXY: clamp(next.scaleXY, limits.min, limits.max),
+					scaleZ: clamp(next.scaleZ, limits.min, limits.max),
+				}
 			})
 
 			return { placedObjects }
@@ -259,6 +325,4 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
 		set(createDefaultBuilderState())
 	},
 }))
-
-
 

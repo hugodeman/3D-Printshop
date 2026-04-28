@@ -3,9 +3,19 @@ export type BuilderSceneDraftObject = {
 	assetId: string
 	position: [number, number, number]
 	rotationY: number
+	rotationZ:number
 	scale: number
+	scaleXY: number;
+	scaleZ: number;
 	color: string
 	partColors?: Record<string, string>
+	customGeometry?: {
+		vertices: number[]
+		indices?: number[]
+		normals?: number[]
+		uvs?: number[]
+	}
+	customName?: string
 }
 
 export type BuilderSceneDraft = {

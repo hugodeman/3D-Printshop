@@ -55,11 +55,11 @@ export function StepButtons({ steps, onInfoClick, onClearClick, clearDisabled }:
 							type="button"
 							onClick={onClearClick}
 							disabled={clearDisabled}
-							className="flex h-13 w-13 items-center justify-center rounded-full border border-red-300/40 bg-[#1F2126]/90 transition enabled:hover:bg-[#2A2D31] disabled:cursor-not-allowed disabled:opacity-50"
+							className="flex h-15 w-15 items-center justify-center rounded-full border border-red-300/40 bg-[#1F2126]/90 transition hover:cursor-pointer enabled:hover:bg-[#2A2D31] disabled:cursor-not-allowed disabled:opacity-50"
 							aria-label="Leeg scene"
 							title="Leeg scene"
 						>
-							<Icon name="Trash2" size={22} color="#FCA5A5" />
+							<Icon name="Trash2" size={24} color="#FCA5A5" />
 						</button>
 					)}
 
@@ -67,11 +67,11 @@ export function StepButtons({ steps, onInfoClick, onClearClick, clearDisabled }:
 						<button
 							type="button"
 							onClick={onInfoClick}
-							className="flex h-13 w-13 items-center justify-center rounded-full border border-[#98CEAA]/40 bg-[#1F2126]/90 transition hover:bg-[#2A2D31]"
+							className="flex h-15 w-15 items-center justify-center rounded-full border border-[#98CEAA]/40 bg-[#1F2126]/90 transition hover:bg-[#2A2D31] hover:cursor-pointer"
 							aria-label="Toon builder uitleg"
 							title="Toon builder uitleg"
 						>
-							<Icon name="Info" size={24} color="#98CEAA" />
+							<Icon name="Info" size={25} color="#98CEAA" />
 						</button>
 					)}
 				</div>
