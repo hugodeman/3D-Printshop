@@ -408,7 +408,9 @@ export default function BuilderPage() {
 
 	function selectPlatform(asset: ModelAsset) {
 		const normalizedColor = normalizeHexColor(asset.color) ?? DEFAULT_PLATFORM_COLOR
-		selectPlatformInStore(asset.id, normalizedColor)
+		const colorToUse = selectedPlatformColor ?? normalizedColor;
+
+		selectPlatformInStore(asset.id, colorToUse)
 		setSelectedPlatformColorInput(normalizedColor)
 	}
 
