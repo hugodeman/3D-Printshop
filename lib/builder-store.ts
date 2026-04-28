@@ -116,7 +116,7 @@ function buildInitialBuilderState(): InitialBuilderState {
 	const selectedPlatformSize = draft.selectedPlatformSize === 15 || draft.selectedPlatformSize === 20 ? draft.selectedPlatformSize : 10
 
 	const placedObjects = (draft.placedObjects ?? [])
-		.filter((obj) => modelAssetsById.has(obj.assetId))
+		.filter((obj) => modelAssetsById.has(obj.assetId) || obj.assetId === "custom-object")
 		.map((obj) => {
 			const asset = modelAssetsById.get(obj.assetId) ?? null
 			const limits = getAssetScaleLimits(asset)
@@ -144,6 +144,8 @@ function buildInitialBuilderState(): InitialBuilderState {
 				scaleZ: clamp(Number(obj.scaleZ) || 1, limits.min, limits.max),
 				color,
 				partColors,
+				customGeometry: obj.customGeometry,
+				customName: obj.customName,
 			}
 		})
 

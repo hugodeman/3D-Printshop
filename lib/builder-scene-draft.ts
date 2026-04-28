@@ -9,6 +9,13 @@ export type BuilderSceneDraftObject = {
 	scaleZ: number;
 	color: string
 	partColors?: Record<string, string>
+	customGeometry?: {
+		vertices: number[]
+		indices?: number[]
+		normals?: number[]
+		uvs?: number[]
+	}
+	customName?: string
 }
 
 export type BuilderSceneDraft = {

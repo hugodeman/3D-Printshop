@@ -464,9 +464,12 @@ export default function BuilderPage() {
 		let previewImage: string | undefined
 		try {
 			// Hide the grid, wait 2 frames so R3F renders a clean frame without it, then capture
+			setSelectedId(null)
+			setOutlineSelection(null)
 			setIsCapturing(true)
+
 			await new Promise<void>((resolve) => {
-				requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+				requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
 			})
 
 			previewImage = captureCanvas?.() ?? undefined
