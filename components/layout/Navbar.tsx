@@ -1,5 +1,5 @@
 import React from "react";
-import { H2 } from "@/components/ui/Typography";
+import {H2, H3} from "@/components/ui/Typography";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { usePathname } from "next/navigation";
@@ -11,7 +11,7 @@ interface NavbarProps {
 
 export function Navbar({ className = "" }: NavbarProps) {
   const pathname = usePathname();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
 
   return (
     <nav className={`flex items-center justify-between p-6 border-b border-black/5 bg-[#2E3033] ${className}`}>
@@ -50,27 +50,29 @@ export function Navbar({ className = "" }: NavbarProps) {
         >
           3D Builder
         </Button>
-        {session ? (
-          <div 
-            className={`flex items-center gap-2 px-6 py-3 cursor-pointer transition-colors rounded-lg w-48 ${
-              pathname === "/profile" 
-                ? "bg-button-primary-active text-contrast" 
-                : "text-white hover:text-gray-300"
-            }`}
-            onClick={() => window.location.href = "/profile"}
-          >
-            <Icon name="CircleUserRound" size={16} />
-            <span>Profiel</span>
-          </div>
+        {status === "loading" ? (
+            // Lege placeholder met zelfde breedte zodat de navbar niet springt
+            <div className="flex items-center gap-3 hover:cursor-pointer w-48 justify-center">
+              <H3>Profiel</H3>
+              <Icon name="CircleUserRound" size={40} color={"#98CEAA"}></Icon>
+            </div>
+        ) : session ? (
+            <div
+                className="flex items-center gap-3 hover:cursor-pointer w-48 justify-center"
+                onClick={() => window.location.href = "/profile"}
+            >
+              <H3>Profiel</H3>
+              <Icon name="CircleUserRound" size={40} color={"#98CEAA"} />
+            </div>
         ) : (
-          <Button
-            variant="primary"
-            isActive={pathname === "/auth/login"}
-            onClick={() => window.location.href = "/auth/login"}
-            className="w-48"
-          >
-            Login
-          </Button>
+            <Button
+                variant="primary"
+                isActive={pathname === "/auth/login"}
+                onClick={() => window.location.href = "/auth/login"}
+                className="w-48"
+            >
+              Login
+            </Button>
         )}
       </div>
     </nav>
