@@ -1,25 +1,58 @@
 import NextAuth from "next-auth"
-import GitHub from "next-auth/providers/github"
-import { PrismaAdapter } from "@next-auth/prisma-adapter"
-import { PrismaClient } from "@prisma/client"
+import Credentials from "next-auth/providers/credentials"
+import prisma from "@/lib/prisma"
+import bcrypt from "bcryptjs"
 
-// Only initialize Prisma client if not in build time and we have DB access
-let adapter = undefined
-
-if (typeof window === 'undefined' && process.env.DATABASE_URL && process.env.NODE_ENV !== 'production') {
-  // This will only run on server-side in development with DB access
-  const prisma = new PrismaClient()
-  adapter = PrismaAdapter(prisma)
-}
-
-const config = {
-  adapter,
+export const { handlers, auth } = NextAuth({
+  secret: process.env.NEXTAUTH_SECRET,
+  session: { strategy: "jwt" },
+  pages: {
+    signIn: "/auth/login",
+  },
   providers: [
-    GitHub({
-      clientId: process.env.GITHUB_ID || "dummy",
-      clientSecret: process.env.GITHUB_SECRET || "dummy",
+    Credentials({
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Wachtwoord", type: "password" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) return null
+
+        const email = (credentials.email as string).toLowerCase().trim()
+
+        const user = await prisma.user.findUnique({
+          where: { email },
+        })
+
+        if (!user) return null
+
+        const passwordMatch = await bcrypt.compare(
+            credentials.password as string,
+            user.password
+        )
+
+        if (!passwordMatch) return null
+
+        return {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+        }
+      },
     }),
   ],
-}
-
-export const { handlers, auth } = NextAuth(config)
+  callbacks: {
+    jwt({ token, user }) {
+      if (user) {
+        token.id = user.id
+        token.role = (user as { role: string }).role
+      }
+      return token
+    },
+    session({ session, token }) {
+      session.user.id = token.id as string
+      session.user.role = token.role as string
+      return session
+    },
+  },
+})

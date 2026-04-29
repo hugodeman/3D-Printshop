@@ -1,11 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import Link from "next/link"
 import {BackgroundMain, BackgroundOverlay, BackgroundContrast1} from "@/components/ui/Background"
 import {H1, H2, H3, P, ErrorText} from "@/components/ui/Typography"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
+import { signIn } from "next-auth/react"
+import { useRouter } from "next/navigation"
 
 type FormData = {
   email: string
@@ -17,6 +19,8 @@ type FormErrors = {
 }
 
 export default function LoginPage() {
+  const router = useRouter()
+
   const [formData, setFormData] = useState<FormData>({
     email: "",
     password: ""
@@ -51,24 +55,24 @@ export default function LoginPage() {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault()
-
-    if (!validateForm()) {
-      return
-    }
+    if (!validateForm()) return
 
     setIsSubmitting(true)
-
     try {
-      console.log("Login data:", formData)
+      const result = await signIn("credentials", {
+        email: formData.email,
+        password: formData.password,
+        redirect: false,
+      })
 
-      // For now, just show success message
-      alert("Login succesvol! (Dit is nog een placeholder)")
-
-    } catch (error) {
-      console.error("Login error:", error)
-      alert("Er is iets misgegaan bij het inloggen. Probeer het opnieuw.")
+      if (result?.error) {
+        setErrors({ password: "Ongeldig email of wachtwoord", email:"Ongeldig email of wachtwoord" })
+        setFormData(prev => ({ ...prev, password: "" }))
+      } else {
+        router.back()
+      }
     } finally {
       setIsSubmitting(false)
     }

@@ -5,6 +5,7 @@ import { BackgroundMain, BackgroundOverlay, BackgroundContrast2 } from "@/compon
 import {H1, H2, P, ErrorText} from "@/components/ui/Typography"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
+import {signIn} from "next-auth/react";
 
 // Countries list for dropdown
 const COUNTRIES = [
@@ -124,22 +125,33 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault()
-
-    if (!validateForm()) {
-      return
-    }
+    if (!validateForm()) return
 
     setIsSubmitting(true)
-
     try {
-      console.log("Registration data:", formData)
+      const res = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      })
 
-      // For now, just show success message
-      alert("Account registratie succesvol! (Dit is nog een placeholder)")
+      const data = await res.json()
 
-    } catch (error) {
-      console.error("Registration error:", error)
-      alert("Er is iets misgegaan bij het registreren. Probeer het opnieuw.")
+      if (!res.ok) {
+        if (res.status === 409) {
+          setErrors({ email: data.error })
+        } else {
+          setErrors({ email: "Er is iets misgegaan. Probeer het opnieuw." })
+        }
+        return
+      }
+
+      // Automatisch inloggen na registratie
+      await signIn("credentials", {
+        email: formData.email,
+        password: formData.password,
+        redirectTo: "/",
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -228,8 +240,8 @@ export default function RegisterPage() {
                       onChange={(e) => updateField("country", e.target.value)}
                       className={`rounded-[5px] border input-shadow outline-none transition-colors h-12 px-4 text-p w-full bg-input-normal border-input-normal`}
                   >
-                    <option value="" disabled hidden className={"text-white/40"}>
-                      <P className={"text-white/20"}>Land</P>
+                    <option value="" disabled hidden className={"text-red-500"}>
+                      Land
                     </option>
 
                     {COUNTRIES.map(country => (
