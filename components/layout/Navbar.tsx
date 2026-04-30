@@ -53,8 +53,8 @@ export function Navbar({ className = "" }: NavbarProps) {
         {status === "loading" ? (
             // Lege placeholder met zelfde breedte zodat de navbar niet springt
             <div className="flex items-center gap-3 hover:cursor-pointer w-48 justify-center">
-              <H3>Profiel</H3>
-              <Icon name="CircleUserRound" size={40} color={"#98CEAA"}></Icon>
+            {/*//   <H3>Profiel</H3>*/}
+            {/*//   <Icon name="CircleUserRound" size={40} color={"#98CEAA"}></Icon>*/}
             </div>
         ) : session ? (
             <div

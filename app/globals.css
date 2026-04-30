@@ -26,6 +26,14 @@ body {
   color: #1F2126;
 }
 
+.text-action {
+  color: #98CEAA;
+}
+
+.text-action-contrast {
+  color: #6D8F78;
+}
+
 /*Buttons*/
 .button-shadow {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.15);
