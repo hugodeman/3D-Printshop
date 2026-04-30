@@ -6,17 +6,7 @@ import {H1, H2, P, ErrorText} from "@/components/ui/Typography"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
 import {signIn} from "next-auth/react";
-
-// Countries list for dropdown
-const COUNTRIES = [
-  "Nederland",
-  "België",
-  "Duitsland",
-  "Frankrijk",
-  "Luxemburg",
-  "Verenigd Koninkrijk",
-  "Andere"
-]
+import {AddressForm} from "@/components/forms/AddressForm";
 
 type FormData = {
   // Login credentials (required)
@@ -228,114 +218,21 @@ export default function RegisterPage() {
             </div>
 
             {/* Address Section */}
-            <div>
-              <H2 className="mb-8 pt-10">Bezorgadres</H2>
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-p font-medium" hidden={true}>
-                    Land
-                  </label>
-                  <select
-                      value={formData.country}
-                      onChange={(e) => updateField("country", e.target.value)}
-                      className={`rounded-[5px] border input-shadow outline-none transition-colors h-12 px-4 text-p w-full bg-input-normal border-input-normal`}
-                  >
-                    <option value="" disabled hidden className={"text-red-500"}>
-                      Land
-                    </option>
-
-                    {COUNTRIES.map(country => (
-                        <option key={country} value={country}>
-                          {country}
-                        </option>
-                    ))}
-                  </select>
-                   {errors.country && <ErrorText>{errors.country}</ErrorText>}
-                </div>
-
-                <div className="flex justify-between">
-                  <div>
-                    <label className="block text-p font-medium" hidden={true}>
-                      Voornaam
-                    </label>
-                    <Input
-                      value={formData.firstName}
-                      onChange={(e) => updateField("firstName", e.target.value)}
-                      placeholder="Voornaam"
-                      inputSize="sm"
-                    />
-                     {errors.firstName && <ErrorText>{errors.firstName}</ErrorText>}
-                  </div>
-
-                  <div>
-                    <label className="block" hidden={true}>
-                      Achternaam
-                    </label>
-                    <Input
-                      value={formData.lastName}
-                      onChange={(e) => updateField("lastName", e.target.value)}
-                      placeholder="Achternaam"
-                      inputSize="sm"
-                    />
-                     {errors.lastName && <ErrorText>{errors.lastName}</ErrorText>}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block" hidden={true}>
-                    Adres
-                  </label>
-                  <Input
-                    value={formData.street}
-                    onChange={(e) => updateField("street", e.target.value)}
-                    placeholder="Adres"
-                  />
-                   {errors.street && <ErrorText>{errors.street}</ErrorText>}
-                </div>
-
-                <div className="gap-6">
-                  <div>
-                    <label className="block" hidden={true}>
-                      Toevoeging
-                    </label>
-                    <Input
-                      value={formData.addition}
-                      onChange={(e) => updateField("addition", e.target.value)}
-                      placeholder="Toevoeging"
-                      inputSize="lg"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-between">
-                  <div>
-                    <label className="block" hidden={true}>
-                      Postcode
-                    </label>
-                    <Input
-                      value={formData.postal}
-                      onChange={(e) => updateField("postal", e.target.value)}
-                      placeholder="Postcode"
-                      inputSize="sm"
-                    />
-                     {errors.postal && <ErrorText>{errors.postal}</ErrorText>}
-                  </div>
-
-                  <div>
-                    <label className="block" hidden={true}>
-                      Woonplaats
-                    </label>
-                    <Input
-                      value={formData.city}
-                      onChange={(e) => updateField("city", e.target.value)}
-                      placeholder="Woonplaats"
-                      inputSize="sm"
-                    />
-                     {errors.city && <ErrorText>{errors.city}</ErrorText>}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <H2>Bezorgadress</H2>
+            <AddressForm
+                data={{
+                  country: formData.country,
+                  firstName: formData.firstName,
+                  lastName: formData.lastName,
+                  street: formData.street,
+                  addition: formData.addition,
+                  postal: formData.postal,
+                  city: formData.city,
+                }}
+                errors={errors}
+                onChange={(field, value) => updateField(field, value)}
+                disabled={false}
+            />
 
             {/* Submit Button */}
             <div className="flex justify-center pt-6">
