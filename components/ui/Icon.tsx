@@ -43,7 +43,8 @@ import {
   ShoppingBag,
   Copyright,
   ChevronDown,
-  Paintbrush2
+  Paintbrush2,
+  CirclePlus
 } from 'lucide-react';
 
 const Icons = {
@@ -90,7 +91,8 @@ const Icons = {
   ShoppingBag,
   Copyright,
   ChevronDown,
-  Paintbrush2
+  Paintbrush2,
+  CirclePlus
 };
 
 type IconProps = {

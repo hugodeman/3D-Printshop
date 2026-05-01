@@ -2,7 +2,7 @@ import React from "react";
 import {H2, H3} from "@/components/ui/Typography";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
-import { usePathname } from "next/navigation";
+import {usePathname, useRouter} from "next/navigation";
 import { useSession } from "next-auth/react";
 
 interface NavbarProps {
@@ -10,13 +10,14 @@ interface NavbarProps {
 }
 
 export function Navbar({ className = "" }: NavbarProps) {
+  const router = useRouter();
   const pathname = usePathname();
   const { data: session, status } = useSession();
 
   return (
     <nav className={`flex items-center justify-between p-6 border-b border-black/5 bg-[#2E3033] ${className}`}>
       {/* Left side - Logo/Icon and Title */}
-      <div className="flex items-center gap-4 cursor-pointer ml-8" onClick={() => window.location.href = "/"}>
+      <div className="flex items-center gap-4 cursor-pointer ml-8" onClick={() => router.push("/")}>
         {/* Placeholder for image icon */}
         <div>
           <Icon name="Image" size={40} color={"#98CEAA"}/>
@@ -29,7 +30,7 @@ export function Navbar({ className = "" }: NavbarProps) {
         <Button
           variant="secondary"
           isActive={pathname === "/shop"}
-          onClick={() => window.location.href = "/shop"}
+          onClick={() => router.push("/shop")}
           className="w-48"
         >
           Webshop
@@ -37,7 +38,7 @@ export function Navbar({ className = "" }: NavbarProps) {
         <Button
           variant="secondary"
           isActive={pathname === "/offerte"}
-          onClick={() => window.location.href = "/offerte"}
+          onClick={() => router.push("/offerte")}
           className="w-48"
         >
           Offerte maken
@@ -45,21 +46,18 @@ export function Navbar({ className = "" }: NavbarProps) {
         <Button
           variant="secondary"
           isActive={pathname === "/builder"}
-          onClick={() => window.location.href = "/builder"}
+          onClick={() => router.push("/builder")}
           className="w-48"
         >
           3D Builder
         </Button>
         {status === "loading" ? (
             // Lege placeholder met zelfde breedte zodat de navbar niet springt
-            <div className="flex items-center gap-3 hover:cursor-pointer w-48 justify-center">
-            {/*//   <H3>Profiel</H3>*/}
-            {/*//   <Icon name="CircleUserRound" size={40} color={"#98CEAA"}></Icon>*/}
-            </div>
+            <div className="w-48"></div>
         ) : session ? (
             <div
                 className="flex items-center gap-3 hover:cursor-pointer w-48 justify-center"
-                onClick={() => window.location.href = "/profile"}
+                onClick={() => router.push("/profile")}
             >
               <H3>Profiel</H3>
               <Icon name="CircleUserRound" size={40} color={"#98CEAA"} />
@@ -68,7 +66,7 @@ export function Navbar({ className = "" }: NavbarProps) {
             <Button
                 variant="primary"
                 isActive={pathname === "/auth/login"}
-                onClick={() => window.location.href = "/auth/login"}
+                onClick={() => router.push("/auth/login")}
                 className="w-48"
             >
               Login

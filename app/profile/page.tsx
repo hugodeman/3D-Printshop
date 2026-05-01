@@ -131,7 +131,7 @@ export default function ProfilePage() {
               <div className={"flex items-center justify-center w-full"}>
                   <div className={"w-3/4 ml-15"}>
                       <H1>Mijn profiel</H1>
-                      <H2 className={"mt-5"}>Welkom, {addressData? addressData.firstName + " " + addressData.lastName : 'gebruiker'}</H2>
+                      <H2 className={"mt-5"}>Welkom, {addressData?.lastName? addressData.firstName + " " + addressData.lastName : 'gebruiker'}</H2>
                   </div>
                   <div onClick={() => handleSignOut()} className="cursor-pointer flex items-center gap-3">
                       <H3 className={"underline text-action"}>Log uit</H3>
@@ -238,6 +238,11 @@ export default function ProfilePage() {
                                       <Icon name={"SquarePen"} size={35} opacity="70%" color={isAdjustingAddress ? "#98CEAA" : "white"}/>
                                       <H3 className={'text-action'}>Pas aan</H3>
                                   </div>
+                                  {/*<div className="flex items-center gap-3 cursor-pointer absolute top-20 right-8"*/}
+                                  {/*     onClick={() => setIsAdjustingCredentials(prev => !prev)}>*/}
+                                  {/*    <Icon name={"CirclePlus"} size={35} opacity="70%" color={isAdjustingCredentials ? "#98CEAA" : "white"}/>*/}
+                                  {/*    <H3 className="text-action">Voeg toe</H3>*/}
+                                  {/*</div>*/}
                               </div>
                           </BackgroundContrast2>
                       </div>)}
