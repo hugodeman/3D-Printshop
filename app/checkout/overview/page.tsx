@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 import {H1, H2, H3, P} from "@/components/ui/Typography"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
@@ -12,6 +13,7 @@ import { useBuilderStore } from "@/lib/builder-store"
 import { readBuilderCheckoutDraft, subscribeBuilderCheckoutDraft, type BuilderCheckoutDraft } from "@/lib/builder-checkout-draft"
 
 export default function CheckoutPage() {
+	const {data: session} = useSession()
 	const router = useRouter()
 	const setStep = useBuilderStore((state) => state.setStep)
 	const [data, setData] = useState<BuilderCheckoutDraft | null>(() => readBuilderCheckoutDraft())
@@ -29,26 +31,30 @@ export default function CheckoutPage() {
 		setIsOrdering(true)
 		setOrderError(null)
 
-		try {
-			const response = await fetch("/api/orders/builder", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(data),
-			})
+		if (session){
+			try {
+				const response = await fetch("/api/orders/builder", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify(data),
+				})
 
-			const result = await response.json() as { checkoutUrl?: string; error?: string }
+				const result = await response.json() as { checkoutUrl?: string; error?: string }
 
-			if (!response.ok || !result.checkoutUrl) {
-				setOrderError(result.error ?? "Bestelling mislukt, probeer opnieuw.")
-				return
+				if (!response.ok || !result.checkoutUrl) {
+					setOrderError(result.error ?? "Bestelling mislukt, probeer opnieuw.")
+					return
+				}
+
+				// Redirect to Mollie checkout
+				window.location.href = result.checkoutUrl
+			} catch {
+				setOrderError("Netwerkfout, probeer opnieuw.")
+			} finally {
+				setIsOrdering(false)
 			}
-
-			// Redirect to Mollie checkout
-			window.location.href = result.checkoutUrl
-		} catch {
-			setOrderError("Netwerkfout, probeer opnieuw.")
-		} finally {
-			setIsOrdering(false)
+		} else {
+			router.push("/auth/login?redirect=/checkout/overview")
 		}
 	}
 

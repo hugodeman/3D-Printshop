@@ -7,7 +7,7 @@ import {H1, H2, H3, P, ErrorText} from "@/components/ui/Typography"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
 import { signIn } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import {useRouter, useSearchParams} from "next/navigation"
 
 type FormData = {
   email: string
@@ -20,6 +20,7 @@ type FormErrors = {
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const [formData, setFormData] = useState<FormData>({
     email: "",
@@ -71,7 +72,8 @@ export default function LoginPage() {
         setErrors({ password: "Ongeldig email of wachtwoord", email:"Ongeldig email of wachtwoord" })
         setFormData(prev => ({ ...prev, password: "" }))
       } else {
-        router.back()
+        const redirect = searchParams.get("redirect")
+        router.push(redirect ?? "/")
       }
     } finally {
       setIsSubmitting(false)
