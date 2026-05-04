@@ -17,7 +17,10 @@ export async function GET() {
 
     try {
         const orders = await prisma.order.findMany({
-            where: { userId: session.user.id },
+            where: {
+                userId: session.user.id,
+                status: { in: ["PAID", "COMPLETED"] },
+            },
             orderBy: { createdAt: "desc" },
             include: {
                 items: {
