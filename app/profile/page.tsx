@@ -28,6 +28,28 @@ export default function ProfilePage() {
         password: "",
     })
 
+    const [orderData, setOrderData] = useState<Array<{
+        id: string
+        status: string
+        total: string
+        note: string | null
+        createdAt: string
+        items: Array<{
+            id: string
+            quantity: number
+            price: string
+            product: {
+                id: string
+                title: string
+                images: { url: string }[]
+            } | null
+            builderItem: {
+                id: string
+                imageUrl: string | null
+            } | null
+        }>
+    }>>([])
+
     const [credentialsErrors, setCredentialsErrors] = useState<{ email?: string; password?: string }>({})
     const [addressErrors, setAddressErrors] = useState<AddressErrors>({})
     const [isSaving, setIsSaving] = useState(false)
@@ -60,6 +82,17 @@ export default function ProfilePage() {
         }
 
         fetchProfile()
+    }, [])
+
+    useEffect(() => {
+        const fetchOrders = async () => {
+            const res = await fetch("/api/orders")
+            if (!res.ok) return
+            const data = await res.json()
+            setOrderData(data)
+        }
+
+        fetchOrders()
     }, [])
 
 // Opslaan
@@ -250,12 +283,62 @@ export default function ProfilePage() {
                       {step === 'bestellingen' && (
                           <div className="flex flex-col gap-6 flex-1">
                               <H2 className={"ml-5 mt-5"}>Mijn bestellingen:</H2>
+                              {orderData.length === 0 ? (
+                                  <P className="ml-5">Je hebt nog geen bestellingen.</P>
+                              ) : (
+                                  orderData.map(order => (
+                                      <BackgroundContrast2 key={order.id} className="p-6 rounded-2xl">
+                                          <div className="flex justify-between items-center mb-4">
+                                              <H3>Bestelling #{order.id.slice(-6).toUpperCase()}</H3>
+                                              <P className="text-white/70">{order.status}</P>
+                                          </div>
+                                          {order.items.map(item => (
+                                              <div key={item.id} className="flex items-center gap-4 py-2 border-t border-white/20">
+                                                  {/* Product order */}
+                                                  {item.product && (
+                                                      <>
+                                                          <img
+                                                              src={item.product.images[0]?.url}
+                                                              alt={item.product.title}
+                                                              className="w-16 h-16 object-cover rounded-lg"
+                                                          />
+                                                          <div>
+                                                              <P>{item.product.title}</P>
+                                                              <P className="text-white/70">Aantal: {item.quantity}</P>
+                                                          </div>
+                                                      </>
+                                                  )}
+                                                  {/* Builder order */}
+                                                  {item.builderItem && (
+                                                      <>
+                                                          {item.builderItem.imageUrl && (
+                                                              <img
+                                                                  src={item.builderItem.imageUrl}
+                                                                  alt="Builder item"
+                                                                  className="w-16 h-16 object-cover rounded-lg"
+                                                              />
+                                                          )}
+                                                          <div>
+                                                              <P>Custom Builder Item</P>
+                                                              <P className="text-white/70">Aantal: {item.quantity}</P>
+                                                          </div>
+                                                      </>
+                                                  )}
+                                                  <P className="ml-auto">€{item.price}</P>
+                                              </div>
+                                          ))}
+                                          <div className="flex justify-end pt-4">
+                                              <H3>Totaal: €{order.total}</H3>
+                                          </div>
+                                      </BackgroundContrast2>
+                                  ))
+                              )}
                           </div>
                       )}
 
                       {step === 'offertes' && (
                           <div className="flex flex-col gap-6 flex-1">
-                                <H2 className={"ml-5 mt-5"}>Mijnoffertes:</H2>
+                                <H2 className={"ml-5 mt-5"}>Mijn offertes:</H2>
                           </div>
                       )}
                   </div>

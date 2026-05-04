@@ -7,9 +7,6 @@
  *  3. Creates Order + OrderItem in the database
  *  4. Generates a placeholder STL print file (stored privately)
  *  5. Creates a Mollie payment and returns the checkout URL
- *
- * TODO: Replace hardcoded `userId` with the actual session user ID once
- *       NextAuth is configured.  Use `getServerSession()` from next-auth.
  */
 
 import { NextRequest, NextResponse } from "next/server"
