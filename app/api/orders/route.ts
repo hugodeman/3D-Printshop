@@ -26,7 +26,10 @@ export async function GET() {
                 items: {
                     include: {
                         product: {
-                            include: { images: true },
+                            include: {
+                                images: true,
+                                options: true,
+                            },
                         },
                         builderItem: true,
                     },

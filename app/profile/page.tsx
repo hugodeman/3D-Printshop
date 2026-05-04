@@ -42,10 +42,13 @@ export default function ProfilePage() {
                 id: string
                 title: string
                 images: { url: string }[]
+                options: string
+                deliveryTime: number
             } | null
             builderItem: {
                 id: string
                 imageUrl: string | null
+                deliveryTime: number;
             } | null
         }>
     }>>([])
@@ -94,6 +97,13 @@ export default function ProfilePage() {
 
         fetchOrders()
     }, [])
+
+    const formatDate = (dateString: string) =>
+        new Date(dateString).toLocaleDateString("nl-NL", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+        })
 
 // Opslaan
     const handleSaveAddress = async () => {
@@ -287,50 +297,73 @@ export default function ProfilePage() {
                                   <P className="ml-5">Je hebt nog geen bestellingen.</P>
                               ) : (
                                   orderData.map(order => (
-                                      <BackgroundContrast2 key={order.id} className="p-6 rounded-2xl">
-                                          <div className="flex justify-between items-center mb-4">
-                                              <H3>Bestelling #{order.id.slice(-6).toUpperCase()}</H3>
+                                      <div key={order.id}>
+                                          <div className={"flex items-center justify-between gap-4 ml-5 mr-10 mt-8"}>
+                                              <H3 className={"ml-5"}>{formatDate(order.createdAt)} - bestelling #{order.id.slice(-6).toUpperCase()}</H3>
                                               <P className="text-white/70">{order.status}</P>
                                           </div>
-                                          {order.items.map(item => (
-                                              <div key={item.id} className="flex items-center gap-4 py-2 border-t border-white/20">
-                                                  {/* Product order */}
-                                                  {item.product && (
-                                                      <>
-                                                          <img
-                                                              src={item.product.images[0]?.url}
-                                                              alt={item.product.title}
-                                                              className="w-16 h-16 object-cover rounded-lg"
-                                                          />
+                                          <BackgroundContrast2 key={order.id} className="p-6 rounded-2xl">
+                                              {order.items.map(item => (
+                                                  <div key={item.id} className="flex items-center gap-4 pb-8 border-b border-white/20">
+                                                      {/* Product order */}
+                                                      {item.product && (
                                                           <div>
-                                                              <P>{item.product.title}</P>
-                                                              <P className="text-white/70">Aantal: {item.quantity}</P>
-                                                          </div>
-                                                      </>
-                                                  )}
-                                                  {/* Builder order */}
-                                                  {item.builderItem && (
-                                                      <>
-                                                          {item.builderItem.imageUrl && (
+                                                              {/* eslint-disable-next-line @next/next/no-img-element */}
                                                               <img
-                                                                  src={item.builderItem.imageUrl}
-                                                                  alt="Builder item"
-                                                                  className="w-16 h-16 object-cover rounded-lg"
+                                                                  src={item.product.images[0]?.url}
+                                                                  alt={item.product.title}
+                                                                  className="w-72 h-auto object-cover rounded-lg"
                                                               />
-                                                          )}
-                                                          <div>
-                                                              <P>Custom Builder Item</P>
-                                                              <P className="text-white/70">Aantal: {item.quantity}</P>
+                                                              <div className={"flex flex-col justify-between"}>
+                                                                  <div>
+                                                                      <P className={"pt-5"}>{item.product.title}</P>
+                                                                      <P className="text-white/80 py-3">Aantal: {item.quantity}</P>
+                                                                      <P className="text-white/80"> Opmaak: {item.product.options}</P>
+                                                                  </div>
+                                                                  <P className="text-white pb-5">maaktijd: {item.product.deliveryTime} uur</P>
+                                                              </div>
                                                           </div>
-                                                      </>
-                                                  )}
-                                                  <P className="ml-auto">€{item.price}</P>
+                                                      )}
+                                                      {/* Builder order */}
+                                                      {item.builderItem && (
+                                                          <div className={"flex gap-4"}>
+                                                              {item.builderItem.imageUrl && (
+                                                                  // eslint-disable-next-line @next/next/no-img-element
+                                                                  <img
+                                                                      src={item.builderItem.imageUrl}
+                                                                      alt="Builder item"
+                                                                      className="object-cover rounded-lg w-72 h-auto"
+                                                                  />
+                                                              )}
+                                                              <div className={"flex flex-col justify-between"}>
+                                                                  <div>
+                                                                      <P className={"pt-5"}>Custom Builder Item</P>
+                                                                      <P className="text-white/80 py-3">Aantal: {item.quantity}</P>
+                                                                  </div>
+                                                                  <P className="text-white pb-5">maaktijd: {item.builderItem.deliveryTime || '1'} uur</P>
+                                                              </div>
+                                                          </div>
+                                                      )}
+                                                      <P className="ml-auto pr-6">€{item.price}</P>
+                                                  </div>
+                                              ))}
+                                              <div className="flex justify-end pt-4">
+                                                  <H3>Totaal: €{order.total}</H3>
                                               </div>
-                                          ))}
-                                          <div className="flex justify-end pt-4">
-                                              <H3>Totaal: €{order.total}</H3>
+                                          </BackgroundContrast2>
+                                          <div>
+                                              <H3 className={"mt-5 mb-2"}>vragen/opmerkingen: </H3>
+                                              <div className={"flex"}>
+                                                  <Input
+                                                      disabled={true}
+                                                      inputSize={"lg"}
+                                                      type="text"
+                                                      value={order.note || ""}
+                                                  />
+                                                <div className={"w-full"}></div>
+                                              </div>
                                           </div>
-                                      </BackgroundContrast2>
+                                      </div>
                                   ))
                               )}
                           </div>
