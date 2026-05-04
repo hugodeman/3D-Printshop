@@ -1,18 +1,8 @@
-/**
- * GET /api/orders/[orderId]/print-file
- *
- * Admin-only endpoint that streams the generated STL print file for an order.
- * The file lives in `private/print-files/` and is never served from `public/`.
- *
- * TODO: Add proper admin role check once NextAuth is configured:
- *   const session = await getServerSession(authOptions)
- *   if (session?.user?.role !== "ADMIN") return 403
- */
-
 import { NextRequest, NextResponse } from "next/server"
 import * as fs from "fs"
 import prisma from "@/lib/prisma"
 import { getPrintFilePath } from "@/lib/builder-print-export"
+import {auth} from "@/lib/auth";
 
 export async function GET(
 	_request: NextRequest,
@@ -20,11 +10,10 @@ export async function GET(
 ) {
 	const { orderId } = await params
 
-	// ── Auth (TODO) ────────────────────────────────────────────────────────
-	// const session = await getServerSession(authOptions)
-	// if (session?.user?.role !== "ADMIN") {
-	//   return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-	// }
+	const session = await auth()
+	if (session?.user?.role !== "ADMIN") {
+	  return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+	}
 
 	try {
 		// Look up the order's BuilderItem to get the print file name

@@ -17,8 +17,9 @@ import prisma from "@/lib/prisma"
 import { createMolliePayment } from "@/lib/mollie"
 import { generateAndSavePrintFile } from "@/lib/builder-print-export"
 import type { BuilderCheckoutDraft } from "@/lib/builder-checkout-draft"
+import {auth} from "@/lib/auth";
 
-// ── Pricing ──────────────────────────────────────────────────────────────────
+// Pricing
 const PLATFORM_PRICE: Record<number, number> = {
 	10: 20.00,  // M
 	15: 25.00,  // L
@@ -36,22 +37,10 @@ export async function POST(request: NextRequest) {
 	try {
 		const draft = (await request.json()) as BuilderCheckoutDraft
 
-		// ── Auth ──────────────────────────────────────────────────────────────
-		// TODO: replace with real session userId from NextAuth:
-		//   const session = await getServerSession(authOptions)
-		//   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-		//   const userId = session.user.id
-		//
-		// For now the userId must be passed in the request body as `userId`.
-		// This is intentionally insecure and should NOT ship to production.
-		const body = draft as BuilderCheckoutDraft & { userId?: string }
-		let userId: string | undefined = body.userId
+		const session = await auth()
 
-		// Dev fallback: if no auth/userId is provided, use the first available user.
-		if (!userId) {
-			const firstUser = await prisma.user.findFirst({ select: { id: true }, orderBy: { createdAt: "asc" } })
-			userId = firstUser?.id
-		}
+		if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+		const userId = session.user.id
 
 		if (!userId) {
 			return NextResponse.json({ error: "No user available for order creation" }, { status: 400 })
@@ -59,7 +48,6 @@ export async function POST(request: NextRequest) {
 
 		const total = calculateTotal(draft)
 
-		// ── BuilderItem ───────────────────────────────────────────────────────
 		const builderItem = await prisma.builderItem.create({
 			data: {
 				userId,
@@ -68,7 +56,6 @@ export async function POST(request: NextRequest) {
 			},
 		})
 
-		// ── Order + OrderItem ─────────────────────────────────────────────────
 		const order = await prisma.order.create({
 			data: {
 				userId,
