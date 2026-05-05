@@ -106,7 +106,69 @@ export default function ProfilePage() {
         })
 
 // Opslaan
-    const handleSaveAddress = async () => {
+    const handleSaveCredentials = async (e: React.SubmitEvent) => {
+        e.preventDefault()
+        const newErrors: { email?: string; password?: string } = {}
+
+        if (!credentialsData.email.trim()) {
+            newErrors.email = "Email is verplicht"
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(credentialsData.email)) {
+            newErrors.email = "Ongeldig emailadres"
+        }
+        if (credentialsData.password && credentialsData.password.length < 8) {
+            newErrors.password = "Wachtwoord moet minimaal 8 karakters bevatten"
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setCredentialsErrors(newErrors)
+            return // Niet opslaan
+        }
+
+        setIsSaving(true)
+        try {
+            const res = await fetch("/api/users", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ type: "credentials", ...credentialsData }),
+            })
+            if (res.ok) {
+                setSaveSuccess(true)
+                setIsAdjustingCredentials(false)
+                setCredentialsData(prev => ({ ...prev, password: "" }))
+                setTimeout(() => setSaveSuccess(false), 3000)
+            } else {
+                const data = await res.json()
+                if (data.error) setCredentialsErrors({ email: data.error })
+            }
+        } finally {
+            setIsSaving(false)
+        }
+    }
+
+    const handleSaveAddress = async (e: React.SubmitEvent) => {
+        e.preventDefault()
+        const newErrors: AddressErrors = {}
+
+        const addressFields = [
+            addressData.country, addressData.firstName, addressData.lastName,
+            addressData.street, addressData.postal, addressData.city
+        ]
+        const hasAnyField = addressFields.some(f => f.trim() !== "")
+
+        if (hasAnyField) {
+            if (!addressData.country.trim()) newErrors.country = "Land is verplicht"
+            if (!addressData.firstName.trim()) newErrors.firstName = "Voornaam is verplicht"
+            if (!addressData.lastName.trim()) newErrors.lastName = "Achternaam is verplicht"
+            if (!addressData.street.trim()) newErrors.street = "Adres is verplicht"
+            if (!addressData.postal.trim()) newErrors.postal = "Postcode is verplicht"
+            if (!addressData.city.trim()) newErrors.city = "Woonplaats is verplicht"
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setAddressErrors(newErrors)
+            return // Niet opslaan
+        }
+
         setIsSaving(true)
         try {
             const res = await fetch("/api/users", {
@@ -118,29 +180,6 @@ export default function ProfilePage() {
                 setSaveSuccess(true)
                 setIsAdjustingAddress(false)
                 setTimeout(() => setSaveSuccess(false), 3000)
-            }
-        } finally {
-            setIsSaving(false)
-        }
-    }
-
-    const handleSaveCredentials = async () => {
-        setIsSaving(true)
-        try {
-            const res = await fetch("/api/users", {
-                method: "PUT",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({type: "credentials", ...credentialsData}),
-            })
-
-            if (res.ok) {
-                setSaveSuccess(true)
-                setIsAdjustingCredentials(false)
-                setCredentialsData(prev => ({...prev, password: ""})) // wachtwoord leegmaken na opslaan
-                setTimeout(() => setSaveSuccess(false), 3000)
-            } else {
-                const data = await res.json()
-                if (data.error) setCredentialsErrors({email: data.error})
             }
         } finally {
             setIsSaving(false)
@@ -174,7 +213,11 @@ export default function ProfilePage() {
               <div className={"flex items-center justify-center w-full"}>
                   <div className={"w-3/4 ml-15"}>
                       <H1>Mijn profiel</H1>
-                      <H2 className={"mt-5"}>Welkom, {addressData?.lastName? addressData.firstName + " " + addressData.lastName : 'gebruiker'}</H2>
+                      {isAdjustingAddress? (
+                        <H2 className={"mt-5"}>Welkom, gebruiker</H2>
+                      ):
+                        <H2 className={"mt-5"}>Welkom, {addressData.lastName && addressData.firstName? addressData.firstName + " " + addressData.lastName : 'gebruiker'}</H2>
+                      }
                   </div>
                   <div onClick={() => handleSignOut()} className="cursor-pointer flex items-center gap-3">
                       <H3 className={"underline text-action"}>Log uit</H3>
@@ -209,7 +252,7 @@ export default function ProfilePage() {
                           <H2 className={"ml-5 mt-5"}>Profielgegevens:</H2>
                           {/* Inloggegevens */}
                           <BackgroundContrast2 className="p-8 rounded-2xl relative">
-                              <div className="flex items-start justify-center">
+                              <form onSubmit={handleSaveCredentials} className="flex items-start justify-center">
                                   <div className="max-w-xl w-full">
                                       <H2 className="mb-6">Inloggegevens</H2>
                                       <div className="space-y-4">
@@ -241,7 +284,7 @@ export default function ProfilePage() {
 
                                       {isAdjustingCredentials ? (
                                           <div className="flex justify-center pt-6">
-                                              <Button onClick={handleSaveCredentials} disabled={isSaving} className="min-w-48">
+                                              <Button type={'submit'} disabled={isSaving} className="min-w-48">
                                                   {isSaving ? "Opslaan..." : saveSuccess ? "Opgeslagen!" : "Opslaan"}
                                               </Button>
                                           </div>
@@ -253,7 +296,7 @@ export default function ProfilePage() {
                                       <Icon name={"SquarePen"} size={35} opacity="70%" color={isAdjustingCredentials ? "#98CEAA" : "white"}/>
                                       <H3 className="text-action">Pas aan</H3>
                                   </div>
-                              </div>
+                              </form>
                           </BackgroundContrast2>
 
                           {/* Bezorgadres */}
@@ -261,7 +304,7 @@ export default function ProfilePage() {
                               <div className="flex items-start justify-center">
                                   <div className="max-w-xl w-full">
                                       <H2 className="mb-6">Bezorgadres</H2>
-                                      <div className="space-y-6">
+                                      <form onSubmit={handleSaveAddress} className="space-y-6">
                                           <AddressForm
                                               data={addressData}
                                               errors={addressErrors}
@@ -270,12 +313,12 @@ export default function ProfilePage() {
                                           />
                                           {isAdjustingAddress ? (
                                               <div className="flex justify-center pt-6">
-                                                  <Button onClick={handleSaveAddress} disabled={isSaving} className="min-w-48">
+                                                  <Button type="submit" disabled={isSaving} className="min-w-48">
                                                       {isSaving ? "Opslaan..." : saveSuccess ? "Opgeslagen!" : "Opslaan"}
                                                   </Button>
                                               </div>
                                           ) : <div className={"py-9"}></div>}
-                                      </div>
+                                      </form>
                                   </div>
                                   <div className={"flex items-center gap-3 cursor-pointer absolute top-7 right-8"} onClick={() => setIsAdjustingAddress(prev => !prev)}>
                                       <Icon name={"SquarePen"} size={35} opacity="70%" color={isAdjustingAddress ? "#98CEAA" : "white"}/>
