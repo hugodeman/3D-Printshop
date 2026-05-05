@@ -462,6 +462,14 @@ export default function BuilderPage() {
 		{ icon: "Ruler", label: "Zet measure aan om 2 punten te meten" },
 	], [])
 
+	const [mounted, setMounted] = useState(false)
+
+	useEffect(() => {
+		setMounted(true)
+	}, [])
+
+	if (!mounted) return null
+
 	async function goToCheckoutOverview() {
 		if (!selectedPlatform) return
 
