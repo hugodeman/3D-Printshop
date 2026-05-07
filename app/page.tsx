@@ -1,325 +1,103 @@
 "use client";
+
 import { H1, H2, H3, P } from "@/components/ui/Typography"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon";
-import { BackgroundOverlay, BackgroundContrast1, BackgroundContrast2 } from "@/components/ui/Background";
-import { Input } from "@/components/ui/Input";
+import { BackgroundMain, BackgroundOverlay, BackgroundContrast1, BackgroundContrast2 } from "@/components/ui/Background";
+import Link from "next/link";
 
+const popularProducts = [
+    { id: 1, title: "Product 1", price: "10,-" },
+    { id: 2, title: "Product 2", price: "10,-" },
+    { id: 3, title: "Product 3", price: "10,-" },
+]
 
-export default function Page() {
+function ImagePlaceholder({ className = "" }: { className?: string }) {
     return (
-        <>
-            {/* Typography Examples */}
+        <div className={`flex items-center justify-center bg-[#3a3a3a] rounded-xl ${className}`}>
+            <Icon name="Image" size={48} opacity="40%" />
+        </div>
+    )
+}
+
+export default function HomePage() {
+    return (
+        <BackgroundMain>
+
+            {/* Hero sectie */}
             <BackgroundOverlay>
-                <section className="p-8 mb-12">
-                    <H1>Welkom bij de 3D Printshop</H1>
-                    <H2>Dit is subtitel</H2>
-                    <H3>Dit is subtekst</H3>
-                    <P>Upload je model en bestel direct.</P>
-                </section>
+                <div className="flex items-center justify-end gap-12 px-16 pb-12 pt-8 w-full">
+                    <div className="w-full flex flex-col justify-center items-start ml-20">
+                        <H1>Ben jij op zoek naar leuke figuurtjes of praktische dingetjes?</H1>
+                        <H2 className="mt-8 text-lg">Dan ben jij hier goed terecht!</H2>
+                        <P className="mt-10 text-white/90">
+                            HoekvanNoek biedt velen leuke figuurtjes en handige dingetjes aan om van te kunnen genieten.
+                        </P>
+                        <P className="mt-6 text-white/90">
+                            Kan je niet vinden wat je zoekt of heb je een specifiek product nodig?{" "} - {" "}
+                            <Link href="/offerte" className="text-action underline inline-block">
+                                Maak een offerte
+                            </Link>
+                        </P>
+                    </div>
+                    <div className="shrink-0 w-1/2 flex justify-center">
+                        <ImagePlaceholder className="w-96 h-56" />
+                    </div>
+                </div>
             </BackgroundOverlay>
 
-            {/* Background Examples */}
-            <section className="p-8 mb-12 h-72]]">
-                <H2 className="mb-4">Background Voorbeelden</H2>
-
-                <div className="mb-8">
-                    <H3 className="mb-4">BackgroundContrast2 (voorbeeld sectie)</H3>
-                    <div className="h-64">
-                        <BackgroundContrast1>
-                            <div className="p-8">
-                                <H1 className={"text-contrast"}>Welkom bij de 3D Printshop</H1>
-                                <H2 className={"text-contrast"}>Dit is subtitel</H2>
-                                <H3 className={"text-contrast"}>Dit is subtekst</H3>
-                                <P className={"text-contrast"}>Upload je model en bestel direct.</P>
-                                <Button variant="secondary" className="mt-4">Contrast button</Button>
-                            </div>
-                            <div className="p-6 space-y-4 max-w-xl">
-                                <Input
-                                    variant="contrast"
-                                    inputSize="lg"
-                                    placeholder="Groene input - groot"
-                                />
-                                <div className={"flex gap-10"}>
-                                    <Input
-                                        variant="contrast"
-                                        inputSize="sm"
-                                        placeholder="Groene input - klein"
-                                    />
-                                    <Input
-                                        variant="contrast"
-                                        inputSize="sm"
-                                        placeholder="Groene input - klein"
-                                    />
-                                </div>
-                            </div>
-                        </BackgroundContrast1>
-                    </div>
-                </div>
-
-                <div className="mb-20 mt-45">
-                    <H3 className="mb-4">BackgroundContrast2 (voorbeeld sectie)</H3>
-                    <div className="h-64">
-                        <BackgroundContrast2>
-                            <div className="p-8">
-                                <H1>Welkom bij de 3D Printshop</H1>
-                                <H2>Dit is subtitel</H2>
-                                <H3>Dit is subtekst</H3>
-                                <P>Upload je model en bestel direct.</P>
-                                <div className={"flex gap-10"}>
-                                    <Button variant="secondary" className="mt-4">Contrast button</Button>
-                                    <Button variant="primary" className="mt-4">Contrast button</Button>
-                                </div>
-                            </div>
-                            <div className="p-6 space-y-4 max-w-xl">
-                                <Input
-                                    variant="normal"
-                                    inputSize="lg"
-                                    placeholder="Normale input - groot"
-                                />
-                                <div className={"flex gap-10"}>
-                                    <Input
-                                        variant="normal"
-                                        inputSize="sm"
-                                        placeholder="Normale input - klein"
-                                    />
-                                    <Input
-                                        variant="normal"
-                                        inputSize="sm"
-                                        placeholder="Normale input - klein"
-                                    />
-                                </div>
-                            </div>
+            {/* Populaire producten */}
+            <section className="px-16 py-14">
+                <H2 className="text-center mb-10">Populaire producten</H2>
+                <div className="flex gap-10 justify-center">
+                    {popularProducts.map(product => (
+                        <BackgroundContrast2 key={product.id} className="rounded-2xl p-5 w-1/6 cursor-pointer hover:opacity-90 transition-opacity">
+                            <ImagePlaceholder className="w-full h-[10vw] mb-4" />
+                            <H3 className="font-medium">{product.title}</H3>
+                            <P className="mt-1">€ {product.price}</P>
                         </BackgroundContrast2>
-                    </div>
+                    ))}
+                </div>
+                <div className="flex justify-center mt-10">
+                    <Link href="/webshop" className="inline-block">
+                        <Button variant="primary">Bekijk alle producten</Button>
+                    </Link>
                 </div>
             </section>
 
-            {/* Icon Examples */
-            }
-            <section className="p-8">
-                <H2 className="mb-8">Icon Voorbeelden</H2>
+            {/* Builder CTA */}
+            <section className="px-16 pb-14">
+                <BackgroundContrast1 className="rounded-4xl px-12 pb-15 pt-8 w-8/10 mx-auto">
+                    <H2 className="text-center text-contrast mb-8">Maak je beeldjes weer leuk!</H2>
+                    <div className="flex items-center gap-8">
+                        {/* Voor/na afbeeldingen */}
+                        <div className="flex items-center gap-6 shrink-0 w-1/2 justify-center">
+                            <ImagePlaceholder className="w-44 h-44" />
+                            <Icon name="ArrowBigRight" size={56} opacity="90%" color={"black"} />
+                            <ImagePlaceholder className="w-44 h-44" />
+                        </div>
 
-                {/* CAD/Design Icons */}
-                <div className="mb-8">
-                    <H3 className="mb-4">CAD & Design</H3>
-                    <div className="flex gap-6 flex-wrap">
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="Box" size={32} opacity="50%"/>
-                            <P className="text-xs">Box</P>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="Rocket" size={32}/>
-                            <P className="text-xs">Rocket</P>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="Ruler" size={32} />
-                            <P className="text-xs">Ruler</P>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="Grid" size={32} />
-                            <P className="text-xs">Grid</P>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="Sliders" size={32} />
-                            <P className="text-xs">Sliders</P>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="MoveVertical" size={32} />
-                            <P className="text-xs">Scroll</P>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="Mouse" size={32} />
-                            <P className="text-xs">Mouse</P>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="MousePointerClick" size={32} />
-                            <P className="text-xs">MousePointerClick</P>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="Eye" size={32} />
-                            <P className="text-xs">Eye</P>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="Minus" size={32} />
-                            <P className="text-xs">Minus</P>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="SquareChevronUp" size={32} />
-                            <P className="text-xs">SquareChevronUp</P>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="Network" size={32} />
-                            <P className="text-xs">Network</P>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="CircleCheck" size={32} />
-                            <P className="text-xs">CircleCheck</P>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="Info" size={32} />
-                            <P className="text-xs">Info</P>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="CircleQuestionMark" size={32} />
-                            <P className="text-xs">CircleQuestionMark</P>
+                        {/* Tekst */}
+                        <div className="flex flex-col gap-4">
+                            <div>
+                                <H3 className="text-contrast">Kunnen jouw beeldjes een upgrade gebruiken?</H3>
+                                <P className="text-contrast mt-5">
+                                    Maak je beeldjes uniek door ze een eigen decoratieve stand te geven.
+                                </P>
+                                <P className="text-contrast mt-2">
+                                    Kies uit voorgemaakte modellen en combineer ze naar wens.
+                                </P>
+                            </div>
+                            <div className={"flex justify-center mt-4"}>
+                                <Link href="/builder" className="inline-block">
+                                    <Button variant={"primary"} isActive>Maak je stand</Button>
+                                </Link>
+                            </div>
                         </div>
                     </div>
-                </div>
-
-                {/* Navigation Icons */}
-                <div className="mb-8">
-                    <H3 className="mb-4">Navigatie</H3>
-                    <div className="flex gap-6 flex-wrap">
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="ArrowBigRight" size={32} />
-                            <P className="text-xs">ArrowBigRight</P>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="ArrowBigLeft" size={32} />
-                            <P className="text-xs">ArrowBigLeft</P>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="ArrowLeftRight" size={32} />
-                            <P className="text-xs">ArrowLeftRight</P>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="Search" size={32} />
-                            <P className="text-xs">Search</P>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Product/Shop Icons */}
-                <div className="mb-8">
-                    <H3 className="mb-4">Shop</H3>
-                    <div className="flex gap-6 flex-wrap">
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="ShoppingCart" size={32} />
-                            <P className="text-xs">ShoppingCart</P>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="ShoppingBag" size={32} />
-                            <P className="text-xs">ShoppingBag</P>
-                        </div>
-                    </div>
-                </div>
-
-                {/* File Upload Icons */}
-                <div className="mb-8">
-                    <H3 className="mb-4">Bestanden</H3>
-                    <div className="flex gap-6 flex-wrap">
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="Upload" size={32} />
-                            <P className="text-xs">Upload</P>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="Download" size={32} />
-                            <P className="text-xs">Download</P>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="Image" size={32} />
-                            <P className="text-xs">Image</P>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="Trash2" size={32} />
-                            <P className="text-xs">Trash</P>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Status Icons */}
-                <div className="mb-8">
-                    <H3 className="mb-4">Status</H3>
-                    <div className="flex gap-6 flex-wrap">
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="Check" size={32} color="#98CEAA" />
-                            <P className="text-xs">Check</P>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="Circle" size={32} />
-                            <P className="text-xs">Circle</P>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="CircleDot" size={32} />
-                            <P className="text-xs">CircleDot</P>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="X" size={32} color="#ff6b6b" />
-                            <P className="text-xs">Cross</P>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Time Icons */}
-                <div className="mb-8">
-                    <H3 className="mb-4">Tijd</H3>
-                    <div className="flex gap-6 flex-wrap">
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="Clock" size={32} />
-                            <P className="text-xs">Clock</P>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="Hourglass" size={32} />
-                            <P className="text-xs">Hourglass</P>
-                        </div>
-                    </div>
-                </div>
-
-                {/* User/Account Icons */}
-                <div className="mb-8">
-                    <H3 className="mb-4">Account</H3>
-                    <div className="flex gap-6 flex-wrap">
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="CircleUserRound" size={32} />
-                            <P className="text-xs">User</P>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="LogOut" size={32} />
-                            <P className="text-xs">LogOut</P>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="Mail" size={32} />
-                            <P className="text-xs">Mail</P>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Action Icons */}
-                <div className="mb-8">
-                    <H3 className="mb-4">Acties</H3>
-                    <div className="flex gap-6 flex-wrap">
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="ThumbsUp" size={32}/>
-                            <P className="text-xs">ThumbsUp</P>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="ThumbsDown" size={32}/>
-                            <P className="text-xs">ThumbsDown</P>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="Cookie" size={32}/>
-                            <P className="text-xs">Cookie</P>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="PenTool" size={32}/>
-                            <P className="text-xs">PenTool</P>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="SquarePen" size={32}/>
-                            <P className="text-xs">SquarePen</P>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="FilePlus" size={32}/>
-                            <P className="text-xs">FilePlus</P>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <Icon name="ScrollText" size={32}/>
-                            <P className="text-xs">ScrollText</P>
-                        </div>
-                    </div>
-                </div>
+                </BackgroundContrast1>
             </section>
-        </>
+
+        </BackgroundMain>
     )
 }

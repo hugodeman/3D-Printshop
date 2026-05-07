@@ -47,13 +47,13 @@ body {
   background-color: #6D8F78;
 }
 
-/*.bg-button-primary:active {*/
-/*  background-color: #6D8F78;*/
-/*}*/
-
 .bg-button-primary-active {
-  background-color: #6D8F78; /* Same as primary hover/active */
-  border: solid 2px; /* Add border to indicate active state */
+  background-color: #6D8F78;
+}
+
+.bg-button-primary-active:hover {
+  color: #CECECD;
+  background-color: #56715d;
 }
 
 .bg-button-secondary {
