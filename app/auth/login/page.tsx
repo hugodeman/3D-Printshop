@@ -84,7 +84,7 @@ export default function LoginPage() {
     <BackgroundMain>
       {/* Header Overlay */}
       <BackgroundOverlay>
-        <H1>Welkom terug</H1>
+        <H1>Login</H1>
         <H2>Log in op je account om verder te gaan</H2>
       </BackgroundOverlay>
 
@@ -97,7 +97,7 @@ export default function LoginPage() {
                 <H3 className={"text-contrast"}>Email:</H3>
               </label>
               <Input
-                type="email"
+                type="text"
                 value={formData.email}
                 onChange={(e) => updateField("email", e.target.value)}
                 placeholder="Email"

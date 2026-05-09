@@ -44,3 +44,12 @@ next-env.d.ts
 
 # local/private runtime files (e.g. generated print exports)
 /private/
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+coverage/

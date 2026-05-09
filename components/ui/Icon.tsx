@@ -44,7 +44,10 @@ import {
   Copyright,
   ChevronDown,
   Paintbrush2,
-  CirclePlus
+  CirclePlus,
+  CircleX,
+  LoaderCircle,
+  Package
 } from 'lucide-react';
 
 const Icons = {
@@ -92,7 +95,10 @@ const Icons = {
   Copyright,
   ChevronDown,
   Paintbrush2,
-  CirclePlus
+  CirclePlus,
+  CircleX,
+  LoaderCircle,
+  Package
 };
 
 type IconProps = {
