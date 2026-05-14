@@ -1,6 +1,6 @@
 "use client"
 
-import {H1, H2, H3, P} from "@/components/ui/Typography";
+import {H1, H2, H3} from "@/components/ui/Typography";
 import { BackgroundContrast2, BackgroundMain, BackgroundOverlay} from "@/components/ui/Background";
 import { Icon } from "@/components/ui/Icon"
 import {useEffect, useState} from "react";
@@ -53,32 +53,36 @@ export default function WebshopPage() {
     )
 
     return (
-        <BackgroundMain>
-            <BackgroundOverlay className={"flex justify-center relative"}>
+        <BackgroundMain className={"relative"}>
+            <BackgroundOverlay className={"flex justify-center"}>
                 <div>
                     <H1>Welkom bij de webshop</H1>
-                    <H2>Bekijk het assortiment beeldjes of praktische spullen</H2>
+                    <H2 className={"mt-5"}>Bekijk het assortiment beeldjes of praktische spullen</H2>
                 </div>
-                <div className="absolute right-25 top-1/2 -translate-y-1/2">
-                    <Icon name={"ShoppingCart"} size={40} />
+                <div className="absolute right-25 top-6 z-10 cursor-pointer">
+                    <Icon name={"ShoppingCart"} size={50} />
                 </div>
             </BackgroundOverlay>
-            <div className={"flex justify-center gap-20"}>
+            <div className={"flex justify-center gap-20 my-10 pb-5"}>
                 <Button className={"w-64"} isActive={productType === "figure"} onClick={() => setProductType("figure")}>Beeldjes</Button>
                 <Button className={"w-64"} isActive={productType === "practical"} onClick={() => setProductType("practical")}>Praktische spullen</Button>
             </div>
 
-            {filteredProducts.map((product) => (
-                <Link key={product.id} href={`/webshop/${product.id}`}>
-                    <BackgroundContrast2 className={"cursor-pointer flex flex-col items-center gap-4 border-b border-black/10 py-6"}>
-                        <div>
-                            <Image src={product.images[0]?.url} alt={product.title} width={200} height={200} />
-                        </div>
-                        <H3>{product.title}</H3>
-                        <P>Price: ${product.price}</P>
-                    </BackgroundContrast2>
-                </Link>
-            ))}
+            <div className={"grid grid-cols-3 gap-15     px-100 justify-center items-center"}>
+                {filteredProducts.map((product) => (
+                    <Link key={product.id} href={`/webshop/${product.id}`} className={"flex justify-center"}>
+                        <BackgroundContrast2 className={"rounded-2xl cursor-pointer flex flex-col gap-4 p-6 min-w-100 w-full mb-5 transition-transform duration-200 hover:scale-110 hover:shadow-xl"}>
+                            <div className={"flex justify-center"}>
+                                <Image src={product.images[0]?.url} alt={product.title} width={200} height={200} loading={"lazy"} />
+                            </div>
+                            <div className={"mb-5 pl-5"}>
+                                <H3 className={"mb-2"}>{product.title}</H3>
+                                <H3>€ {product.price}</H3>
+                            </div>
+                        </BackgroundContrast2>
+                    </Link>
+                ))}
+            </div>
         </BackgroundMain>
     )
 }

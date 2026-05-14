@@ -24,7 +24,7 @@ export default function ProductOptions({ type, options }: Props) {
             <select
                 value={selected}
                 onChange={(e) => setSelected(e.target.value)}
-                className="rounded-[5px] border input-shadow outline-none transition-colors h-12 px-4 text-p w-full bg-input-normal border-input-normal"
+                className="rounded-[5px] border input-shadow outline-none transition-colors h-12 px-4 text-p w-full bg-input-normal border-input-normal cursor-pointer"
             >
                 <option value="" disabled hidden>Kies opmaak</option>
                 <option value="painted">Geschilderd</option>
@@ -38,7 +38,7 @@ export default function ProductOptions({ type, options }: Props) {
             <select
                 value={selected}
                 onChange={(e) => setSelected(e.target.value)}
-                className="rounded-[5px] border input-shadow outline-none transition-colors h-12 px-4 text-p w-full bg-input-normal border-input-normal"
+                className="rounded-[5px] border input-shadow outline-none transition-colors h-12 px-4 text-p w-full bg-input-normal border-input-normal cursor-pointer"
             >
                 <option value="" disabled hidden>Kies kleur</option>
                 {COLORS.map((color) => (
