@@ -29,8 +29,8 @@ export function Navbar({ className = "" }: NavbarProps) {
       <div className="flex items-center gap-10">
         <Button
           variant="secondary"
-          isActive={pathname === "/shop"}
-          onClick={() => router.push("/shop")}
+          isActive={pathname === "/webshop"}
+          onClick={() => router.push("/webshop")}
           className="w-48"
         >
           Webshop
