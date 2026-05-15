@@ -68,10 +68,10 @@ export default function WebshopPage() {
                 <Button className={"w-64"} isActive={productType === "practical"} onClick={() => setProductType("practical")}>Praktische spullen</Button>
             </div>
 
-            <div className={"grid grid-cols-3 gap-15     px-100 justify-center items-center"}>
+            <div className={"grid grid-cols-3 gap-15 px-130 justify-center items-center mb-20"}>
                 {filteredProducts.map((product) => (
                     <Link key={product.id} href={`/webshop/${product.id}`} className={"flex justify-center"}>
-                        <BackgroundContrast2 className={"rounded-2xl cursor-pointer flex flex-col gap-4 p-6 min-w-100 w-full mb-5 transition-transform duration-200 hover:scale-110 hover:shadow-xl"}>
+                        <BackgroundContrast2 className={"rounded-2xl cursor-pointer flex flex-col gap-4 p-6 min-w-70 w-full mb-5 transition-transform duration-200 hover:scale-110 hover:shadow-xl"}>
                             <div className={"flex justify-center"}>
                                 <Image src={product.images[0]?.url} alt={product.title} width={200} height={200} loading={"lazy"} />
                             </div>

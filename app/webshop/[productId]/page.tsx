@@ -1,11 +1,9 @@
 import { BackgroundMain, BackgroundOverlay } from "@/components/ui/Background"
 import {H2, H3, P} from "@/components/ui/Typography";
 import prisma from "@/lib/prisma"
-import Image from "next/image";
 import {Icon} from "@/components/ui/Icon";
-import ProductOptions from "@/components/shop/ProductOptions";
-import {Button} from "@/components/ui/Button";
 import ProductImageSlider from "@/components/shop/ProductImageSlider";
+import AddToCartButton from "@/components/shop/AddToCartButton";
 
 type Props = {
     params: Promise<{ productId: string }>
@@ -40,11 +38,17 @@ export default async function ProductDetail({ params }: Props) {
                     </div>
                     <P className={"pb-3"}>Afmetingen:  {product.dimensions}</P>
                     <P className={"pb-10"}>Filament type: {product.filament}</P>
-                    <div className={"mb-15 w-1/4 min-w-50"}>
-                        <P className={"mb-3"}>Kies opmaak:</P>
-                        <ProductOptions type={product.type} options={product.options}/>
+                    <div className={"mb-5 w-1/4 min-w-50"}>
+                        <P>Kies opmaak:</P>
                     </div>
-                    <Button className={"mb-25 w-1/3 min-w-60"}>Voeg toe aan winkelmand</Button>
+                    <AddToCartButton product={{
+                        id: product.id,
+                        title: product.title,
+                        price: Number(product.price),
+                        images: product.images.map(i => i.url),
+                        type: product.type,
+                        options: product.options
+                    }} />
                 </div>
             </BackgroundOverlay>
         </BackgroundMain>
