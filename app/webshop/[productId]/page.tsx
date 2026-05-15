@@ -5,6 +5,7 @@ import Image from "next/image";
 import {Icon} from "@/components/ui/Icon";
 import ProductOptions from "@/components/shop/ProductOptions";
 import {Button} from "@/components/ui/Button";
+import ProductImageSlider from "@/components/shop/ProductImageSlider";
 
 type Props = {
     params: Promise<{ productId: string }>
@@ -26,8 +27,8 @@ export default async function ProductDetail({ params }: Props) {
                 <Icon name={"ShoppingCart"} size={50}/>
             </div>
             <BackgroundOverlay className={"mt-25 h-full w-full flex flex-row text-start gap-5"}>
-                <div className={"cursor-pointer w-1/3"}>
-                    <Image src={product.images[0]?.url} alt={product.title} width={400} height={400} />
+                <div className={"w-1/3"}>
+                    <ProductImageSlider images={product.images} title={product.title}></ProductImageSlider>
                 </div>
                 <div className={"flex flex-col flex-wrap justify-center w-1/3"}>
                     <H2 className={"pb-15 mt-10"}>{product.title}</H2>
