@@ -6,6 +6,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { BackgroundMain } from "@/components/ui/Background";
 import { SessionProvider } from "next-auth/react";
+import { CartProvider } from "@/context/CartContext"
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -21,13 +22,15 @@ export default function RootLayout({
     <SessionProvider>
       <html lang="en">
         <body className={poppins.className}>
-          <BackgroundMain>
-            <Navbar />
-            <main>
-              {children}
-            </main>
-            <Footer />
-          </BackgroundMain>
+          <CartProvider>
+            <BackgroundMain>
+              <Navbar />
+              <main>
+               {children}
+              </main>
+              <Footer />
+            </BackgroundMain>
+          </CartProvider>
         </body>
       </html>
     </SessionProvider>

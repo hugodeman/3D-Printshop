@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/Button"
 import { ProductPopupModel } from "@/components/shop/ProductPopupModel"
 import ProductOptions from "@/components/shop/ProductOptions"
+import {useCart} from "@/context/CartContext";
 
 type Props = {
     product: {
@@ -22,6 +23,18 @@ type Props = {
 export default function AddToCartButton({ product }: Props) {
     const [popupOpen, setPopupOpen] = useState(false)
     const [selectedOption, setSelectedOption] = useState("")
+    const { addItem } = useCart()
+
+    const handleAddToCart = () => {
+        addItem({
+            id: product.id,
+            title: product.title,
+            price: product.price,
+            image: product.images[0] || "",
+            option: selectedOption
+        })
+        setPopupOpen(true)
+    }
 
     return (
         <div>
@@ -35,7 +48,7 @@ export default function AddToCartButton({ product }: Props) {
 
             <Button
                 className={"mb-25 w-1/3 min-w-60"}
-                onClick={() => setPopupOpen(true)}
+                onClick={handleAddToCart}
             >
                 Voeg toe aan winkelmand
             </Button>

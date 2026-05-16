@@ -4,7 +4,8 @@ import {BackgroundContrast1} from "@/components/ui/Background";
 import {H2, H3} from "@/components/ui/Typography";
 import {Icon} from "@/components/ui/Icon";
 import {Button} from "@/components/ui/Button";
-import Image from "next/image"
+import Image from "next/image";
+import Link from "next/link";
 
 type ProductPopupModel = {
     isOpen: boolean
@@ -43,9 +44,11 @@ export function ProductPopupModel({ isOpen, onCloseAction, product }: ProductPop
                 </div>
             </div>
 
-            <Button variant={"primary"} isActive={true} className="w-full">
-                Ga naar winkelmand
-            </Button>
+            <Link href="/shoppingcart">
+                <Button variant={"primary"} isActive={true} className="w-full">
+                    Ga naar winkelmand
+                </Button>
+            </Link>
         </BackgroundContrast1>
     )
 }

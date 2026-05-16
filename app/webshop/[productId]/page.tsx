@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma"
 import {Icon} from "@/components/ui/Icon";
 import ProductImageSlider from "@/components/shop/ProductImageSlider";
 import AddToCartButton from "@/components/shop/AddToCartButton";
+import Link from "next/link"
 
 type Props = {
     params: Promise<{ productId: string }>
@@ -22,7 +23,9 @@ export default async function ProductDetail({ params }: Props) {
     return (
         <BackgroundMain className={"flex flex-col relative"}>
             <div className={"absolute right-25 top-6 z-10"}>
-                <Icon name={"ShoppingCart"} size={50}/>
+                <Link href="/winkelmand">
+                    <Icon name={"ShoppingCart"} size={50} className="cursor-pointer" />
+                </Link>
             </div>
             <BackgroundOverlay className={"mt-25 h-full w-full flex flex-row text-start gap-5"}>
                 <div className={"w-1/3"}>

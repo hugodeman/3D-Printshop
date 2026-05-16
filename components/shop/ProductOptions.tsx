@@ -33,8 +33,8 @@ export default function ProductOptions({ type, options, onChangeAction }: Props)
                 className="rounded-[5px] border input-shadow outline-none transition-colors h-12 px-4 text-p w-full bg-input-normal border-input-normal cursor-pointer"
             >
                 <option value="" disabled hidden>Kies opmaak</option>
-                <option value="painted">Geverfd</option>
-                <option value="unpainted">Niet geverfd</option>
+                <option value="Geverfd">Geverfd</option>
+                <option value="Niet geverfd">Niet geverfd</option>
             </select>
         )
     }

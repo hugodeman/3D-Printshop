@@ -60,7 +60,9 @@ export default function WebshopPage() {
                     <H2 className={"mt-5"}>Bekijk het assortiment beeldjes of praktische spullen</H2>
                 </div>
                 <div className="absolute right-25 top-6 z-10 cursor-pointer">
-                    <Icon name={"ShoppingCart"} size={50} />
+                    <Link href="/shoppingcart">
+                        <Icon name={"ShoppingCart"} size={50} />
+                    </Link>
                 </div>
             </BackgroundOverlay>
             <div className={"flex justify-center gap-20 my-10 pb-5"}>
