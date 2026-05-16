@@ -23,7 +23,7 @@ export default async function ProductDetail({ params }: Props) {
     return (
         <BackgroundMain className={"flex flex-col relative"}>
             <div className={"absolute right-25 top-6 z-10"}>
-                <Link href="/winkelmand">
+                <Link href="/shoppingcart">
                     <Icon name={"ShoppingCart"} size={50} className="cursor-pointer" />
                 </Link>
             </div>
