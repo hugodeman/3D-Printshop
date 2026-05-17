@@ -38,7 +38,7 @@ export default function WinkelmandPage() {
                     {items.map((item) => (
                         <div key={`${item.id}-${item.option}`} className="w-full min-w-200">
                             <BackgroundContrast2 className={"rounded-2xl p-5 mb-5 w-full flex items-center gap-4 relative"}>
-                                <button className="absolute top-4 right-4" onClick={() => removeItem(item.id)}>
+                                <button className="absolute top-4 right-4" onClick={() => removeItem(item.id, item.option)}>
                                     <Icon name={"Trash2"} size={30} className={"cursor-pointer"} opacity={0.8}/>
                                 </button>
 
@@ -52,7 +52,7 @@ export default function WinkelmandPage() {
 
                                 <select
                                     value={item.quantity}
-                                    onChange={(e) => updateQuantity(item.id, Number(e.target.value))}
+                                    onChange={(e) => updateQuantity(item.id, item.option, Number(e.target.value))}
                                     className="rounded-[5px] border input-shadow outline-none transition-colors h-12 px-4 text-p bg-input-normal border-input-normal cursor-pointer"
                                 >
                                     {[1,2,3,4,5].map((n) => (
