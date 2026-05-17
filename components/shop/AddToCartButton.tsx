@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button"
 import { ProductPopupModel } from "@/components/shop/ProductPopupModel"
 import ProductOptions from "@/components/shop/ProductOptions"
 import {useCart} from "@/context/CartContext";
+import {ErrorText} from "@/components/ui/Typography";
 
 type Props = {
     product: {
@@ -24,8 +25,14 @@ export default function AddToCartButton({ product }: Props) {
     const [popupOpen, setPopupOpen] = useState(false)
     const [selectedOption, setSelectedOption] = useState("")
     const { addItem } = useCart()
+    const [error, setError] = useState("")
 
     const handleAddToCart = () => {
+        if (selectedOption === "") {
+            setError("Kies een optie")
+            return
+        }
+
         addItem({
             id: product.id,
             title: product.title,
@@ -44,6 +51,7 @@ export default function AddToCartButton({ product }: Props) {
                     options={product.options}
                     onChangeAction={setSelectedOption}
                 />
+                {error && <ErrorText className="mt-2">{error}</ErrorText>}
             </div>
 
             <Button
