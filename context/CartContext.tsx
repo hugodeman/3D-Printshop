@@ -14,8 +14,8 @@ type CartItem = {
 type CartContextType = {
     items: CartItem[]
     addItem: (item: Omit<CartItem, "quantity">) => void
-    removeItem: (id: string) => void
-    updateQuantity: (id: string, quantity: number) => void
+    removeItem: (id: string, option: string) => void
+    updateQuantity: (id: string, option: string, quantity: number) => void
     total: number
 }
 
@@ -51,13 +51,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         })
     }
 
-    const removeItem = (id: string) => {
-        setItems((prev) => prev.filter((i) => i.id !== id))
+    const removeItem = (id: string, option: string) => {
+        setItems((prev) => prev.filter((i) => !(i.id === id && i.option === option)))
     }
 
-    const updateQuantity = (id: string, quantity: number) => {
+    const updateQuantity = (id: string, option: string, quantity: number) => {
         setItems((prev) =>
-            prev.map((i) => (i.id === id ? { ...i, quantity } : i))
+            prev.map((i) => (i.id === id && i.option === option ? { ...i, quantity } : i))
         )
     }
 
