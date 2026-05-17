@@ -24,6 +24,8 @@ type Props = {
 export default function AddToCartButton({ product }: Props) {
     const [popupOpen, setPopupOpen] = useState(false)
     const [selectedOption, setSelectedOption] = useState("")
+    const [confirmedOption, setConfirmedOption] = useState("")
+
     const { addItem } = useCart()
     const [error, setError] = useState("")
 
@@ -32,6 +34,7 @@ export default function AddToCartButton({ product }: Props) {
             setError("Kies een optie")
             return
         }
+        setConfirmedOption(selectedOption)
 
         addItem({
             id: product.id,
@@ -66,7 +69,7 @@ export default function AddToCartButton({ product }: Props) {
                 onCloseAction={() => setPopupOpen(false)}
                 product={{
                     ...product,
-                    options: selectedOption ? [selectedOption] : []
+                    options: confirmedOption ? [confirmedOption] : []
                 }}
             />
         </div>
