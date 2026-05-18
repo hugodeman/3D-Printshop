@@ -84,7 +84,6 @@ model Order {
   status    OrderStatus @default(PENDING)
   total     Decimal
   note      String?
-  option    String?
   createdAt DateTime    @default(now())
   user      User        @relation(fields: [userId], references: [id])
   items     OrderItem[]
@@ -98,6 +97,7 @@ model OrderItem {
   builderItemId String?      @unique
   quantity      Int
   price         Decimal
+  option        String?
   builderItem   BuilderItem? @relation(fields: [builderItemId], references: [id])
   order         Order        @relation(fields: [orderId], references: [id])
   product       Product?     @relation(fields: [productId], references: [id])
