@@ -7,15 +7,40 @@ import { Icon } from "@/components/ui/Icon"
 import { Button } from "@/components/ui/Button"
 import Image from "next/image"
 import Link from "next/link"
+import {useState} from "react";
 
 export default function WinkelmandPage() {
     const { items, removeItem, updateQuantity, total } = useCart()
+    const [note, setNote] = useState<string>("")
+
+    const handleOrder = async () => {
+        const response = await fetch("/api/orders", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                items: items.map(item => ({
+                    productId: item.id,
+                    quantity: item.quantity,
+                    price: item.price,
+                    option: item.option,
+                })),
+                note: note
+            })
+        })
+        if (!response.ok) {
+            console.error("Failed to create order")
+            return
+        }
+
+        const { checkoutUrl } = await response.json()
+        window.location.href = checkoutUrl // Mollie of mock redirect
+    }
 
     return (
         <BackgroundMain className="flex flex-col">
             <BackgroundOverlay className="flex flex-col items-center py-10">
                 <H1>Winkelmand</H1>
-                <Link href="/webshop" className="text-action text-p underline mt-2">Ga verder met shoppen</Link>
+                <Link href="/webshop" className="text-action text-h3 underline mt-2">Ga verder met shoppen</Link>
             </BackgroundOverlay>
 
             {items.length === 0 ? (
@@ -45,7 +70,9 @@ export default function WinkelmandPage() {
                                 <Image src={item.image} alt={item.title} width={200} height={200} className="rounded-lg object-cover" loading="lazy" />
 
                                 <div className="flex-1">
-                                    <H2 className={"pb-10"}>{item.title}</H2>
+                                    <Link href={`/webshop/${item.id}`}>
+                                        <H2 className={"mb-10 text-action hover:underline"}>{item.title}</H2>
+                                    </Link>
                                     <H3 className={"pb-1"}>Opmaak:</H3>
                                     <P>{item.option}</P>
                                 </div>
@@ -70,6 +97,7 @@ export default function WinkelmandPage() {
                             <P>Voeg opmerking/vraag toe:</P>
                             <textarea
                                 placeholder="..."
+                                onChange={(e) => setNote(e.target.value)}
                                 className="rounded-lg border p-3 w-full min-w-60 h-40 resize-none bg-input-normal border-input-normal outline-none input-shadow mt-2"
                             />
                         </div>
@@ -78,7 +106,7 @@ export default function WinkelmandPage() {
                                 <H3>Totaal:</H3>
                                 <H2 className={"pr-20"}>€{total.toFixed(2)}</H2>
                             </div>
-                            <Button className={"w-3/7 min-w-50 mt-3"}>Bestel</Button>
+                            <Button className={"w-3/7 min-w-50 mt-3"} onClick={handleOrder}>Bestel</Button>
                         </div>
                     </div>
                 </div>

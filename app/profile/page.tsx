@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button"
 import { AddressForm, AddressData, AddressErrors } from "@/components/forms/AddressForm"
 import { Icon } from "@/components/ui/Icon";
 import {Input} from "@/components/ui/Input";
+import Image from "next/image";
 
 export default function ProfilePage() {
     const { data: session, status } = useSession()
@@ -34,6 +35,7 @@ export default function ProfilePage() {
         total: string
         note: string | null
         createdAt: string
+        option: string | null
         items: Array<{
             id: string
             quantity: number
@@ -41,7 +43,7 @@ export default function ProfilePage() {
             product: {
                 id: string
                 title: string
-                images: { url: string }[]
+                images: { id: string, url: string, productId: string }[]
                 options: string
                 deliveryTime: number
             } | null
@@ -52,6 +54,10 @@ export default function ProfilePage() {
             } | null
         }>
     }>>([])
+
+    useEffect(() => {
+        console.log(orderData)
+    }, [orderData])
 
     const [credentialsErrors, setCredentialsErrors] = useState<{ email?: string; password?: string }>({})
     const [addressErrors, setAddressErrors] = useState<AddressErrors>({})
@@ -350,18 +356,13 @@ export default function ProfilePage() {
                                                   <div key={item.id} className="flex items-center gap-4 pb-8 border-b border-white/20">
                                                       {/* Product order */}
                                                       {item.product && (
-                                                          <div>
-                                                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                              <img
-                                                                  src={item.product.images[0]?.url}
-                                                                  alt={item.product.title}
-                                                                  className="w-72 h-auto object-cover rounded-lg"
-                                                              />
+                                                          <div className={"flex gap-4"}>
+                                                              <Image src={item.product.images[0]?.url || ""} alt={item.product.title} width={150} height={150} className="rounded-lg object-cover" loading="lazy" />
                                                               <div className={"flex flex-col justify-between"}>
-                                                                  <div>
+                                                                  <div className={"flex flex-col justify-between"}>
                                                                       <P className={"pt-5"}>{item.product.title}</P>
                                                                       <P className="text-white/80 py-3">Aantal: {item.quantity}</P>
-                                                                      <P className="text-white/80"> Opmaak: {item.product.options}</P>
+                                                                      <P className="text-white/80"> Opmaak: {order.option}</P>
                                                                   </div>
                                                                   <P className="text-white pb-5">maaktijd: {item.product.deliveryTime} uur</P>
                                                               </div>
