@@ -70,10 +70,11 @@ export async function POST(request: NextRequest) {
             total,
             note,
             items: {
-                create: items.map((item: { productId: string, quantity: number, price: number }) => ({
+                create: items.map((item: { productId: string, quantity: number, price: number, option: string }) => ({
                     productId: item.productId,
                     quantity: item.quantity,
                     price: item.price,
+                    option: item.option,
                 }))
             }
         }

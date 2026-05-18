@@ -35,11 +35,11 @@ export default function ProfilePage() {
         total: string
         note: string | null
         createdAt: string
-        option: string | null
         items: Array<{
             id: string
             quantity: number
             price: string
+            option: string | null
             product: {
                 id: string
                 title: string
@@ -362,7 +362,7 @@ export default function ProfilePage() {
                                                                   <div className={"flex flex-col justify-between"}>
                                                                       <P className={"pt-5"}>{item.product.title}</P>
                                                                       <P className="text-white/80 py-3">Aantal: {item.quantity}</P>
-                                                                      <P className="text-white/80"> Opmaak: {order.option}</P>
+                                                                      <P className="text-white/80"> Opmaak: {item.option}</P>
                                                                   </div>
                                                                   <P className="text-white pb-5">maaktijd: {item.product.deliveryTime} uur</P>
                                                               </div>

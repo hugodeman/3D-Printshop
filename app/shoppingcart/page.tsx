@@ -7,11 +7,20 @@ import { Icon } from "@/components/ui/Icon"
 import { Button } from "@/components/ui/Button"
 import Image from "next/image"
 import Link from "next/link"
-import {useState} from "react";
+import {useEffect, useState} from "react";
 
 export default function WinkelmandPage() {
     const { items, removeItem, updateQuantity, total } = useCart()
     const [note, setNote] = useState<string>("")
+
+    const [mounted, setMounted] = useState(false)
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setMounted(true)
+    }, [])
+
+    if (!mounted) return null
 
     const handleOrder = async () => {
         const response = await fetch("/api/orders", {
