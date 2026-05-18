@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation"
 import { H2, H3, P } from "@/components/ui/Typography"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
+import {useCart} from "@/context/CartContext";
 
 type OrderStatus = "PENDING" | "PAID" | "COMPLETED"
 
@@ -23,6 +24,8 @@ function CheckoutPaymentContent() {
 	const [loading, setLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
 	const [isSimulating, setIsSimulating] = useState(false)
+
+	const { clearCart } = useCart()
 
 	async function fetchOrder(nextOrderId: string) {
 		const res = await fetch(`/api/orders/${nextOrderId}`)
@@ -47,6 +50,8 @@ function CheckoutPaymentContent() {
 
 			const updated = await fetchOrder(orderId)
 			setOrder(updated)
+			clearCart() // clear shoppingcart after payment
+
 		} catch {
 			setError("Kon mock betaling niet uitvoeren.")
 		} finally {
