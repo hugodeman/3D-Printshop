@@ -84,6 +84,7 @@ model Order {
   status    OrderStatus @default(PENDING)
   total     Decimal
   note      String?
+  option    String?
   createdAt DateTime    @default(now())
   user      User        @relation(fields: [userId], references: [id])
   items     OrderItem[]
