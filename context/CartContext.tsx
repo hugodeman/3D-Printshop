@@ -1,6 +1,7 @@
 "use client"
 
 import { createContext, useContext, useEffect, useState } from "react"
+import {Product} from "@/types/Product";
 
 type CartItem = {
     id: string
@@ -9,6 +10,7 @@ type CartItem = {
     image: string
     option: string
     quantity: number
+    product: Product
 }
 
 type CartContextType = {

@@ -6,22 +6,9 @@ import { ProductPopupModel } from "@/components/shop/ProductPopupModel"
 import ProductOptions from "@/components/shop/ProductOptions"
 import {useCart} from "@/context/CartContext";
 import {ErrorText} from "@/components/ui/Typography";
+import {Product} from "@/types/Product";
 
-type Props = {
-    product: {
-        id: string
-        title: string
-        price: number
-        images: string[]
-        type: string
-        options: {
-            paintable: boolean | null
-            color: string | null
-        } | null
-    }
-}
-
-export default function AddToCartButton({ product }: Props) {
+export default function AddToCartButton({ product }: { product: Product }) {
     const [popupOpen, setPopupOpen] = useState(false)
     const [selectedOption, setSelectedOption] = useState("")
     const [confirmedOption, setConfirmedOption] = useState("")
@@ -40,8 +27,9 @@ export default function AddToCartButton({ product }: Props) {
             id: product.id,
             title: product.title,
             price: product.price,
-            image: product.images[0] || "",
-            option: selectedOption
+            image: product.images[0]?.url || "",
+            option: selectedOption,
+            product,
         })
         setPopupOpen(true)
     }
@@ -67,10 +55,8 @@ export default function AddToCartButton({ product }: Props) {
             <ProductPopupModel
                 isOpen={popupOpen}
                 onCloseAction={() => setPopupOpen(false)}
-                product={{
-                    ...product,
-                    options: confirmedOption ? [confirmedOption] : []
-                }}
+                product={product}
+                selectedOption={confirmedOption}
             />
         </div>
     )

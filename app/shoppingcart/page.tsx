@@ -7,9 +7,16 @@ import { Icon } from "@/components/ui/Icon"
 import { Button } from "@/components/ui/Button"
 import Image from "next/image"
 import Link from "next/link"
-import {useEffect, useState} from "react";
+import React, {useEffect, useState} from "react";
+import ProductDetailModal from "@/components/shop/ProductDetailModal";
+import {Product} from "@/types/Product";
 
 export default function WinkelmandPage() {
+    const [selectedProduct, setSelectedProduct] = useState<{
+        product: Product
+        option: string
+    } | null>(null)
+
     const { items, removeItem, updateQuantity, total } = useCart()
     const [note, setNote] = useState<string>("")
 
@@ -79,9 +86,16 @@ export default function WinkelmandPage() {
                                 <Image src={item.image} alt={item.title} width={200} height={200} className="rounded-lg object-cover" loading="lazy" />
 
                                 <div className="flex-1">
-                                    <Link href={`/webshop/${item.id}`}>
+                                    <div onClick={() => {
+                                        if (!item.product) return
+
+                                        setSelectedProduct({
+                                            product: item.product,
+                                            option: item.option ?? "",
+                                        })
+                                    }} className={"cursor-pointer"}>
                                         <H2 className={"mb-10 text-action hover:underline"}>{item.title}</H2>
-                                    </Link>
+                                    </div>
                                     <H3 className={"pb-1"}>Opmaak:</H3>
                                     <P>{item.option}</P>
                                 </div>
@@ -120,7 +134,14 @@ export default function WinkelmandPage() {
                     </div>
                 </div>
             )}
-
+            {selectedProduct && (
+                <ProductDetailModal
+                    isOpen={true}
+                    onCloseAction={() => setSelectedProduct(null)}
+                    product={selectedProduct.product}
+                    selectedOption={selectedProduct.option}
+                />
+            )}
         </BackgroundMain>
     )
 }

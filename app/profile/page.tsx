@@ -9,7 +9,9 @@ import { Button } from "@/components/ui/Button"
 import { AddressForm, AddressData, AddressErrors } from "@/components/forms/AddressForm"
 import { Icon } from "@/components/ui/Icon";
 import {Input} from "@/components/ui/Input";
+import ProductDetailModal from "@/components/shop/ProductDetailModal"
 import Image from "next/image";
+import {Product} from "@/types/Product";
 
 export default function ProfilePage() {
     const { data: session, status } = useSession()
@@ -38,26 +40,16 @@ export default function ProfilePage() {
         items: Array<{
             id: string
             quantity: number
-            price: string
+            price: number
             option: string | null
-            product: {
-                id: string
-                title: string
-                images: { id: string, url: string, productId: string }[]
-                options: string
-                deliveryTime: number
-            } | null
+            product: Product
             builderItem: {
                 id: string
                 imageUrl: string | null
-                deliveryTime: number;
+                deliveryTime: number
             } | null
         }>
     }>>([])
-
-    useEffect(() => {
-        console.log(orderData)
-    }, [orderData])
 
     const [credentialsErrors, setCredentialsErrors] = useState<{ email?: string; password?: string }>({})
     const [addressErrors, setAddressErrors] = useState<AddressErrors>({})
@@ -67,6 +59,11 @@ export default function ProfilePage() {
     const [isAdjustingAddress, setIsAdjustingAddress] = useState(false)
 
     const [step, setStep] = useState('profielgegevens')
+
+    const [selectedProduct, setSelectedProduct] = useState<{
+        product: Product
+        option: string
+    } | null>(null)
 
     // Ophalen bij mount
     useEffect(() => {
@@ -213,7 +210,7 @@ export default function ProfilePage() {
     if (status === "loading") return <BackgroundMain><P>Laden...</P></BackgroundMain>
     if (!session) return <BackgroundMain><P>Je bent niet ingelogd.</P></BackgroundMain>
 
-  return (
+    return (
       <BackgroundMain>
           <BackgroundOverlay>
               <div className={"flex items-center justify-center w-full"}>
@@ -347,22 +344,31 @@ export default function ProfilePage() {
                               ) : (
                                   orderData.map(order => (
                                       <div key={order.id}>
-                                          <div className={"flex items-center justify-between gap-4 ml-5 mr-10 mt-8"}>
+                                          <div className={"flex items-center justify-between gap-4 ml-5 mr-10 mt-8 mb-2"}>
                                               <H3 className={"ml-5"}>{formatDate(order.createdAt)} - bestelling #{order.id.slice(-6).toUpperCase()}</H3>
-                                              <P className="text-white/70">{order.status}</P>
+                                              <P className="text-white/70 pr-4">{order.status}</P>
                                           </div>
-                                          <BackgroundContrast2 key={order.id} className="p-6 rounded-2xl">
+                                          <BackgroundContrast2 key={order.id} className="pl-6 pr-6 pb-6 rounded-2xl">
                                               {order.items.map(item => (
-                                                  <div key={item.id} className="flex items-center gap-4 pb-8 border-b border-white/20">
+                                                  <div key={item.id} className="flex items-center gap-4 pb-5 border-b border-white/20">
                                                       {/* Product order */}
                                                       {item.product && (
                                                           <div className={"flex gap-4"}>
-                                                              <Image src={item.product.images[0]?.url || ""} alt={item.product.title} width={150} height={150} className="rounded-lg object-cover" loading="lazy" />
+                                                              <Image src={item.product.images[0]?.url || ""} alt={item.product.title} width={200} height={200} className="rounded-lg object-cover mt-5" loading="lazy" />
                                                               <div className={"flex flex-col justify-between"}>
                                                                   <div className={"flex flex-col justify-between"}>
-                                                                      <P className={"pt-5"}>{item.product.title}</P>
+                                                                      <div onClick={() => {
+                                                                          if (!item.product) return
+
+                                                                          setSelectedProduct({
+                                                                              product: item.product,
+                                                                              option: item.option ?? "",
+                                                                          })
+                                                                      }} className={"cursor-pointer"}>
+                                                                        <H2 className={"mt-11 text-action hover:underline"}>{item.product.title}</H2>
+                                                                      </div>
                                                                       <P className="text-white/80 py-3">Aantal: {item.quantity}</P>
-                                                                      <P className="text-white/80"> Opmaak: {item.option}</P>
+                                                                      <P className="pt-10 pb-4"> Opmaak: {item.option}</P>
                                                                   </div>
                                                                   <P className="text-white pb-5">maaktijd: {item.product.deliveryTime} uur</P>
                                                               </div>
@@ -376,37 +382,41 @@ export default function ProfilePage() {
                                                                   <img
                                                                       src={item.builderItem.imageUrl}
                                                                       alt="Builder item"
-                                                                      className="object-cover rounded-lg w-72 h-auto"
+                                                                      className="object-cover rounded-lg w-72 h-auto mt-5"
                                                                   />
                                                               )}
                                                               <div className={"flex flex-col justify-between"}>
                                                                   <div>
-                                                                      <P className={"pt-5"}>Custom Builder Item</P>
+                                                                      <H2 className={"mt-11 text-action hover:underline"}>Custom Builder Item</H2>
                                                                       <P className="text-white/80 py-3">Aantal: {item.quantity}</P>
                                                                   </div>
                                                                   <P className="text-white pb-5">maaktijd: {item.builderItem.deliveryTime || '1'} uur</P>
                                                               </div>
                                                           </div>
                                                       )}
-                                                      <P className="ml-auto pr-6">€{item.price}</P>
+                                                      <H3 className="ml-auto pr-6">€{item.price}</H3>
                                                   </div>
                                               ))}
-                                              <div className="flex justify-end pt-4">
-                                                  <H3>Totaal: €{order.total}</H3>
+                                              <div className={"flex flex-row justify-between"}>
+                                                  <div className={"w-full"}>
+                                                      <H3 className={"mt-5 mb-2"}>vragen/opmerkingen: </H3>
+                                                      <div className={"flex"}>
+                                                          <Input
+                                                              disabled={true}
+                                                              inputSize={"lg"}
+                                                              type="text"
+                                                              value={order.note || ""}
+                                                          />
+                                                        <div className={"w-full"}></div>
+                                                      </div>
+
+                                                  </div>
+                                                  <div className="flex flex-row items-center gap-2 justify-end pt-4 pr-3">
+                                                      <H3>Totaal:</H3>
+                                                      <H2>€{order.total}</H2>
+                                                  </div>
                                               </div>
                                           </BackgroundContrast2>
-                                          <div>
-                                              <H3 className={"mt-5 mb-2"}>vragen/opmerkingen: </H3>
-                                              <div className={"flex"}>
-                                                  <Input
-                                                      disabled={true}
-                                                      inputSize={"lg"}
-                                                      type="text"
-                                                      value={order.note || ""}
-                                                  />
-                                                <div className={"w-full"}></div>
-                                              </div>
-                                          </div>
                                       </div>
                                   ))
                               )}
@@ -421,6 +431,17 @@ export default function ProfilePage() {
                   </div>
               </div>
           </div>
+          {selectedProduct && (
+              <ProductDetailModal
+                  isOpen={true}
+                  onCloseAction={() => setSelectedProduct(null)}
+                  product={{
+                      ...selectedProduct.product,
+                      price: Number(selectedProduct.product.price),
+                  }}
+                  selectedOption={selectedProduct.option}
+              />
+          )}
       </BackgroundMain>
   );
 }

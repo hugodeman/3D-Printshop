@@ -6,20 +6,16 @@ import {Icon} from "@/components/ui/Icon";
 import {Button} from "@/components/ui/Button";
 import Image from "next/image";
 import Link from "next/link";
+import {Product} from "@/types/Product";
 
 type ProductPopupModel = {
     isOpen: boolean
     onCloseAction: () => void
-    product: {
-        id: string
-        title: string
-        price: number
-        images: string[]
-        options: string[]
-    }
+    product: Product
+    selectedOption?: string
 }
 
-export function ProductPopupModel({ isOpen, onCloseAction, product }: ProductPopupModel) {
+export function ProductPopupModel({ isOpen, onCloseAction, product, selectedOption }: ProductPopupModel) {
     if (!isOpen) return null
 
     return (
@@ -31,7 +27,7 @@ export function ProductPopupModel({ isOpen, onCloseAction, product }: ProductPop
 
             <div className="flex gap-5 items-center mb-5 mt-2">
                 <Image
-                    src={product.images[0] || ""}
+                    src={product.images[0]?.url || "/placeholder.png"}
                     alt={product.title}
                     width={70}
                     height={70}
@@ -40,7 +36,7 @@ export function ProductPopupModel({ isOpen, onCloseAction, product }: ProductPop
                 <div className="flex flex-col gap-1">
                     <H3 className="text-sm text-contrast">{product.title}</H3>
                     <H3 className="text-sm text-contrast">€ {product.price}</H3>
-                    {product.options.length > 0 && <H3 className="text-sm text-contrast">{product.options[0]}</H3>}
+                    <H3 className="text-sm text-contrast">{selectedOption}</H3>
                 </div>
             </div>
 
