@@ -7,9 +7,10 @@ import { Icon } from "@/components/ui/Icon"
 type Props = {
     images: Array<{ id: string, url: string }>
     title: string
+    iconColor?: string
 }
 
-export default function ProductImageSlider({ images, title }: Props) {
+export default function ProductImageSlider({ images, title, iconColor = "white" }: Props) {
     const [current, setCurrent] = useState(0)
     const [lightboxOpen, setLightboxOpen] = useState(false)
 
@@ -22,7 +23,7 @@ export default function ProductImageSlider({ images, title }: Props) {
         <div className="flex flex-col items-center gap-4">
             <div className="flex items-center gap-4">
                 <button onClick={prev}>
-                    <Icon name={"ArrowBigLeft"} size={40} className={"cursor-pointer"}/>
+                    <Icon name={"ArrowBigLeft"} size={40} className={"cursor-pointer"} color={iconColor}/>
                 </button>
 
                 <Image
@@ -36,14 +37,14 @@ export default function ProductImageSlider({ images, title }: Props) {
                 />
 
                 <button onClick={next}>
-                    <Icon name={"ArrowBigRight"} size={40} className={"cursor-pointer"}/>
+                    <Icon name={"ArrowBigRight"} size={40} className={"cursor-pointer"} color={iconColor}/>
                 </button>
             </div>
 
             <div className="flex gap-2">
                 {images.map((_, i) => (
                     <button key={i} onClick={() => setCurrent(i)}>
-                        <Icon name={i === current ? "CircleDot" : "Circle"} size={15} className={"cursor-pointer"}/>
+                        <Icon name={i === current ? "CircleDot" : "Circle"} size={15} className={"cursor-pointer"} color={iconColor}/>
                     </button>
                 ))}
             </div>
