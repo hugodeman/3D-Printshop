@@ -43,7 +43,20 @@ export async function GET() {
             },
         })
 
-        return NextResponse.json(orders)
+        const formattedOrders = orders.map(order => ({
+            ...order,
+            items: order.items.map(item => ({
+                ...item,
+                product: item.product
+                    ? {
+                        ...item.product,
+                        price: Number(item.product.price),
+                    }
+                    : null,
+            })),
+        }))
+
+        return NextResponse.json(formattedOrders)
     } catch (error) {
         console.error("[GET /api/orders]", error)
         return NextResponse.json({ error: "Internal server error" }, { status: 500 })
