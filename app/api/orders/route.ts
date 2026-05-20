@@ -82,13 +82,41 @@ export async function POST(request: NextRequest) {
             userId: session.user.id,
             total,
             note,
-            items: {
-                create: items.map((item: { productId: string, quantity: number, price: number, option: string }) => ({
-                    productId: item.productId,
-                    quantity: item.quantity,
-                    price: item.price,
-                    option: item.option,
-                }))
+        },
+    })
+
+    await prisma.$transaction(async (tx) => {
+        for (const item of items) {
+            if (item.type === "product") {
+                await tx.orderItem.create({
+                    data: {
+                        orderId: order.id,
+                        productId: item.productId,
+                        quantity: item.quantity,
+                        price: item.price,
+                        option: item.option ?? null,
+                    },
+                })
+            }
+
+            if (item.type === "builder") {
+                const builder = await tx.builderItem.create({
+                    data: {
+                        userId: session.user.id,
+                        imageUrl: item.image ?? null,
+                        deliveryTime: item.builderData?.decorations?.length ?? null,
+                        configJson: item.builderData,
+                    },
+                })
+
+                await tx.orderItem.create({
+                    data: {
+                        orderId: order.id,
+                        builderItemId: builder.id,
+                        quantity: item.quantity,
+                        price: item.price,
+                    },
+                })
             }
         }
     })

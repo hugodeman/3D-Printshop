@@ -10,15 +10,21 @@ import Link from "next/link"
 import React, {useEffect, useState} from "react";
 import ProductDetailModal from "@/components/shop/ProductDetailModal";
 import {Product} from "@/types/Product";
+import {useRouter} from "next/navigation";
 
 export default function WinkelmandPage() {
+    const router = useRouter()
+
     const [selectedProduct, setSelectedProduct] = useState<{
         product: Product
-        option: string
+        option?: string
     } | null>(null)
 
-    const { items, removeItem, updateQuantity, total } = useCart()
-    const [note, setNote] = useState<string>("")
+    const { items, removeItem, updateQuantity, total, note, setNote } = useCart()
+
+    useEffect(() => {
+        localStorage.setItem("cart-note", note)
+    }, [note])
 
     const [mounted, setMounted] = useState(false)
 
@@ -29,28 +35,6 @@ export default function WinkelmandPage() {
 
     if (!mounted) return null
 
-    const handleOrder = async () => {
-        const response = await fetch("/api/orders", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                items: items.map(item => ({
-                    productId: item.id,
-                    quantity: item.quantity,
-                    price: item.price,
-                    option: item.option,
-                })),
-                note: note
-            })
-        })
-        if (!response.ok) {
-            console.error("Failed to create order")
-            return
-        }
-
-        const { checkoutUrl } = await response.json()
-        window.location.href = checkoutUrl // Mollie of mock redirect
-    }
 
     return (
         <BackgroundMain className="flex flex-col">
@@ -79,11 +63,19 @@ export default function WinkelmandPage() {
                     {items.map((item) => (
                         <div key={`${item.id}-${item.option}`} className="w-full min-w-200">
                             <BackgroundContrast2 className={"rounded-2xl p-5 mb-5 w-full flex items-center gap-4 relative"}>
-                                <button className="absolute top-4 right-4" onClick={() => removeItem(item.id, item.option)}>
+                                <button className="absolute top-4 right-4" onClick={() => removeItem(item.id, item.option ?? "")}>
                                     <Icon name={"Trash2"} size={30} className={"cursor-pointer"} opacity={0.8}/>
                                 </button>
-
+                                {item.type === "product" ? (
                                 <Image src={item.image} alt={item.title} width={200} height={200} className="rounded-lg object-cover" loading="lazy" />
+                                ) : (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                    src={item.image}
+                                    alt="Builder item"
+                                    className="object-cover rounded-lg w-72 h-auto mt-5"
+                                />
+                                )}
 
                                 <div className="flex-1">
                                     <div onClick={() => {
@@ -96,19 +88,37 @@ export default function WinkelmandPage() {
                                     }} className={"cursor-pointer"}>
                                         <H2 className={"mb-10 text-action hover:underline"}>{item.title}</H2>
                                     </div>
-                                    <H3 className={"pb-1"}>Opmaak:</H3>
-                                    <P>{item.option}</P>
+                                    {item.type === "product" ? (
+                                        <div>
+                                            <H3 className={"pb-1"}>Opmaak:</H3>
+                                            <P>{item.option}</P>
+                                        </div>
+                                    ) : (
+                                        <div>
+                                            <H3 className={"pb-1"}>Custom build</H3>
+                                            <P>{item.builderData?.decorations.length} decoraties</P>
+                                        </div>
+                                    )}
                                 </div>
 
-                                <select
-                                    value={item.quantity}
-                                    onChange={(e) => updateQuantity(item.id, item.option, Number(e.target.value))}
-                                    className="rounded-[5px] border input-shadow outline-none transition-colors h-12 px-4 text-p bg-input-normal border-input-normal cursor-pointer"
-                                >
-                                    {[1,2,3,4,5].map((n) => (
-                                        <option key={n} value={n}>{n}</option>
-                                    ))}
-                                </select>
+                                {item.type === "product" ? (
+                                    <select
+                                        value={item.quantity}
+                                        onChange={(e) => updateQuantity(item.id, item.option ?? "", Number(e.target.value))}
+                                        className="rounded-[5px] border input-shadow outline-none transition-colors h-12 px-4 text-p bg-input-normal border-input-normal cursor-pointer"
+                                    >
+                                        {[1,2,3,4,5].map((n) => (
+                                            <option key={n} value={n}>{n}</option>
+                                        ))}
+                                    </select>
+                                ): (
+                                    <select value={item.quantity}
+                                            className="rounded-[5px] border input-shadow outline-none transition-colors h-12 px-4 text-p bg-input-normal border-input-normal"
+                                            disabled={true}
+                                    >
+                                        <option value={1}>1</option>
+                                    </select>
+                                )}
 
                                 <H3 className="w-20 text-right pr-30 pl-10">€{(item.price * item.quantity).toFixed(2)}</H3>
                             </BackgroundContrast2>
@@ -120,6 +130,7 @@ export default function WinkelmandPage() {
                             <P>Voeg opmerking/vraag toe:</P>
                             <textarea
                                 placeholder="..."
+                                value={note}
                                 onChange={(e) => setNote(e.target.value)}
                                 className="rounded-lg border p-3 w-full min-w-60 h-40 resize-none bg-input-normal border-input-normal outline-none input-shadow mt-2"
                             />
@@ -129,7 +140,9 @@ export default function WinkelmandPage() {
                                 <H3>Totaal:</H3>
                                 <H2 className={"pr-20"}>€{total.toFixed(2)}</H2>
                             </div>
-                            <Button className={"w-3/7 min-w-50 mt-3"} onClick={handleOrder}>Bestel</Button>
+                            <Button className={"w-3/7 min-w-50 mt-3"} onClick={() => router.push("/checkout")}>
+                                Bestellen
+                            </Button>
                         </div>
                     </div>
                 </div>

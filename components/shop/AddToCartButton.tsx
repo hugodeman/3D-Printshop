@@ -25,6 +25,7 @@ export default function AddToCartButton({ product }: { product: Product }) {
 
         addItem({
             id: product.id,
+            type: "product",
             title: product.title,
             price: product.price,
             image: product.images[0]?.url || "",

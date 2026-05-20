@@ -4,59 +4,25 @@ import { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useSession } from "next-auth/react"
 import {H1, H2, H3, P} from "@/components/ui/Typography"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import { StepButtons } from "@/components/builder/StepButtons"
 import { useBuilderStore } from "@/lib/builder-store"
 import { readBuilderCheckoutDraft, subscribeBuilderCheckoutDraft, type BuilderCheckoutDraft } from "@/lib/builder-checkout-draft"
+import {useCart} from "@/context/CartContext";
 
-export default function CheckoutPage() {
-	const {data: session} = useSession()
+export default function OverviewPage() {
 	const router = useRouter()
 	const setStep = useBuilderStore((state) => state.setStep)
 	const [data, setData] = useState<BuilderCheckoutDraft | null>(() => readBuilderCheckoutDraft())
-	const [isOrdering, setIsOrdering] = useState(false)
-	const [orderError, setOrderError] = useState<string | null>(null)
+	const { addItem } = useCart()
 
 	useEffect(() => {
 		return subscribeBuilderCheckoutDraft(() => {
 			setData(readBuilderCheckoutDraft())
 		})
 	}, [])
-
-	async function handleOrder() {
-		if (!data) return
-		setIsOrdering(true)
-		setOrderError(null)
-
-		if (session){
-			try {
-				const response = await fetch("/api/orders/builder", {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify(data),
-				})
-
-				const result = await response.json() as { checkoutUrl?: string; error?: string }
-
-				if (!response.ok || !result.checkoutUrl) {
-					setOrderError(result.error ?? "Bestelling mislukt, probeer opnieuw.")
-					return
-				}
-
-				// Redirect to Mollie checkout
-				window.location.href = result.checkoutUrl
-			} catch {
-				setOrderError("Netwerkfout, probeer opnieuw.")
-			} finally {
-				setIsOrdering(false)
-			}
-		} else {
-			router.push("/auth/login?redirect=/checkout/overview")
-		}
-	}
 
 	if (!data) {
 		return (
@@ -98,6 +64,19 @@ export default function CheckoutPage() {
 		},
 		{ id: 3, label: "Bestellen", done: false, isCurrent: true },
 	]
+
+	async function handleRouter(){
+		if (!data) return
+		addItem({
+			id: crypto.randomUUID(),
+			type: "builder",
+			title: "Custom Stand",
+			price: Number(totalPrice),
+			image: data?.previewImage ?? "/placeholder.png",
+			builderData: data,
+		})
+		router.push("/shoppingcart")
+	}
 
 	return (
 		<div className="min-h-screen bg-[#1A1C1E]">
@@ -170,17 +149,12 @@ export default function CheckoutPage() {
 								</div>
 							</div>
 
-							{orderError && (
-								<P className="mt-3 text-red-400">{orderError}</P>
-							)}
-
 							<Button
 								className="mt-auto w-full flex justify-center gap-4"
-								onClick={handleOrder}
-								disabled={isOrdering}
+								onClick={handleRouter}
 							>
 								<Icon name="ShoppingBag" size={20} color="#1F2126" />
-								<H3 className={"text-contrast"}>{isOrdering ? "Verwerken..." : "Bestellen"}</H3>
+								<H3 className={"text-contrast"}>Bestellen</H3>
 							</Button>
 						</div>
 					</div>

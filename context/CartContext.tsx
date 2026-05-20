@@ -2,15 +2,18 @@
 
 import { createContext, useContext, useEffect, useState } from "react"
 import {Product} from "@/types/Product";
+import {BuilderCheckoutDraft} from "@/lib/builder-checkout-draft";
 
 type CartItem = {
     id: string
+    type: "product" | "builder"
     title: string
     price: number
     image: string
-    option: string
     quantity: number
-    product: Product
+    option?: string
+    product?: Product
+    builderData?: BuilderCheckoutDraft
 }
 
 type CartContextType = {
@@ -20,6 +23,8 @@ type CartContextType = {
     clearCart: () => void
     updateQuantity: (id: string, option: string, quantity: number) => void
     total: number
+    note: string
+    setNote: (note: string) => void
 }
 
 const CartContext = createContext<CartContextType | null>(null)
@@ -60,6 +65,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     const clearCart = () => {
         setItems([])
+        setNote("")
+
+        localStorage.removeItem("cart")
+        localStorage.removeItem("cart-note")
     }
 
     const updateQuantity = (id: string, option: string, quantity: number) => {
@@ -70,8 +79,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     const total = items.reduce((sum, i) => sum + i.price * i.quantity, 0)
 
+    const [note, setNote] = useState(() => {
+        if (typeof window === "undefined") return ""
+
+        try {
+            return localStorage.getItem("cart-note") ?? ""
+        } catch {
+            return ""
+        }
+    })
+
     return (
-        <CartContext.Provider value={{ items, addItem, removeItem, clearCart, updateQuantity, total }}>
+        <CartContext.Provider value={{ items, addItem, removeItem, clearCart, updateQuantity, total, note, setNote }}>
             {children}
         </CartContext.Provider>
     )
