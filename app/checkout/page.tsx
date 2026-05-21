@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 import { useCart } from "@/context/CartContext"
 import { BackgroundMain, BackgroundContrast1, BackgroundContrast2, BackgroundOverlay } from "@/components/ui/Background"
 import { H1, H2, H3, P } from "@/components/ui/Typography"
@@ -199,13 +199,22 @@ export default function CheckoutPage() {
                         <div className="flex flex-col gap-4 border-t border-black/20 pt-4">
                             {items.map(item => (
                                 <div key={`${item.id}-${item.option}`} className={"flex items-center gap-4 pb-4 border-b border-black/20"}>
-                                    <Image
-                                        src={item.image}
-                                        alt={item.title}
-                                        width={70}
-                                        height={70}
-                                        className="rounded-lg object-cover"
-                                    />
+                                    {item.type === "product"? (
+                                        <Image
+                                            src={item.image}
+                                            alt={item.title}
+                                            width={70}
+                                            height={70}
+                                            className="rounded-lg object-cover"
+                                        />
+                                    ) : (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img
+                                            src={item.image}
+                                            alt={item.title}
+                                            className="object-cover rounded-lg w-42 h-auto"
+                                        />
+                                    )}
                                     <div className="flex-1">
                                         <H3 className="text-contrast">{item.title}</H3>
                                         <P className="opacity-80 text-contrast">{item.option}</P>

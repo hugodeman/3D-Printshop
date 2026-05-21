@@ -1,16 +1,18 @@
 "use client"
 
+import React, {useEffect, useState} from "react";
+import Image from "next/image"
+import Link from "next/link"
+import {useRouter} from "next/navigation";
 import { useCart } from "@/context/CartContext"
 import {BackgroundContrast2, BackgroundMain, BackgroundOverlay} from "@/components/ui/Background"
 import { H1, H2, H3, P } from "@/components/ui/Typography"
 import { Icon } from "@/components/ui/Icon"
 import { Button } from "@/components/ui/Button"
-import Image from "next/image"
-import Link from "next/link"
-import React, {useEffect, useState} from "react";
 import ProductDetailModal from "@/components/shop/ProductDetailModal";
+import BuilderPreviewModal from "@/components/builder/BuilderPreviewModal";
 import {Product} from "@/types/Product";
-import {useRouter} from "next/navigation";
+import {BuilderConfig} from "@/types/BuilderConfig";
 
 export default function WinkelmandPage() {
     const router = useRouter()
@@ -19,6 +21,8 @@ export default function WinkelmandPage() {
         product: Product
         option?: string
     } | null>(null)
+
+    const [selectedBuilderItem, setSelectedBuilderItem] = useState<BuilderConfig | null>(null)
 
     const { items, removeItem, updateQuantity, total, note, setNote } = useCart()
 
@@ -34,7 +38,6 @@ export default function WinkelmandPage() {
     }, [])
 
     if (!mounted) return null
-
 
     return (
         <BackgroundMain className="flex flex-col">
@@ -73,21 +76,32 @@ export default function WinkelmandPage() {
                                 <img
                                     src={item.image}
                                     alt="Builder item"
-                                    className="object-cover rounded-lg w-72 h-auto mt-5"
+                                    className="object-cover rounded-lg w-72 h-auto"
                                 />
                                 )}
 
                                 <div className="flex-1">
-                                    <div onClick={() => {
-                                        if (!item.product) return
+                                    {item.type === "product"? (
+                                        <div onClick={() => {
+                                            if (!item.product) return
 
-                                        setSelectedProduct({
-                                            product: item.product,
-                                            option: item.option ?? "",
-                                        })
-                                    }} className={"cursor-pointer"}>
-                                        <H2 className={"mb-10 text-action hover:underline"}>{item.title}</H2>
-                                    </div>
+                                            setSelectedProduct({
+                                                product: item.product,
+                                                option: item.option ?? "",
+                                            })
+                                        }} className={"cursor-pointer"}>
+                                            <H2 className={"mb-10 text-action hover:underline"}>{item.title}</H2>
+                                        </div>
+                                    ) : (
+                                        <div onClick={() => {
+                                            if (!item.builderData) return
+
+                                            setSelectedBuilderItem(item.builderData as BuilderConfig)
+                                        }} className={"cursor-pointer"}>
+                                            <H2 className={"mb-10 text-action hover:underline"}>{item.title}</H2>
+                                        </div>
+                                    )}
+
                                     {item.type === "product" ? (
                                         <div>
                                             <H3 className={"pb-1"}>Opmaak:</H3>
@@ -153,6 +167,13 @@ export default function WinkelmandPage() {
                     onCloseAction={() => setSelectedProduct(null)}
                     product={selectedProduct.product}
                     selectedOption={selectedProduct.option}
+                />
+            )}
+            {selectedBuilderItem && (
+                <BuilderPreviewModal
+                    isOpen={true}
+                    onCloseAction={() => setSelectedBuilderItem(null)}
+                    config={selectedBuilderItem}
                 />
             )}
         </BackgroundMain>

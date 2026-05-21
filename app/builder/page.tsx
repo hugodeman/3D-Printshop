@@ -7,7 +7,7 @@ import { EffectComposer, Outline } from "@react-three/postprocessing"
 import { BlendFunction } from "postprocessing"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { Color, type Material, type Mesh, type Object3D, Raycaster, Vector2, type Group as THREE_Group } from "three"
+import { type Mesh, type Object3D, Raycaster, Vector2, type Group as THREE_Group } from "three"
 import * as THREE from "three"
 
 import { Button } from "@/components/ui/Button"
@@ -21,169 +21,25 @@ import { BuilderResetConfirmModal } from "@/components/builder/BuilderResetConfi
 import ImageTo3D from "@/components/builder/ImageTo3D"
 import CustomObject from "@/components/builder/CustomObject"
 import { MeasurementTool, MeasurementDisplay } from "@/components/builder/MeasurementTool"
+import {GLTFObject} from "@/components/builder/GLTFObject";
 
 import { saveBuilderCheckoutDraft } from "@/lib/builder-checkout-draft"
-import {
-	BASE_PLATFORM_SIZE_CM,
-	getDecorationModelScale,
-	getPlatformModelScaleVector,
-} from "@/lib/builder-scene-scale"
+import {BASE_PLATFORM_SIZE_CM, getPlatformModelScaleVector,} from "@/lib/builder-scene-scale"
 import { useBuilderStore, type PlacedObject } from "@/lib/builder-store"
-
-import rawModelAssets from "./model-assets.json"
-
-type PartColors = Record<string, string>
-type Vec3 = [number, number, number]
-type ScaleLimits = { min: number; max: number }
-
-type ModelAsset = {
-	dimensions: string;
-	id: string
-	name: string
-	thumbnail: string
-	kind: "platform" | "decoration"
-	modelPath: string
-	color: string
-	partColors?: PartColors
-	spawnPosition?: Vec3
-	scaleLimits?: ScaleLimits
-}
+import {assetsById, decorationAssets, modelAssets, platformAssets} from "@/lib/builder-model-assets";
+import {degreesToRadians, getAssetScaleLimits, normalizeHexColor, radiansToDegrees, clamp} from "@/lib/builder-scene-utils";
+import { ModelAsset } from "@/types/BuilderConfig"
 
 const POSITION_STEP = 0.05
 const ROTATION_MIN = 0
 const ROTATION_MAX = 2 * Math.PI
 const ROTATION_STEP = 0.02
-const SCALE_MIN = 0.5
-const SCALE_MAX = 3
 const SCALE_STEP = 0.05
-const DEG_PER_RAD = 180 / Math.PI
 const DEFAULT_PLATFORM_COLOR = "#228B22"
 const BUILDER_INTRO_SEEN_KEY = "builder-intro-seen-v1"
 
-function radiansToDegrees(rad: number) {
-	return Math.round(rad * DEG_PER_RAD)
-}
-
-function degreesToRadians(deg: number) {
-	return deg / DEG_PER_RAD
-}
-
-const modelAssets = rawModelAssets as unknown as ModelAsset[]
-const platformAssets = modelAssets.filter((asset) => asset.kind === "platform")
-const decorationAssets = modelAssets.filter((asset) => asset.kind === "decoration")
-const assetsById = new Map(modelAssets.map((asset) => [asset.id, asset]))
-
 for (const asset of modelAssets) {
 	useGLTF.preload(asset.modelPath)
-}
-
-// Clones a material and applies a tint color if possible
-function tintMaterial(material: Material, color: string) {
-	const clone = material.clone() as Material & { color?: Color }
-	if (clone.color) clone.color.set(color)
-	return clone
-}
-
-// Traverses a model's scene graph and applies tinting to all mesh materials based on the provided colors
-function applyModelTint(root: Object3D, defaultColor: string, partColors?: PartColors) {
-	root.traverse((node) => {
-		const mesh = node as Mesh
-		if (!mesh.isMesh || !mesh.material) return
-
-		const color = partColors?.[node.name] ?? defaultColor
-		if (Array.isArray(mesh.material)) {
-			mesh.material = mesh.material.map((m) => tintMaterial(m, color))
-		} else {
-			mesh.material = tintMaterial(mesh.material, color)
-		}
-	})
-}
-
-function clamp(value: number, min: number, max: number) {
-	return Math.min(Math.max(value, min), max)
-}
-
-function normalizeHexColor(value: string) {
-	const withHash = value.startsWith("#") ? value : `#${value}`
-	const isHex = /^#[0-9a-fA-F]{6}$/.test(withHash)
-	return isHex ? withHash.toUpperCase() : null
-}
-
-function getAssetScaleLimits(asset: ModelAsset | null | undefined): ScaleLimits {
-	const min = asset?.scaleLimits?.min ?? SCALE_MIN
-	const max = asset?.scaleLimits?.max ?? SCALE_MAX
-	return { min: Math.min(min, max), max: Math.max(min, max) }
-}
-
-function GLTFObject({
-	modelPath,
-	position,
-	rotationY,
-	scale,
-	scaleVector,
-	tintColor,
-	partColors,
-	instanceId,
-	onReady,
-}: {
-	modelPath: string
-	position: Vec3
-	rotationY?: number
-	scale?: number
-	scaleVector?: Vec3
-	tintColor: string
-	partColors?: PartColors
-	instanceId?: string
-	onReady?: (objects: Object3D[] | null) => void
-}) {
-	const gltf = useGLTF(modelPath)
-	const groupRef = useRef<THREE_Group>(null)
-
-	const scene = useMemo(() => {
-		const clone = gltf.scene.clone(true)
-		applyModelTint(clone, tintColor, partColors)
-
-		// Add userData for raycasting
-		if (instanceId) {
-			clone.traverse((node) => {
-				const n = node as unknown as { userData: Record<string, string> }
-				n.userData.decorationInstanceId = instanceId
-			})
-		}
-
-		return clone
-	}, [gltf.scene, tintColor, partColors, instanceId])
-
-	useEffect(() => {
-		if (!onReady || !groupRef.current) return
-
-		const meshes: Object3D[] = []
-		groupRef.current.traverse((child) => {
-			const maybeMesh = child as Mesh
-			if (maybeMesh.isMesh) meshes.push(maybeMesh)
-		})
-
-		onReady(meshes.length > 0 ? meshes : null)
-
-		return () => {
-			onReady(null)
-		}
-	}, [onReady, scene])
-
-	const previewScale: number | Vec3 = scaleVector
-		? scaleVector
-		: getDecorationModelScale(scale ?? 1)
-
-	return (
-		<group
-			ref={groupRef}
-			position={position}
-			rotation={[0, rotationY ?? 0, 0]}
-			scale={previewScale}
-		>
-			<primitive object={scene} />
-		</group>
-	)
 }
 
 // Registers a canvas capture function via a ref so the parent can take a screenshot

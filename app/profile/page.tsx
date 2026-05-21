@@ -10,8 +10,11 @@ import { AddressForm, AddressData, AddressErrors } from "@/components/forms/Addr
 import { Icon } from "@/components/ui/Icon";
 import {Input} from "@/components/ui/Input";
 import ProductDetailModal from "@/components/shop/ProductDetailModal"
+import BuilderPreviewModal from "@/components/builder/BuilderPreviewModal"
+import { BuilderConfig } from "@/types/BuilderConfig"
 import Image from "next/image";
 import {Product} from "@/types/Product";
+import {BuilderItem} from "@/types/BuilderItem";
 
 export default function ProfilePage() {
     const { data: session, status } = useSession()
@@ -43,11 +46,7 @@ export default function ProfilePage() {
             price: number
             option: string | null
             product: Product
-            builderItem: {
-                id: string
-                imageUrl: string | null
-                deliveryTime: number
-            } | null
+            builderItem: BuilderItem
         }>
     }>>([])
 
@@ -64,6 +63,8 @@ export default function ProfilePage() {
         product: Product
         option: string
     } | null>(null)
+
+    const [selectedBuilderItem, setSelectedBuilderItem] = useState<BuilderConfig | null>(null)
 
     // Ophalen bij mount
     useEffect(() => {
@@ -387,7 +388,12 @@ export default function ProfilePage() {
                                                               )}
                                                               <div className={"flex flex-col justify-between"}>
                                                                   <div>
-                                                                      <H2 className={"mt-11 text-action hover:underline"}>Custom Builder Item</H2>
+                                                                      <div onClick={() => {
+                                                                          const config = item.builderItem?.configJson as BuilderConfig
+                                                                          if (config) setSelectedBuilderItem(config)
+                                                                      }} className={"cursor-pointer"}>
+                                                                        <H2 className={"mt-11 text-action hover:underline"}>Custom Builder Item</H2>
+                                                                      </div>
                                                                       <P className="text-white/80 py-3">Aantal: {item.quantity}</P>
                                                                   </div>
                                                                   <P className="text-white pb-5">maaktijd: {item.builderItem.deliveryTime || '1'} uur</P>
@@ -440,6 +446,13 @@ export default function ProfilePage() {
                       price: Number(selectedProduct.product.price),
                   }}
                   selectedOption={selectedProduct.option}
+              />
+          )}
+          {selectedBuilderItem && (
+              <BuilderPreviewModal
+                  isOpen={true}
+                  onCloseAction={() => setSelectedBuilderItem(null)}
+                  config={selectedBuilderItem}
               />
           )}
       </BackgroundMain>
