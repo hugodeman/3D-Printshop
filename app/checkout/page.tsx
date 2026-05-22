@@ -1,17 +1,22 @@
 "use client"
 
 import React, { useEffect, useState } from "react"
-import { useCart } from "@/context/CartContext"
+import Image from "next/image"
+import {useRouter} from "next/navigation";
+import {useSession} from "next-auth/react";
 import { BackgroundMain, BackgroundContrast1, BackgroundContrast2, BackgroundOverlay } from "@/components/ui/Background"
 import { H1, H2, H3, P } from "@/components/ui/Typography"
 import { Button } from "@/components/ui/Button"
 import { AddressForm, AddressData, AddressErrors } from "@/components/forms/AddressForm"
-import Image from "next/image"
 import { Icon } from "@/components/ui/Icon"
+import { useCart } from "@/context/CartContext"
 
 const SHIPPING_COST = 7
 
 export default function CheckoutPage() {
+    const router = useRouter()
+    const { data: session, status } = useSession()
+
     const { items, total, note } = useCart()
     const [overviewOpen, setOverviewOpen] = useState(false)
 
@@ -96,6 +101,20 @@ export default function CheckoutPage() {
         } finally {
             setIsLoading(false)
         }
+    }
+
+    useEffect(() => {
+        if (status === "unauthenticated") {
+            router.push("/auth/login")
+        }
+    }, [status, router])
+
+    if (status === "loading") {
+        return null
+    }
+
+    if (!session) {
+        return null
     }
 
     return (

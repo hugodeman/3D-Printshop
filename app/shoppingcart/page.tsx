@@ -4,6 +4,7 @@ import React, {useEffect, useState} from "react";
 import Image from "next/image"
 import Link from "next/link"
 import {useRouter} from "next/navigation";
+import {useSession} from "next-auth/react";
 import { useCart } from "@/context/CartContext"
 import {BackgroundContrast2, BackgroundMain, BackgroundOverlay} from "@/components/ui/Background"
 import { H1, H2, H3, P } from "@/components/ui/Typography"
@@ -16,6 +17,7 @@ import {BuilderConfig} from "@/types/BuilderConfig";
 
 export default function WinkelmandPage() {
     const router = useRouter()
+    const { data: session } = useSession()
 
     const [selectedProduct, setSelectedProduct] = useState<{
         product: Product
@@ -38,6 +40,14 @@ export default function WinkelmandPage() {
     }, [])
 
     if (!mounted) return null
+
+    function handleCheckout() {
+        if (!session) {
+            router.push("/auth/login?redirect=/checkout")
+        } else {
+            router.push("/checkout")
+        }
+    }
 
     return (
         <BackgroundMain className="flex flex-col">
@@ -154,7 +164,7 @@ export default function WinkelmandPage() {
                                 <H3>Totaal:</H3>
                                 <H2 className={"pr-20"}>€{total.toFixed(2)}</H2>
                             </div>
-                            <Button className={"w-3/7 min-w-50 mt-3"} onClick={() => router.push("/checkout")}>
+                            <Button className={"w-3/7 min-w-50 mt-3"} onClick={handleCheckout}>
                                 Bestellen
                             </Button>
                         </div>
