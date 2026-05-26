@@ -18,6 +18,7 @@ import { ColorInput } from "@/components/builder/ColorInput"
 import { StepButtons } from "@/components/builder/StepButtons"
 import { BuilderIntroModal } from "@/components/builder/BuilderIntroModal"
 import { BuilderResetConfirmModal } from "@/components/builder/BuilderResetConfirmModal"
+import {DeleteSceneButton} from "@/components/builder/DeleteSceneButton";
 import ImageTo3D from "@/components/builder/ImageTo3D"
 import CustomObject from "@/components/builder/CustomObject"
 import { MeasurementTool, MeasurementDisplay } from "@/components/builder/MeasurementTool"
@@ -509,8 +510,6 @@ export default function BuilderPage() {
 					<div className="flex justify-center p-4">
 						<StepButtons
 							steps={stepItems}
-							onClearClick={handleClearScene}
-							clearDisabled={!canClearScene}
 							onInfoClick={() => setIsIntroOpen(true)}
 						/>
 					</div>
@@ -708,6 +707,9 @@ export default function BuilderPage() {
 								<Icon name="Grid" size={25} color={showGrid ? "#d0e3d3" : "#98CEAA"} className="h-[clamp(1.25rem,3vmin,1.75rem)] w-[clamp(1.25rem,3vmin,1.75rem)]" />
 							</button>
 						</div>
+                        <div className={"absolute z-10 bottom-[clamp(0.75rem,2vh,1.5rem)] left-[clamp(0.75rem,2vw,1.5rem)]"}>
+                            <DeleteSceneButton onClearClick={handleClearScene} clearDisabled={!canClearScene}></DeleteSceneButton>
+                        </div>
 					</div>
 				</div>
 
@@ -738,6 +740,7 @@ export default function BuilderPage() {
 												<P className="text-white/60">cm</P>
 											</div>
 										</div>
+										<H3 className={"border-t border-white/10 pt-6"}>Kies maat:</H3>
 										<div className="grid grid-cols-3 gap-2">
 											{[
 												{ label: "M", value: 10 as const },
