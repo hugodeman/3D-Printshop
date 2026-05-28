@@ -60,7 +60,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
 
     const removeItem = (id: string, option: string) => {
-        setItems((prev) => prev.filter((i) => !(i.id === id && i.option === option)))
+        setItems((prev) => prev.filter((i) =>
+                !(i.id === id && (i.option ?? "") === option)
+        ))
     }
 
     const clearCart = () => {
