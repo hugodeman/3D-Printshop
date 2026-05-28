@@ -156,7 +156,7 @@ export default function TermsConditionsPage() {
 
                         <P className="mb-4">
                             Indien een product beschadigd of incorrect geleverd is, neem dan binnen
-                            48 uur contact op via support@jouwdomein.nl met duidelijke foto's van het probleem.
+                            48 uur contact op via support@jouwdomein.nl met duidelijke foto&apos;s van het probleem.
                         </P>
 
                         <P>
