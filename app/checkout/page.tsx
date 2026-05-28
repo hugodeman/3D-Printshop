@@ -204,7 +204,6 @@ export default function CheckoutPage() {
                                 <div className={"flex items-center flex-row gap-1"}>
                                     <H3>Ik ga akkoord met de </H3>
                                     <Link className={"text-action hover:underline cursor-pointer"} href={"/footer_pages/terms_conditions"}>algemene voorwaarden</Link>
-                                    <Link href={"/"}>home</Link>
                                 </div>
                             </div>
                             {checklistErrors && <ErrorText className={"flex justify-start"}>{checklistErrors}</ErrorText>}

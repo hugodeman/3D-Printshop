@@ -8,6 +8,7 @@ import { NextResponse, NextRequest } from "next/server"
 import prisma from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { createMolliePayment } from "@/lib/mollie"
+import { generateAndSavePrintFile } from "@/lib/builder-print-export"
 
 export async function GET() {
     const session = await auth()
@@ -117,6 +118,17 @@ export async function POST(request: NextRequest) {
                         price: item.price,
                     },
                 })
+
+                // Genereer printbestand
+                try {
+                    const printFilename = await generateAndSavePrintFile(order.id, item.builderData)
+                    await prisma.builderItem.update({
+                        where: { id: builder.id },
+                        data: { printFileUrl: printFilename },
+                    })
+                } catch (exportError) {
+                    console.error("[builder-print-export] STL generation failed:", exportError)
+                }
             }
         }
     })
