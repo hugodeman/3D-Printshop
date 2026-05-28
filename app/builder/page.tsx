@@ -180,6 +180,7 @@ export default function BuilderPage() {
 	const resetScene = useBuilderStore((state) => state.resetScene)
 	// UI-only state
 	const [selectedPlatformColorInput, setSelectedPlatformColorInput] = useState(selectedPlatformColor)
+	const [selectedColorInput, setSelectedColorInput] = useState<string | null>(null)
 	const [selectedPartColorInputs, setSelectedPartColorInputs] = useState<Record<string, string>>({})
 	const [outlineSelection, setOutlineSelection] = useState<Object3D[] | null>(null)
 	const [hierarchyOpen, setHierarchyOpen] = useState(true)
@@ -923,6 +924,23 @@ export default function BuilderPage() {
 												)
 											})}
 										</div>
+									</div>
+								)}
+								
+								{(!selectedObjectAsset?.partColors || Object.keys(selectedObjectAsset.partColors).length === 0) && selectedObject && (
+									<div className="border-t border-white/10 pt-5 mt-5">
+										<H3 className="mb-3 font-medium">Kleur</H3>
+										<ColorInput
+											label="Kleur"
+											value={selectedObject.color ?? selectedObjectAsset?.color}
+											onChange={(next) => updateSelected((o) => ({ ...o, color: next }))}
+											inputValue={selectedColorInput ?? (selectedObject.color ?? selectedObjectAsset?.color).toUpperCase()}
+											onInputChange={(raw) => setSelectedColorInput(raw)}
+											onBlur={() => {
+												const stable = (selectedObject.color ?? selectedObjectAsset?.color).toUpperCase()
+												setSelectedColorInput(stable)
+											}}
+										/>
 									</div>
 								)}
 

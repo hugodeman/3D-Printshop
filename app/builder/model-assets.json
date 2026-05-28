@@ -53,6 +53,36 @@
       "head_center": "#FFFFFF",
       "head_leaf": "#FF69B4"
     }
+  },
+  {
+    "id": "rock-model",
+    "name": "Steen",
+    "thumbnail": "/object-cards/Rock.png",
+    "kind": "decoration",
+    "modelPath": "/models/Rock.glb",
+    "color": "#A9A9A9",
+    "spawnPosition": [0, 0.2, 0],
+    "scaleLimits": {
+      "min": 0.5,
+      "max": 2.0
+    }
+  },
+  {
+    "id": "bush-model",
+    "name": "Struik",
+    "thumbnail": "/object-cards/Bush.png",
+    "kind": "decoration",
+    "modelPath": "/models/Bush.glb",
+    "color": "#228B22",
+    "spawnPosition": [0, 0.2, 0],
+    "scaleLimits": {
+      "min": 0.7,
+      "max": 2.0
+    },
+    "partColors": {
+      "base": "#8B4513",
+      "leaves": "#228B22"
+    }
   }
 ]
 
