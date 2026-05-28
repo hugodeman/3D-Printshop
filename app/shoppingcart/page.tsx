@@ -149,7 +149,7 @@ export default function WinkelmandPage() {
                         </div>
                     ))}
 
-                    <div className="w-full flex gap-4 mt-3">
+                    <div className="w-full flex gap-4 mt-3 mb-10">
                         <div className={"flex flex-col w-3/7"}>
                             <P>Voeg opmerking/vraag toe:</P>
                             <textarea

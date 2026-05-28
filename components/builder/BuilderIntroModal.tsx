@@ -44,7 +44,7 @@ export function BuilderIntroModal({ isOpen, onCloseAction }: BuilderIntroModalPr
 						))}
 					</div>
 
-					<div className="space-y-4 py-6">
+					<div className="space-y-4 py-6 border-b border-white/10">
 						<div className="flex items-start gap-3">
 							<div className="mt-4 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg">
 								<Icon name="Network" size={24} color="#98CEAA" />
@@ -65,6 +65,12 @@ export function BuilderIntroModal({ isOpen, onCloseAction }: BuilderIntroModalPr
 							</div>
 						</div>
 					</div>
+					<div className={"pt-5 mb-10"}>
+						<H3 className={"mb-2"}>Let op!</H3>
+						<P>• Kleuren kunnen licht afwijken van de preview.</P>
+						<P>• De stands worden uniek gemaakt - er is geen optie voor retournering.</P>
+						<P>• Zorg ervoor dat de decoraties niet buiten het platform vallen en niet in elkaar staan.</P>
+					</div>
 					<div className={"flex justify-center mt-5"}>
 						<Button onClick={onCloseAction} className="gap-3 w-4/5 px-10">
 							<div className={"flex items-center gap-3 justify-center"}>
@@ -78,5 +84,3 @@ export function BuilderIntroModal({ isOpen, onCloseAction }: BuilderIntroModalPr
 		</div>
 	)
 }
-
-

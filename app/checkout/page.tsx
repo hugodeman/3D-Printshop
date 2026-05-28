@@ -5,11 +5,12 @@ import Image from "next/image"
 import {useRouter} from "next/navigation";
 import {useSession} from "next-auth/react";
 import { BackgroundMain, BackgroundContrast1, BackgroundContrast2, BackgroundOverlay } from "@/components/ui/Background"
-import { H1, H2, H3, P } from "@/components/ui/Typography"
+import {ErrorText, H1, H2, H3, P} from "@/components/ui/Typography"
 import { Button } from "@/components/ui/Button"
 import { AddressForm, AddressData, AddressErrors } from "@/components/forms/AddressForm"
 import { Icon } from "@/components/ui/Icon"
 import { useCart } from "@/context/CartContext"
+import Link from "next/link";
 
 const SHIPPING_COST = 7
 
@@ -27,6 +28,11 @@ export default function CheckoutPage() {
     const [addressErrors, setAddressErrors] = useState<AddressErrors>({})
     const [paymentMethod, setPaymentMethod] = useState<"ideal" | "paypal">("ideal")
     const [isLoading, setIsLoading] = useState(false)
+    const [conditionsAccepted, setConditionsAccepted] = useState(false)
+    const [checklistErrors, setChecklistErrors] = useState("")
+    const hasBuilderItems = items.some(i => i.type === "builder")
+    const [builderItemsAccepted, setBuilderItemsAccepted] = useState(false)
+    const [builderItemErrors, setBuilderItemErrors] = useState("")
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -64,6 +70,10 @@ export default function CheckoutPage() {
         if (!addressData.street.trim()) newErrors.street = "Adres is verplicht"
         if (!addressData.postal.trim()) newErrors.postal = "Postcode is verplicht"
         if (!addressData.city.trim()) newErrors.city = "Woonplaats is verplicht"
+
+        if (!conditionsAccepted) setChecklistErrors("Accepteer voorwaarde om door te gaan")
+        if (!builderItemsAccepted && hasBuilderItems) setBuilderItemErrors("Accepteer voorwaarde om door te gaan")
+        if (!conditionsAccepted || (!builderItemsAccepted && hasBuilderItems)) return
 
         if (Object.keys(newErrors).length > 0) {
             setAddressErrors(newErrors)
@@ -188,6 +198,24 @@ export default function CheckoutPage() {
                                 </div>
                             </div>
                         </BackgroundContrast2>
+                        <div className={"flex-row gap-3 my-4"}>
+                            <div className={"flex items-center gap-3 my-4"}>
+                                <input type="checkbox" value={"conditions"} onChange={(e) => setConditionsAccepted(e.target.checked)} />
+                                <div className={"flex items-center flex-row gap-1"}>
+                                    <H3>Ik ga akkoord met de </H3>
+                                    <Link className={"text-action hover:underline cursor-pointer"} href={"/footer_pages/terms_conditions"}>algemene voorwaarden</Link>
+                                    <Link href={"/"}>home</Link>
+                                </div>
+                            </div>
+                            {checklistErrors && <ErrorText className={"flex justify-start"}>{checklistErrors}</ErrorText>}
+                            {hasBuilderItems && (
+                                <div className={"flex items-center gap-3 my-4"}>
+                                    <input type="checkbox" value={"builderItems"} onChange={(e) => setBuilderItemsAccepted(e.target.checked)} />
+                                    <H3>Ik begrijp dat custom stands kunnen afwijken van de preview</H3>
+                                </div>
+                            )}
+                            {builderItemErrors && <ErrorText className={"flex justify-start"}>{builderItemErrors}</ErrorText>}
+                        </div>
 
                         <div className={"flex justify-center"}>
                             <Button onClick={handlePay} disabled={isLoading} className="w-full max-w-50">

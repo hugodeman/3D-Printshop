@@ -4,7 +4,7 @@ import { P } from "@/components/ui/Typography";
 
 const footerItems = [
   { icon: "Mail", label: "Contact", href: "/contact" },
-  { icon: "ArrowLeftRight", label: "Refund policy", href: "/refund-policy" },
+  { icon: "ArrowLeftRight", label: "Terms & Conditions", href: "/footer_pages/terms_conditions" },
   { icon: "ScrollText", label: "FAQ", href: "/faq" },
   { icon: "Cookie", label: "Cookies", href: "/cookies" },
 ] as const;
