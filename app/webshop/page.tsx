@@ -1,33 +1,16 @@
 "use client"
 
+import Image from "next/image";
+import Link from "next/link"
 import {H1, H2, H3} from "@/components/ui/Typography";
 import { BackgroundContrast2, BackgroundMain, BackgroundOverlay} from "@/components/ui/Background";
 import { Icon } from "@/components/ui/Icon"
 import {useEffect, useState} from "react";
 import {Button} from "@/components/ui/Button";
-import Image from "next/image";
-import Link from "next/link"
+import {Product} from "@/types/Product";
 
 export default function WebshopPage() {
-    const [productData, setProductData] = useState<Array<{
-        id: string,
-        title: string,
-        price: number,
-        type: string,
-        filament: string,
-        dimensions: string,
-        description: string,
-        deliveryTime: number,
-        images: Array<{
-            id: string,
-            url: string
-        }>,
-        options: {
-            id: string,
-            paintable: boolean,
-            color: string
-        } | null
-    }>>([])
+    const [productData, setProductData] = useState<Product[]>([])
 
     const [productType, setProductType] = useState<"figure" | "practical">("figure")
 
