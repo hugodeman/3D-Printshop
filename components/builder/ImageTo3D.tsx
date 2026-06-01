@@ -19,6 +19,21 @@ interface ImageTo3DProps {
   onAddToScene: (geometry: THREE.BufferGeometry, name: string) => void
 }
 
+/**
+ * Component die een afbeelding verwerkt met OpenCV en een 3D-extrusie (THREE.ExtrudeGeometry) genereert.
+ *
+ * - Laadt OpenCV (van CDN) wanneer nodig.
+ * - Biedt drag & drop / file select functionaliteit.
+ * - Verwerkt de afbeelding (grijswaarden, smoothing, edge detection, contour-detectie).
+ * - Zet de grootste contour om naar een `THREE.Shape` en creëert daaruit een extrude-geometrie.
+ * - Roept `onAddToScene` aan met de gegenereerde geometrie en een naam.
+ *
+ * De component handelt foutafhandeling en een kleine preview (200x200) af voor de UI.
+ *
+ * @param props.onAddToScene Callback om de gemaakte geometry aan de builder/scene toe te voegen.
+ * @returns JSX element met upload UI en statusmeldingen.
+ */
+
 export default function ImageTo3D({ onAddToScene }: ImageTo3DProps) {
   const [isProcessing, setIsProcessing] = useState(false)
   const [previewImage, setPreviewImage] = useState<string | null>(null)
@@ -54,6 +69,21 @@ export default function ImageTo3D({ onAddToScene }: ImageTo3DProps) {
     script.onerror = () => setError('OpenCV kon niet worden geladen van CDN')
     document.head.appendChild(script)
   }, [])
+
+  /**
+   * Verwerkt het geselecteerde afbeeldingsbestand en genereert een 3D-geometrie.
+   *
+   * Stappen:
+   * - Laadt het beeld in een hidden canvas en schaalt down voor performance.
+   * - Zet om naar grayscale en voert filtering + Canny edge detection uit.
+   * - Vindt contours en selecteert de grootste contour.
+   * - Zet contour-coördinaten om naar `THREE.Vector2` (genormaliseerd naar -0.5..0.5).
+   * - Maakt een `THREE.Shape` en een `THREE.ExtrudeGeometry`, centreren en schalen.
+   * - Roept `onAddToScene` aan met de resulterende geometry.
+   *
+   * @param file Afbeeldingsbestand dat geüpload is (PNG, JPG, etc.)
+   * @throws Throws een Error wanneer OpenCV nog niet klaar is of wanneer er geen bruikbare contouren gevonden worden.
+   */
 
   const processImage = useCallback(async (file: File) => {
     if (!cvReady) {
@@ -230,6 +260,15 @@ export default function ImageTo3D({ onAddToScene }: ImageTo3DProps) {
       setIsProcessing(false)
     }
   }, [onAddToScene, cvReady])
+
+  /**
+   * Handler voor het file-input element.
+   *
+   * - Valideert type en grootte van het bestand.
+   * - Roept `processImage` aan met het geselecteerde bestand.
+   *
+   * @param e Change event van het `<input type="file">`
+   */
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]

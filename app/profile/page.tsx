@@ -16,6 +16,17 @@ import Image from "next/image";
 import {Product} from "@/types/Product";
 import {BuilderItem} from "@/types/BuilderItem";
 
+/**
+ * User profile dashboard.
+ *
+ * Features:
+ * - account credential management
+ * - address management
+ * - order history
+ * - builder item previews
+ * - product detail previews
+ */
+
 export default function ProfilePage() {
     const { data: session, status } = useSession()
 

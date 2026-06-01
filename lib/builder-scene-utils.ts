@@ -11,6 +11,17 @@ export function tintMaterial(material: Material, color: string) {
     return clone
 }
 
+/**
+ * Applies color overrides to every mesh in a model hierarchy.
+ *
+ * Supports:
+ * - single model color
+ * - per-part color overrides
+ *
+ * Materials are cloned before tinting to prevent shared
+ * GLTF materials from affecting other instances.
+ */
+
 export function applyModelTint(root: Object3D, defaultColor: string, partColors?: PartColors) {
     root.traverse((node) => {
         const mesh = node as Mesh
@@ -28,6 +39,13 @@ export function applyModelTint(root: Object3D, defaultColor: string, partColors?
 export function clamp(value: number, min: number, max: number) {
     return Math.min(Math.max(value, min), max)
 }
+
+/**
+ * Validates and normalizes a hexadecimal color string.
+ *
+ * Returns an uppercase hex value including '#',
+ * or null if the input is invalid.
+ */
 
 export function normalizeHexColor(value: string) {
     const withHash = value.startsWith("#") ? value : `#${value}`

@@ -31,6 +31,29 @@ import {assetsById, decorationAssets, modelAssets, platformAssets} from "@/lib/b
 import {degreesToRadians, getAssetScaleLimits, normalizeHexColor, radiansToDegrees, clamp} from "@/lib/builder-scene-utils";
 import { ModelAsset } from "@/types/BuilderConfig"
 
+/**
+ * BuilderPage
+ *
+ * Main interaction for assembling a custom stand.
+ *
+ * Workflow:
+ * 1. Select a platform
+ * 2. Add decorations
+ * 3. Adjust decorations
+ * 4. Export config to BuilderCheckoutDraft
+ * 5. Navigate to /checkout/overview
+ *
+ * Responsibilities:
+ * - Rendering of the 3D scene
+ * - Maintaining the selection and manipulation of objects
+ * - Capturing of preview-pictures
+ * - Export to checkout draft
+ *
+ * State:
+ * - Permanent builder state through builder-store (Zustand)
+ * - Temporary UI state via React useState (e.g. color inputs, modals)
+ */
+
 const POSITION_STEP = 0.05
 const ROTATION_MIN = 0
 const ROTATION_MAX = 2 * Math.PI
@@ -139,7 +162,7 @@ function ClickHandler({
 			const distance = Math.sqrt(dx * dx + dy * dy)
 			pointerStart.current = null
 
-			// Treat only near-stationary mouse actions as a click.
+			// Treat only near-stationary mouse actions as a click to prevent deselecting when dragging scene.
 			if (distance > CLICK_MOVE_THRESHOLD) return
 			if (event.target !== gl.domElement) return
 
@@ -282,6 +305,12 @@ export default function BuilderPage() {
 		addObjectToStore(asset.id)
 	}
 
+	/**
+	 * Past het momenteel geselecteerde object aan via een immutable updater.
+	 *
+	 * Wordt gebruikt door sliders, kleurkiezers en transformatiecontroles.
+	 */
+
 	function updateSelected(updater: (o: PlacedObject) => PlacedObject) {
 		if (!selectedId) return
 		updateSelectedInStore(updater)
@@ -327,6 +356,18 @@ export default function BuilderPage() {
 	}, [])
 
 	if (!mounted) return null
+
+	/**
+	 * Exporteert de huidige builder configuratie naar een checkout draft.
+	 *
+	 * Werkwijze:
+	 * - maakt een screenshot van de scene
+	 * - serialiseert platform- en decoratiegegevens
+	 * - slaat alles op via saveBuilderCheckoutDraft()
+	 * - navigeert naar de checkout overview
+	 *
+	 * Custom objects worden niet meegenomen in de bestelling.
+	 */
 
 	async function goToCheckoutOverview() {
 		if (!selectedPlatform) return

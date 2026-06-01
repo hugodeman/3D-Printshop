@@ -1,6 +1,14 @@
 import rawModelAssets from "@/app/builder/model-assets.json"
 import { ModelAsset } from "@/types/BuilderConfig"
 
+/**
+ * Central asset registry for the builder.
+ *
+ * Loads all available platform and decoration assets
+ * from the JSON asset catalog and exposes convenience
+ * collections for lookups and filtering.
+ */
+
 export const modelAssets =
     rawModelAssets as unknown as ModelAsset[]
 

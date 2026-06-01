@@ -5,7 +5,7 @@
  * Stores files in `private/print-files/` (outside `public/`, not accessible to users).
  *
  * Loads real model geometries from GLB files, applies correct positions,
- * rotations, and scales. Each 1 Three.js unit = 10 mm in the exported file.
+ * rotations, and scales. Each 1 Three.js unit = 50 mm in the exported file.
  */
 
 import * as fs from "fs"

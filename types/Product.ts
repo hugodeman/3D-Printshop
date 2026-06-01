@@ -1,3 +1,10 @@
+/**
+ * Frontend-safe product model.
+ *
+ * Prisma Decimal values are converted to native numbers
+ * before being passed into React components.
+ */
+
 export type Product = {
     id: string
     title: string

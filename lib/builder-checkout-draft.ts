@@ -1,3 +1,20 @@
+/**
+ * Builder checkout draft persistence.
+ *
+ * Stores the current builder configuration in sessionStorage
+ * so it can be transferred from the builder to the checkout flow.
+ *
+ * The draft acts as a snapshot of the builder state and contains:
+ * - selected platform
+ * - platform size and color
+ * - placed decorations
+ * - preview image
+ * - metadata required for order creation
+ *
+ * Data is persisted in sessionStorage and synchronized through
+ * custom browser events.
+ */
+
 export type BuilderCheckoutDecorationDraft = {
 	instanceId: string
 	assetId: string
@@ -38,6 +55,13 @@ function parseDraft(rawDraft: string | null) {
 	}
 }
 
+/**
+ * Saves a builder checkout draft to sessionStorage.
+ *
+ * Also updates the in-memory cache and dispatches a custom
+ * browser event so subscribed components can react immediately.
+ */
+
 export function saveBuilderCheckoutDraft(draft: BuilderCheckoutDraft) {
 	if (typeof window === "undefined") {
 		return
@@ -51,6 +75,13 @@ export function saveBuilderCheckoutDraft(draft: BuilderCheckoutDraft) {
 
 	window.dispatchEvent(new CustomEvent(BUILDER_CHECKOUT_DRAFT_EVENT))
 }
+
+/**
+ * Retrieves the current builder checkout draft.
+ *
+ * Uses an in-memory cache to avoid unnecessary JSON parsing
+ * when the stored draft has not changed.
+ */
 
 export function readBuilderCheckoutDraft() {
 	if (typeof window === "undefined") {
@@ -67,6 +98,16 @@ export function readBuilderCheckoutDraft() {
 
 	return cachedParsedDraft
 }
+
+/**
+ * Subscribes to checkout draft changes.
+ *
+ * Listens for:
+ * - browser storage events
+ * - custom builder draft update events
+ *
+ * Returns an unsubscribe callback.
+ */
 
 export function subscribeBuilderCheckoutDraft(onStoreChange: () => void) {
 	if (typeof window === "undefined") {

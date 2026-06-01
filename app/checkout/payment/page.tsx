@@ -8,6 +8,18 @@ import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import {useCart} from "@/context/CartContext";
 
+/**
+ * Checkout payment status page.
+ *
+ * Handles:
+ * - polling order payment status
+ * - displaying Mollie payment results
+ * - local mock-payment development flow
+ * - clearing the cart after successful payment
+ *
+ * This page is opened after returning from Mollie checkout.
+ */
+
 type OrderStatus = "PENDING" | "PAID" | "COMPLETED"
 
 type OrderResult = {
@@ -65,7 +77,14 @@ function CheckoutPaymentContent() {
 			return
 		}
 
-		// Poll the order status briefly — Mollie may not have fired the webhook yet
+		/**
+		 * Polls the order endpoint until payment status updates
+		 * or max retry attempts are reached.
+		 *
+		 * Needed because Mollie webhooks may arrive slightly later
+		 * than the browser redirect.
+		 */
+		
 		let attempts = 0
 		const poll = async () => {
 			try {

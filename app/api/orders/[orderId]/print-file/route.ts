@@ -4,6 +4,37 @@ import prisma from "@/lib/prisma"
 import { getPrintFilePath } from "@/lib/builder-print-export"
 import {auth} from "@/lib/auth";
 
+/**
+ * GET /api/orders/[orderId]/print-file
+ *
+ * Downloads the generated print file (3MF/STL)
+ * for a BuilderItem belonging to the given order.
+ *
+ * Admin-only route.
+ *
+ * Flow:
+ * 1. Validate authenticated admin session
+ * 2. Find BuilderItem linked to the order
+ * 3. Resolve stored print file path
+ * 4. Serve generated 3MF file
+ * 5. Fallback to STL export if needed
+ *
+ * Notes:
+ * * Print files are generated after checkout
+ * * Files are stored server-side
+ * * Cache is disabled because files may be regenerated
+ *
+ * Security:
+ * * Only ADMIN users may access this route
+ * * Prevents exposure of internal manufacturing files
+ *
+ * Response:
+ * 200 -> Binary 3MF/STL file
+ * 403 -> Forbidden
+ * 404 -> File not found
+ * 500 -> Internal server error
+ */
+
 export async function GET(
 	_request: NextRequest,
 	{ params }: { params: Promise<{ orderId: string }> },

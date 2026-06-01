@@ -6,18 +6,26 @@ import * as THREE from "three"
 import { clearBuilderSceneDraft, readBuilderSceneDraft, saveBuilderSceneDraft } from "@/lib/builder-scene-draft"
 import rawModelAssets from "@/app/builder/model-assets.json"
 
-type PartColors = Record<string, string>
-type Vec3 = [number, number, number]
-type ScaleLimits = { min: number; max: number }
+import {getAssetScaleLimits, normalizeHexColor, clamp} from "@/lib/builder-scene-utils";
+import {PartColors, Vec3, ModelAsset} from "@/types/BuilderConfig";
 
-type ModelAsset = {
-	id: string
-	kind: "platform" | "decoration"
-	color: string
-	spawnPosition?: number[]
-	scaleLimits?: ScaleLimits
-	partColors?: PartColors
-}
+/**
+ * Builder state architecture
+ *
+ * Zustand Store
+ *   ↕
+ * BuilderSceneDraft (localStorage autosave)
+ *   ↓
+ * BuilderCheckoutDraft (overview snapshot)
+ *   ↓
+ * Shopping Cart
+ *   ↓
+ * Order creation
+ *   ↓
+ * Print file generation
+ *
+ * The store is the source of truth while editing.
+ */
 
 export type BuilderStep = 1 | 2
 
@@ -67,29 +75,9 @@ type BuilderStore = InitialBuilderState & {
 const DEFAULT_PLATFORM_COLOR = "#228B22"
 const ROTATION_MIN = 0
 const ROTATION_MAX = 2 * Math.PI
-const SCALE_MIN = 0.5
-const SCALE_MAX = 3
 // as unknown for unmatching model types
 const modelAssets = rawModelAssets as unknown as ModelAsset[]
 const modelAssetsById = new Map(modelAssets.map((asset) => [asset.id, asset]))
-
-// Keeps values between a range
-function clamp(value: number, min: number, max: number) {
-	return Math.min(Math.max(value, min), max)
-}
-
-// Ensures the color is in #RRGGBB format for inputs
-function normalizeHexColor(value: string) {
-	const withHash = value.startsWith("#") ? value : `#${value}`
-	const isHex = /^#[0-9a-fA-F]{6}$/.test(withHash)
-	return isHex ? withHash.toUpperCase() : null
-}
-
-function getAssetScaleLimits(asset: ModelAsset | null | undefined): ScaleLimits {
-	const min = asset?.scaleLimits?.min ?? SCALE_MIN
-	const max = asset?.scaleLimits?.max ?? SCALE_MAX
-	return { min: Math.min(min, max), max: Math.max(min, max) }
-}
 
 function createDefaultBuilderState(): InitialBuilderState {
 	return {
@@ -103,7 +91,24 @@ function createDefaultBuilderState(): InitialBuilderState {
 	}
 }
 
-// Read and sanitize stored draft so invalid data cannot break the builder.
+/**
+ * Restores the builder from a previously saved draft.
+ *
+ * All persisted values are validated and sanitized before being
+ * loaded into the Zustand store.
+ *
+ * Invalid:
+ * - asset ids
+ * - colors
+ * - scales
+ * - rotations
+ * - selections
+ *
+ * are automatically replaced with safe defaults.
+ *
+ * This prevents corrupted localStorage data from breaking the builder.
+ */
+
 function buildInitialBuilderState(): InitialBuilderState {
 	const fallback = createDefaultBuilderState()
 
@@ -158,6 +163,15 @@ function buildInitialBuilderState(): InitialBuilderState {
 		return Number.isFinite(suffix) ? Math.max(maxId, suffix) : maxId
 	}, 0)
 
+	/**
+	 * Incrementing counter used to generate unique instance ids.
+	 *
+	 * Example:
+	 * tree-1
+	 * tree-2
+	 * tree-3
+	 */
+
 	const nextId = Number.isFinite(draft.nextId)
 		? Math.max(Number(draft.nextId), computedNextId)
 		: computedNextId
@@ -175,7 +189,13 @@ function buildInitialBuilderState(): InitialBuilderState {
 
 const initialState = buildInitialBuilderState()
 
-// Persists the current builder state to localStorage as a draft. This is called on every state change to ensure the draft is always up-to-date.
+/**
+ * Persists the complete builder state to localStorage.
+ *
+ * Called after every state mutation so the user can safely
+ * refresh the page or continue editing later.
+ */
+
 function persistScene(state: BuilderStore) {
 	saveBuilderSceneDraft({
 		version: 1,
@@ -245,6 +265,16 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
 		})
 		persistScene(get())
 	},
+
+	/**
+	 * Adds a custom user-generated geometry to the scene.
+	 *
+	 * The geometry is converted into serializable arrays so it can be
+	 * stored in localStorage and restored later.
+	 *
+	 * Three.js BufferGeometry instances themselves cannot be persisted.
+	 */
+
 	addCustomObject: (geometry, name, color) => {
 		set((state) => {
 			const nextId = state.nextId + 1
@@ -286,6 +316,17 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
 		})
 		persistScene(get())
 	},
+
+	/**
+	 * Updates the currently selected object.
+	 *
+	 * The updater receives the current object and must return
+	 * the modified version.
+	 *
+	 * Scale values are automatically clamped to the limits
+	 * defined by the asset configuration.
+	 */
+
 	updateSelected: (updater) => {
 		set((state) => {
 			if (!state.selectedId) return {}

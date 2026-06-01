@@ -1,7 +1,22 @@
 /**
  * GET /api/orders
- * Returns all orders for the currently logged-in user,
- * including order items with their product or builderItem.
+ *
+ * Returns all paid/completed orders for the authenticated user.
+ *
+ * Included relations:
+ * - Order.items
+ * - OrderItem.product (+ images/options)
+ * - OrderItem.builderItem
+ *
+ * Notes:
+ * - Prisma Decimal values are converted to numbers before returning JSON
+ * - Only orders with status PAID or COMPLETED are returned
+ * - Used by the profile page order history
+ *
+ * Response:
+ * 200 -> Order[]
+ * 401 -> Unauthorized
+ * 500 -> Internal server error
  */
 
 import { NextResponse, NextRequest } from "next/server"
@@ -63,6 +78,55 @@ export async function GET() {
         return NextResponse.json({ error: "Internal server error" }, { status: 500 })
     }
 }
+
+/**
+ * POST /api/orders
+ *
+ * Creates a new order for the authenticated user
+ * and initializes the Mollie payment flow.
+ *
+ * Supported item types:
+ * * product -> references an existing webshop Product
+ * * builder -> creates a custom BuilderItem from BuilderConfig
+ *
+ * Flow:
+ * 1. Validate authenticated user
+ * 2. Calculate total price from cart items
+ * 3. Create Order record
+ * 4. Create OrderItems
+ * 5. For builder items:
+ * * create BuilderItem
+ * * store BuilderConfig JSON
+ * * generate printable 3MF/STL file
+ * 6. Create Mollie payment
+ * 7. Store Payment record
+ * 8. Return checkout URL
+ *
+ * Notes:
+ * * Builder items are generated dynamically from serialized BuilderConfig
+ * * Print files are generated server-side after order creation
+ * * Prisma Decimal values are stored as strings internally
+ *
+ * Request body:
+ * {
+ * items: Array<{
+ * type: "product" | "builder"
+ * productId?: string
+ * quantity: number
+ * price: number
+ * option?: string
+ * builderData?: BuilderConfig
+ * image?: string
+ * }>
+ * note?: string
+ * }
+ *
+ * Response:
+ * 200 -> { orderId, checkoutUrl }
+ * 401 -> Unauthorized
+ * 500 -> Internal server error
+ */
+
 
 export async function POST(request: NextRequest) {
     const session = await auth()

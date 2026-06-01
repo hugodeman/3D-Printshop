@@ -4,6 +4,17 @@ import { createContext, useContext, useEffect, useState } from "react"
 import {Product} from "@/types/Product";
 import {BuilderCheckoutDraft} from "@/lib/builder-checkout-draft";
 
+/**
+ * Item stored in the shopping cart.
+ *
+ * Supports:
+ * * Regular webshop products
+ * * Custom builder-generated products
+ *
+ * Builder items store serialized BuilderCheckoutDraft data
+ * which is later converted into a BuilderItem during checkout.
+ */
+
 type CartItem = {
     id: string
     type: "product" | "builder"
@@ -28,6 +39,22 @@ type CartContextType = {
 }
 
 const CartContext = createContext<CartContextType | null>(null)
+
+/**
+ * Global shopping cart state provider.
+ *
+ * Responsibilities:
+ * * Persist cart state in localStorage
+ * * Manage product + builder items
+ * * Track checkout note
+ * * Calculate total price
+ * * Handle quantity updates
+ *
+ * Notes:
+ * * Cart state is client-side only
+ * * Orders are only created during checkout
+ * * Builder items temporarily store BuilderCheckoutDraft data
+ */
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
     const [items, setItems] = useState<CartItem[]>(() => {

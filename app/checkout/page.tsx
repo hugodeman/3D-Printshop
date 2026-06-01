@@ -61,6 +61,23 @@ export default function CheckoutPage() {
         }
     }
 
+    /**
+     * Starts the checkout/payment flow.
+     *
+     * Flow:
+     * 1. Validate address fields
+     * 2. Validate accepted conditions
+     * 3. Validate builder disclaimers (if needed)
+     * 4. Send cart contents to POST /api/orders
+     * 5. Create Order + Payment records
+     * 6. Redirect user to Mollie checkout
+     *
+     * Notes:
+     * * Builder items include serialized BuilderCheckoutDraft data
+     * * Orders are only persisted after checkout starts
+     * * Shipping costs are calculated client-side for display only
+     */
+
     const handlePay = async () => {
         const newErrors: AddressErrors = {}
 
