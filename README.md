@@ -1,36 +1,66 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 3D Printshop
 
-## Getting Started
+Een fullstack 3D-print webshop met een configurator/builder voor custom figurine-stands.
+Gebruikers kunnen producten kopen, offertes aanvragen en in een 3D omgeving een custom stand maken voor hun eigen figurines.
 
-First, run the development server:
+---
+
+## Tech Stack
+
+### Frontend / Fullstack
+- Next.js (React) voor de frontend en server-side rendering
+
+---
+
+### 3D Builder
+- Three.js voor 3D rendering en interactie
+- Zustand voor state management in de builder
+
+---
+
+### Backend / Database
+- Prisma ORM voor database interactie
+- PostgreSQL als database
+
+---
+
+### Auth & Payments (Webshop)
+- Mollie API voor iDEAL/PAYPAL betalingen
+- JWT voor authenticatie
+
+---
+
+### File Uploads (Offertes)
+- Uploadthing voor veilige file uploads
+
+---
+
+### Styling
+- Tailwind CSS voor snelle styling en responsive design
+
+---
+
+### Hosting
+- Vercel voor hosting
+---
+
+## Installatie (voorbeeld)
 
 ```bash
+git clone https://github.com/jouw-repo/3d-printshop.git
+cd 3d-printshop
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Maak een `.env` bestand aan met de volgende variabelen:
+```
+DATABASE_URL=postgresql://user:password@localhost:5432/3dprintshop
+NEXTAUTH_SECRET="..."
+NEXTAUTH_URL="http://localhost:3000"
+```
+### Run database migraties:
+```bash
+npx prisma generate
+npx prisma migrate dev --name init
+```
