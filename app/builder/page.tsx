@@ -260,7 +260,7 @@ export default function BuilderPage() {
 	}, [placedObjects])
 
 	const canGoToStep2 = Boolean(selectedPlatformId)
-	const canGoToCheckout = canGoToStep2 && placedObjects.filter((obj) => obj.assetId !== 'custom-object').length > 0
+	const canGoToCheckout = canGoToStep2 && placedObjects.filter((obj) => obj.assetId !== "custom-object").length > 0
 	const canClearScene = Boolean(selectedPlatformId) || placedObjects.length > 0
 	const selectedScaleLimits = getAssetScaleLimits(selectedObjectAsset)
 	const positionMin = -(selectedPlatformSize / BASE_PLATFORM_SIZE_CM) + 0.1
@@ -397,7 +397,7 @@ export default function BuilderPage() {
 			platformSize: selectedPlatformSize,
 			platformColor: selectedPlatformColor,
 			decorations: placedObjects
-				.filter((obj) => obj.assetId !== 'custom-object') // Exclude custom objects from checkout
+				.filter((obj) => obj.assetId !== "custom-object") // Exclude custom objects from checkout
 				.map((obj) => ({
 					instanceId: obj.instanceId,
 					assetId: obj.assetId,
@@ -408,7 +408,7 @@ export default function BuilderPage() {
 					color: obj.color,
 					partColors: obj.partColors,
 				})),
-			totalItems: placedObjects.filter((obj) => obj.assetId !== 'custom-object').length, // Exclude custom objects from count
+			totalItems: placedObjects.filter((obj) => obj.assetId !== "custom-object").length, // Exclude custom objects from count
 			createdAt: new Date().toISOString(),
 			previewImage,
 		})
@@ -623,15 +623,15 @@ export default function BuilderPage() {
 									} else if (obj.customGeometry) {
 										// Custom object from image
 										const geometry = new THREE.BufferGeometry()
-										geometry.setAttribute('position', new THREE.Float32BufferAttribute(obj.customGeometry.vertices, 3))
+										geometry.setAttribute("position", new THREE.Float32BufferAttribute(obj.customGeometry.vertices, 3))
 										if (obj.customGeometry.indices) {
 											geometry.setIndex(obj.customGeometry.indices)
 										}
 										if (obj.customGeometry.normals) {
-											geometry.setAttribute('normal', new THREE.Float32BufferAttribute(obj.customGeometry.normals, 3))
+											geometry.setAttribute("normal", new THREE.Float32BufferAttribute(obj.customGeometry.normals, 3))
 										}
 										if (obj.customGeometry.uvs) {
-											geometry.setAttribute('uv', new THREE.Float32BufferAttribute(obj.customGeometry.uvs, 2))
+											geometry.setAttribute("uv", new THREE.Float32BufferAttribute(obj.customGeometry.uvs, 2))
 										}
 										geometry.computeBoundingBox()
 										geometry.computeVertexNormals()
@@ -850,7 +850,7 @@ export default function BuilderPage() {
 								/>
 
 								{/* Y Positie — alleen voor custom objects */}
-								{selectedObject.assetId === 'custom-object' && (
+								{selectedObject.assetId === "custom-object" && (
 									<SliderInput
 										label="Positie Y"
 										value={selectedObject.position[1]}
@@ -880,7 +880,7 @@ export default function BuilderPage() {
 								/>
 
 								{/* Rotatie Z — alleen voor custom objects */}
-								{selectedObject.assetId === 'custom-object' && (
+								{selectedObject.assetId === "custom-object" && (
 									<SliderInput
 										label="Rotatie Z"
 										value={selectedObject.rotationZ ?? 1}
@@ -898,7 +898,7 @@ export default function BuilderPage() {
 								)}
 
 								{/* Schaal — gesplitst voor custom objects, uniform voor normale */}
-								{selectedObject.assetId === 'custom-object' ? (
+								{selectedObject.assetId === "custom-object" ? (
 									<>
 										<SliderInput
 											label="Schaal"

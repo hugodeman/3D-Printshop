@@ -51,7 +51,7 @@ export default function ImageTo3D({ onAddToScene }: ImageTo3DProps) {
     }
 
     // Script zit al in de DOM maar is nog niet klaar
-    if (document.querySelector('script[src*="opencv.js"]')) {
+    if (document.querySelector("script[src*=\"opencv.js\"]")) {
       const interval = setInterval(() => {
         if (window.cv && window.cv.Mat) {
           setCvReady(true)
@@ -62,11 +62,11 @@ export default function ImageTo3D({ onAddToScene }: ImageTo3DProps) {
     }
 
     // Script nog niet geladen, voeg toe
-    const script = document.createElement('script')
-    script.src = 'https://docs.opencv.org/4.5.2/opencv.js'
+    const script = document.createElement("script")
+    script.src = "https://docs.opencv.org/4.5.2/opencv.js"
     script.async = true
     script.onload = () => setCvReady(true)
-    script.onerror = () => setError('OpenCV kon niet worden geladen van CDN')
+    script.onerror = () => setError("OpenCV kon niet worden geladen van CDN")
     document.head.appendChild(script)
   }, [])
 
@@ -95,12 +95,11 @@ export default function ImageTo3D({ onAddToScene }: ImageTo3DProps) {
     setError(null)
 
     try {
-      const domImg = document.createElement('img')
+      const domImg = document.createElement("img")
       const canvas = canvasRef.current!
 
       await new Promise((resolve, reject) => {
         domImg.onload = () => {
-          console.log('Image loaded, dimensions:', domImg.width, 'x', domImg.height)
           resolve(void 0)
         }
         domImg.onerror = reject
@@ -214,7 +213,6 @@ export default function ImageTo3D({ onAddToScene }: ImageTo3DProps) {
 
         // If that didn't work, try with minimal beveling
         if (geometry.attributes.position.count === 0) {
-          console.log('Trying with minimal beveling...')
           geometry = new THREE.ExtrudeGeometry(shape, {
             depth: 0.2,
             bevelEnabled: true,
@@ -224,7 +222,7 @@ export default function ImageTo3D({ onAddToScene }: ImageTo3DProps) {
           })
         }
       } catch (err) {
-        console.error('Error creating geometry from contour:', err)
+        console.error("Error creating geometry from contour:", err)
         throw new Error("Kon geen geldige 3D vorm maken van de contour. Probeer een afbeelding met duidelijker object randen.")
       }
 
@@ -254,7 +252,7 @@ export default function ImageTo3D({ onAddToScene }: ImageTo3DProps) {
       setPreviewImage(previewCanvas.toDataURL())
 
     } catch (err) {
-      console.error('Error during image processing:', err)
+      console.error("Error during image processing:", err)
       setError(err instanceof Error ? err.message : "Er is iets misgegaan bij het verwerken van de afbeelding")
     } finally {
       setIsProcessing(false)
@@ -318,7 +316,7 @@ export default function ImageTo3D({ onAddToScene }: ImageTo3DProps) {
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onClick={() => fileInputRef.current?.click()}
-        style={{opacity: cvReady ? 1 : 0.5, pointerEvents: cvReady ? 'auto' : 'none'}}
+        style={{opacity: cvReady ? 1 : 0.5, pointerEvents: cvReady ? "auto" : "none"}}
       >
         <input
           ref={fileInputRef}

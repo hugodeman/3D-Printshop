@@ -68,7 +68,7 @@ export default function ProfilePage() {
     const [isAdjustingCredentials, setIsAdjustingCredentials] = useState(false)
     const [isAdjustingAddress, setIsAdjustingAddress] = useState(false)
 
-    const [step, setStep] = useState('profielgegevens')
+    const [step, setStep] = useState("profielgegevens")
 
     const [selectedProduct, setSelectedProduct] = useState<{
         product: Product
@@ -231,7 +231,7 @@ export default function ProfilePage() {
                       {isAdjustingAddress? (
                         <H2 className={"mt-5"}>Welkom, gebruiker</H2>
                       ):
-                        <H2 className={"mt-5"}>Welkom, {addressData.lastName && addressData.firstName? addressData.firstName + " " + addressData.lastName : 'gebruiker'}</H2>
+                        <H2 className={"mt-5"}>Welkom, {addressData.lastName && addressData.firstName? addressData.firstName + " " + addressData.lastName : "gebruiker"}</H2>
                       }
                   </div>
                   <div onClick={() => handleSignOut()} className="cursor-pointer flex items-center gap-3">
@@ -247,22 +247,22 @@ export default function ProfilePage() {
                       <div className="shrink-0">
                           <BackgroundContrast1 className="flex justify-center rounded-2xl absolute left-10 top-5 px-8">
                               <div className={"pr-10 pl-6 pb-6 rounded-2xl w-full space-y-4"}>
-                                  <H2 className={`mb-6 pt-10 text-contrast`}>Bekijk mijn:</H2>
-                                  <div onClick={() => setStep('profielgegevens')} className={"cursor-pointer"}>
-                                      <H3 className={`border-t pt-4 pr-3 pl-1 border-black/30 ${step === 'profielgegevens' ? "text-action-contrast" : 'text-contrast'}`}>Profielgegevens</H3>
+                                  <H2 className={"mb-6 pt-10 text-contrast"}>Bekijk mijn:</H2>
+                                  <div onClick={() => setStep("profielgegevens")} className={"cursor-pointer"}>
+                                      <H3 className={`border-t pt-4 pr-3 pl-1 border-black/30 ${step === "profielgegevens" ? "text-action-contrast" : "text-contrast"}`}>Profielgegevens</H3>
                                   </div>
-                                  <div onClick={() => setStep('bestellingen')} className={"cursor-pointer"}>
-                                      <H3 className={`border-t pt-4 pr-3 pl-1 border-black/30 ${step === 'bestellingen' ? "text-action-contrast" : 'text-contrast'}`}>Bestellingen</H3>
+                                  <div onClick={() => setStep("bestellingen")} className={"cursor-pointer"}>
+                                      <H3 className={`border-t pt-4 pr-3 pl-1 border-black/30 ${step === "bestellingen" ? "text-action-contrast" : "text-contrast"}`}>Bestellingen</H3>
                                   </div>
-                                  <div onClick={() => setStep('offertes')} className={"cursor-pointer"}>
-                                      <H3 className={`border-t pt-4 pr-3 pl-1 border-black/30 ${step === 'offertes' ? "text-action-contrast" : 'text-contrast'}`}>Offertes</H3>
+                                  <div onClick={() => setStep("offertes")} className={"cursor-pointer"}>
+                                      <H3 className={`border-t pt-4 pr-3 pl-1 border-black/30 ${step === "offertes" ? "text-action-contrast" : "text-contrast"}`}>Offertes</H3>
                                   </div>
                               </div>
                           </BackgroundContrast1>
                       </div>
 
                       {/* Rechter kolom — twee blokken onder elkaar */}
-                      {step === 'profielgegevens' && (
+                      {step === "profielgegevens" && (
                       <div className="flex flex-col gap-6 flex-1">
                           <H2 className={"ml-5 mt-5"}>Profielgegevens:</H2>
                           {/* Inloggegevens */}
@@ -299,7 +299,7 @@ export default function ProfilePage() {
 
                                       {isAdjustingCredentials ? (
                                           <div className="flex justify-center pt-6">
-                                              <Button type={'submit'} disabled={isSaving} className="min-w-48">
+                                              <Button type={"submit"} disabled={isSaving} className="min-w-48">
                                                   {isSaving ? "Opslaan..." : saveSuccess ? "Opgeslagen!" : "Opslaan"}
                                               </Button>
                                           </div>
@@ -337,7 +337,7 @@ export default function ProfilePage() {
                                   </div>
                                   <div className={"flex items-center gap-3 cursor-pointer absolute top-7 right-8"} onClick={() => setIsAdjustingAddress(prev => !prev)}>
                                       <Icon name={"SquarePen"} size={35} opacity="70%" color={isAdjustingAddress ? "#98CEAA" : "white"}/>
-                                      <H3 className={'text-action'}>Pas aan</H3>
+                                      <H3 className={"text-action"}>Pas aan</H3>
                                   </div>
                                   {/*<div className="flex items-center gap-3 cursor-pointer absolute top-20 right-8"*/}
                                   {/*     onClick={() => setIsAdjustingCredentials(prev => !prev)}>*/}
@@ -348,7 +348,7 @@ export default function ProfilePage() {
                           </BackgroundContrast2>
                       </div>)}
 
-                      {step === 'bestellingen' && (
+                      {step === "bestellingen" && (
                           <div className="flex flex-col gap-6 flex-1">
                               <H2 className={"ml-5 mt-5"}>Mijn bestellingen:</H2>
                               {orderData.length === 0 ? (
@@ -407,7 +407,7 @@ export default function ProfilePage() {
                                                                       </div>
                                                                       <P className="text-white/80 py-3">Aantal: {item.quantity}</P>
                                                                   </div>
-                                                                  <P className="text-white pb-5">maaktijd: {item.builderItem.deliveryTime || '1'} uur</P>
+                                                                  <P className="text-white pb-5">maaktijd: {item.builderItem.deliveryTime || "1"} uur</P>
                                                               </div>
                                                           </div>
                                                       )}
@@ -440,7 +440,7 @@ export default function ProfilePage() {
                           </div>
                       )}
 
-                      {step === 'offertes' && (
+                      {step === "offertes" && (
                           <div className="flex flex-col gap-6 flex-1">
                                 <H2 className={"ml-5 mt-5"}>Mijn offertes:</H2>
                           </div>

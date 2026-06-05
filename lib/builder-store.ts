@@ -281,9 +281,9 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
 			const instanceId = `custom-${nextId}`
 
 			// Extract geometry data for serialization
-			const positionAttribute = geometry.getAttribute('position')
-			const normalAttribute = geometry.getAttribute('normal')
-			const uvAttribute = geometry.getAttribute('uv')
+			const positionAttribute = geometry.getAttribute("position")
+			const normalAttribute = geometry.getAttribute("normal")
+			const uvAttribute = geometry.getAttribute("uv")
 			const indexAttribute = geometry.getIndex()
 
 			const customGeometry = {
@@ -300,14 +300,14 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
 					...state.placedObjects,
 					{
 						instanceId,
-						assetId: 'custom-object', // Special asset ID for custom objects
+						assetId: "custom-object", // Special asset ID for custom objects
 						position: [0, 0.5, 0], // Higher position for custom objects
 						rotationY: 0,
 						rotationZ: 0,
 						scale: 1,
 						scaleXY: 1,
 						scaleZ:1,
-						color: color || '#FFFFFF',
+						color: color || "#FFFFFF",
 						customGeometry,
 						customName: name,
 					},

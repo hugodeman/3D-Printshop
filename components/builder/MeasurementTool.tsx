@@ -15,6 +15,7 @@ export function MeasurementTool({ enabled, onMeasure }: MeasurementToolProps) {
   const { camera, gl, scene } = useThree()
   const [measurePoints, setMeasurePoints] = useState<THREE.Vector3[]>([])
   const [linePoints, setLinePoints] = useState<THREE.Vector3[]>([])
+  //eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [distance, setDistance] = useState<number | null>(null)
   const raycasterRef = useRef(new THREE.Raycaster())
   const mouseRef = useRef(new THREE.Vector2())

@@ -1,4 +1,4 @@
-import { LucideIcon } from 'lucide-react';
+import { LucideIcon } from "lucide-react";
 import {
   ArrowBigRight,
   ArrowBigLeft,
@@ -48,7 +48,7 @@ import {
   CircleX,
   LoaderCircle,
   Package
-} from 'lucide-react';
+} from "lucide-react";
 
 const Icons = {
   ArrowBigRight,
@@ -108,7 +108,7 @@ type IconProps = {
   className?: string;
 } & React.SVGProps<SVGSVGElement>;
 
-export function Icon({ name, size = 24, color = 'currentColor', className, ...props }: IconProps) {
+export function Icon({ name, size = 24, color = "currentColor", className, ...props }: IconProps) {
   const IconComponent = Icons[name as keyof typeof Icons] as LucideIcon;
  
   if (!IconComponent) {

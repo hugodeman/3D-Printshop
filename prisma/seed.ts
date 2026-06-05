@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { PrismaClient, Prisma } from "../app/generated/prisma/client"
-import { PrismaPg } from '@prisma/adapter-pg'
+import { PrismaPg } from "@prisma/adapter-pg"
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! })
 const prisma = new PrismaClient({ adapter })
@@ -13,22 +13,22 @@ export async function main() {
   //////////////////////////////////////
 
   const admin = await prisma.user.upsert({
-    where: { email: 'admintest@test.com' },
+    where: { email: "admintest@test.com" },
     update: {},
     create: {
-      email: 'admintest@test.com',
-      password: 'adminpassword',
-      role: 'ADMIN',
+      email: "admintest@test.com",
+      password: "adminpassword",
+      role: "ADMIN",
     },
   });
 
   const user = await prisma.user.upsert({
-    where: { email: 'usertest@test.com' },
+    where: { email: "usertest@test.com" },
     update: {},
     create: {
-      email: 'usertest@test.com',
-      password: 'userpassword',
-      role: 'USER',
+      email: "usertest@test.com",
+      password: "userpassword",
+      role: "USER",
     },
   });
 
