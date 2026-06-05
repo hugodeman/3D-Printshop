@@ -57,6 +57,7 @@ type InitialBuilderState = {
 	placedObjects: PlacedObject[]
 	selectedId: string | null
 	nextId: number
+	isAddCustomObjectModalOpen: boolean
 }
 
 type BuilderStore = InitialBuilderState & {
@@ -66,6 +67,8 @@ type BuilderStore = InitialBuilderState & {
 	setSelectedPlatformSize: (size: 10 | 15 | 20) => void
 	addObject: (assetId: string) => void
 	addCustomObject: (geometry: THREE.BufferGeometry, name: string, color?: string) => void
+	openAddCustomObjectModal: () => void
+	closeAddCustomObjectModal: () => void
 	updateSelected: (updater: (o: PlacedObject) => PlacedObject) => void
 	removeSelected: () => void
 	setSelectedId: (id: string | null) => void
@@ -88,6 +91,7 @@ function createDefaultBuilderState(): InitialBuilderState {
 		placedObjects: [],
 		selectedId: null,
 		nextId: 0,
+		isAddCustomObjectModalOpen: false
 	}
 }
 
@@ -184,6 +188,7 @@ function buildInitialBuilderState(): InitialBuilderState {
 		placedObjects,
 		selectedId,
 		nextId,
+		isAddCustomObjectModalOpen: false
 	}
 }
 
@@ -296,6 +301,7 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
 			return {
 				nextId,
 				selectedId: instanceId,
+				isAddCustomObjectModalOpen: false,
 				placedObjects: [
 					...state.placedObjects,
 					{
@@ -315,6 +321,14 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
 			}
 		})
 		persistScene(get())
+	},
+
+	openAddCustomObjectModal: () => {
+		set({ isAddCustomObjectModalOpen: true })
+	},
+
+	closeAddCustomObjectModal: () => {
+		set({ isAddCustomObjectModalOpen: false })
 	},
 
 	/**

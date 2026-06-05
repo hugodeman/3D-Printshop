@@ -19,7 +19,7 @@ import { StepButtons } from "@/components/builder/StepButtons"
 import { BuilderIntroModal } from "@/components/builder/BuilderIntroModal"
 import { BuilderResetConfirmModal } from "@/components/builder/BuilderResetConfirmModal"
 import {DeleteSceneButton} from "@/components/builder/DeleteSceneButton";
-import ImageTo3D from "@/components/builder/ImageTo3D"
+import {AddCustomObjectModal} from "@/components/builder/AddCustomObjectModal";
 import CustomObject from "@/components/builder/CustomObject"
 import { MeasurementTool, MeasurementDisplay } from "@/components/builder/MeasurementTool"
 import {GLTFObject} from "@/components/builder/GLTFObject";
@@ -196,7 +196,7 @@ export default function BuilderPage() {
 	const setSelectedPlatformColor = useBuilderStore((state) => state.setSelectedPlatformColor)
 	const setSelectedPlatformSize = useBuilderStore((state) => state.setSelectedPlatformSize)
 	const addObjectToStore = useBuilderStore((state) => state.addObject)
-	const addCustomObjectToStore = useBuilderStore((state) => state.addCustomObject)
+	const openModal = useBuilderStore((state) => state.openAddCustomObjectModal)
 	const updateSelectedInStore = useBuilderStore((state) => state.updateSelected)
 	const removeSelectedFromStore = useBuilderStore((state) => state.removeSelected)
 	const setSelectedId = useBuilderStore((state) => state.setSelectedId)
@@ -424,6 +424,7 @@ export default function BuilderPage() {
 				onCancelAction={() => setIsClearModalOpen(false)}
 				onConfirmAction={confirmClearScene}
 			/>
+			<AddCustomObjectModal />
 			<div className="grid h-full grid-cols-[260px_1fr_300px] gap-4">
 
 				{/* Left Sidebar */}
@@ -507,8 +508,11 @@ export default function BuilderPage() {
 						{step === 2 && (
 							<div className="flex flex-col gap-3">
 								{/* Image to 3D Upload */}
-								<div className="border-b border-white/10 mt-2 pb-4 mb-4">
-									<ImageTo3D onAddToScene={addCustomObjectToStore} />
+								<H2 className={"pt-5"}>Voeg je beeldje(s) toe</H2>
+								<div className="border-b border-white/10 mt-2 pb-10 mb-4">
+									<Button onClick={openModal} className="w-full">
+										+ Voeg beeldje toe
+									</Button>
 								</div>
 
 								<H2>Voeg decoraties toe</H2>

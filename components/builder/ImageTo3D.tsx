@@ -3,7 +3,7 @@
 import React, {useCallback, useRef, useState, useEffect} from "react"
 import * as THREE from "three"
 import Image from "next/image"
-import {H2, P} from "@/components/ui/Typography"
+import {H2, H3, P} from "@/components/ui/Typography"
 import {Icon} from "@/components/ui/Icon"
 
 // OpenCV will be loaded from window.cv
@@ -299,8 +299,9 @@ export default function ImageTo3D({ onAddToScene }: ImageTo3DProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <H2>Upload je figurine(s)</H2>
-      <P className="text-white/70">
+      <H2>Upload je figurine(s) waar jij deze stand voor maakt</H2>
+      <H3 className={"text-white/80 mt-3 mb-2"}>Dit is alleen een visueel beeld en zal niet meegaan met de print.</H3>
+      <P className="text-white/70 mb-3">
         Upload een afbeelding om deze om te zetten naar een 3D model. Gebruik afbeeldingen met duidelijke contrasten voor het beste resultaat. Zorg ervoor dat de afbeelding vierkant is.
       </P>
 
