@@ -8,6 +8,7 @@ import {H1, H2, H3, P} from "@/components/ui/Typography"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import { StepButtons } from "@/components/builder/StepButtons"
+import {InfoPopover} from "@/components/ui/PaintedPopover";
 import { useBuilderStore } from "@/lib/builder-store"
 import { readBuilderCheckoutDraft, subscribeBuilderCheckoutDraft, type BuilderCheckoutDraft } from "@/lib/builder-checkout-draft"
 import {useCart} from "@/context/CartContext";
@@ -159,7 +160,14 @@ export default function OverviewPage() {
 							</div>
 
 							<div className={"border-t border-white/10 mb-5"}>
-								<P className="text-white/80 mb-3 mt-5">Kies opmaak:</P>
+								<div className="flex items-center">
+									<P className="text-white/80 mb-3 mt-5">Kies opmaak:</P>
+									<InfoPopover side={"top"}>
+										Beeldjes worden geverfd met acrylverf. In sommige gevallen kan langdurig
+										direct contact met PVC ervoor zorgen dat de verf licht afgeeft. Bewaar
+										het beeldje bij voorkeur niet langdurig tegen ongelakt PVC aan of bij hoge temperaturen.
+									</InfoPopover>
+								</div>
 								<select
 									value={selected ? "Geverfd" : "Niet geverfd"}
 									onChange={(e) => handleChange(e.target.value)}
