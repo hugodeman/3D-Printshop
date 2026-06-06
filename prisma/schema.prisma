@@ -73,6 +73,7 @@ model BuilderItem {
   printFileUrl String?
   deliveryTime Int?
   configJson   Json
+  painted      Boolean    @default(false)
   createdAt    DateTime   @default(now())
   user         User       @relation(fields: [userId], references: [id])
   orderItem    OrderItem?
