@@ -114,6 +114,7 @@ export default function CheckoutPage() {
                         option: item.option,
                         image: item.image,
                         builderData: item.builderData,
+                        painted: (item as any).painted ?? undefined,
                     })),
                     address: addressData,
                     paymentMethod,

@@ -405,7 +405,8 @@ export default function ProfilePage() {
                                                                       }} className={"cursor-pointer"}>
                                                                         <H2 className={"mt-11 text-action hover:underline"}>Custom Builder Item</H2>
                                                                       </div>
-                                                                      <P className="text-white/80 py-3">Aantal: {item.quantity}</P>
+                                                                       <P className="text-white/80 py-3">Aantal: {item.quantity}</P>
+                                                                       <P className="pt-10 pb-4">Opmaak: {item.builderItem?.painted ? "Geverfd" : "Niet geverfd"}</P>
                                                                   </div>
                                                                   <P className="text-white pb-5">maaktijd: {item.builderItem.deliveryTime || "1"} uur</P>
                                                               </div>

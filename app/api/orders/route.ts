@@ -171,6 +171,8 @@ export async function POST(request: NextRequest) {
                         imageUrl: item.image ?? null,
                         deliveryTime: item.builderData?.decorations?.length ?? null,
                         configJson: item.builderData,
+                        // Store whether the customer requested the item to be painted
+                        painted: typeof item.painted === "boolean" ? item.painted : (item.builderData?.painted ?? false),
                     },
                 })
 

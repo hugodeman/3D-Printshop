@@ -23,6 +23,7 @@ type CartItem = {
     image: string
     quantity: number
     option?: string
+    painted?: boolean
     product?: Product
     builderData?: BuilderCheckoutDraft
 }

@@ -14,4 +14,5 @@ export type BuilderItem = {
     imageUrl: string | null
     deliveryTime: number
     configJson: BuilderConfig
+    painted: boolean
 } | null

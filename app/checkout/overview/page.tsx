@@ -15,7 +15,9 @@ import {useCart} from "@/context/CartContext";
 export default function OverviewPage() {
 	const router = useRouter()
 	const setStep = useBuilderStore((state) => state.setStep)
-	const [data, setData] = useState<BuilderCheckoutDraft | null>(() => readBuilderCheckoutDraft())
+ 	const [data, setData] = useState<BuilderCheckoutDraft | null>(() => readBuilderCheckoutDraft())
+ 	// whether the customer wants the builder item painted
+ 	const [selected, setSelected] = useState<boolean>(true)
 	const { addItem } = useCart()
 
 	useEffect(() => {
@@ -23,6 +25,15 @@ export default function OverviewPage() {
 			setData(readBuilderCheckoutDraft())
 		})
 	}, [])
+
+	const [mounted, setMounted] = useState(false)
+
+	useEffect(() => {
+		// eslint-disable-next-line react-hooks/set-state-in-effect
+		setMounted(true)
+	}, [])
+
+	if (!mounted) return null
 
 	if (!data) {
 		return (
@@ -65,6 +76,11 @@ export default function OverviewPage() {
 		{ id: 3, label: "Bestellen", done: false, isCurrent: true },
 	]
 
+ 	const handleChange = (value: string) => {
+ 		// convert select string value to boolean
+ 		setSelected(value === "Geverfd")
+ 	}
+
 	async function handleRouter(){
 		if (!data) return
 		addItem({
@@ -74,6 +90,7 @@ export default function OverviewPage() {
 			price: Number(totalPrice),
 			image: data?.previewImage ?? "/placeholder.png",
 			builderData: data,
+			painted: selected
 		})
 		router.push("/shoppingcart")
 	}
@@ -141,8 +158,20 @@ export default function OverviewPage() {
 								</div>
 							</div>
 
+							<div className={"border-t border-white/10 mb-5"}>
+								<P className="text-white/80 mb-3 mt-5">Kies opmaak:</P>
+								<select
+									value={selected ? "Geverfd" : "Niet geverfd"}
+									onChange={(e) => handleChange(e.target.value)}
+									className="rounded-[5px] border input-shadow outline-none transition-colors h-12 px-4 text-p w-full bg-input-normal border-input-normal cursor-pointer"
+								>
+									<option value="Geverfd">Geverfd</option>
+									<option value="Niet geverfd">Niet geverfd</option>
+								</select>
+							</div>
+
 							<div className="border-t border-white/10">
-								<div className="flex justify-between text-lg mt-12">
+								<div className="flex justify-between text-lg mt-6">
 									<H3>Totaal Prijs</H3>
 									{/*bereking platform + decoraties*/}
 									<H2>€ {totalPrice}</H2>

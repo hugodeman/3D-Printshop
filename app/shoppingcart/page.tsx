@@ -115,12 +115,15 @@ export default function WinkelmandPage() {
                                     {item.type === "product" ? (
                                         <div>
                                             <H3 className={"pb-1"}>Opmaak:</H3>
-                                            <P>{item.option}</P>
+                                            <P>{item.option ?? "Standaard"}</P>
                                         </div>
                                     ) : (
                                         <div>
-                                            <H3 className={"pb-1"}>Custom build</H3>
-                                            <P>{item.builderData?.decorations.length} decoraties</P>
+                                            <H3 className={"pb-1"}>Opmaak:</H3>
+                                            <div className="flex items-center gap-3">
+                                                <P>{item.painted ? "Geverfd" : "Niet geverfd"}</P>
+                                            </div>
+                                            <P className="mt-2">{item.builderData?.decorations.length ?? 0} decoraties</P>
                                         </div>
                                     )}
                                 </div>
