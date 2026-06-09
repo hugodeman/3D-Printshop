@@ -37,8 +37,8 @@ export function Navbar({ className = "" }: NavbarProps) {
         </Button>
         <Button
           variant="secondary"
-          isActive={pathname === "/offerte"}
-          onClick={() => router.push("/offerte")}
+          isActive={pathname === "/quote"}
+          onClick={() => router.push("/quote")}
           className="w-48"
         >
           Offerte maken
