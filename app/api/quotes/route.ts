@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
 
         const uploadDir = join(
             process.cwd(),
-            "storage",
+            "private",
             "quotes",
             quote.id
         )
@@ -198,7 +198,7 @@ export async function POST(request: NextRequest) {
             await writeFile(join(uploadDir, filename), buffer)
 
             filesToCreate.push({
-                url: `/public/quotes/models/${quote.id}/${filename}`,
+                url: `/private/quotes/models/${quote.id}/${filename}`,
                 filename,
                 mimeType: modelFile.type,
                 size: modelFile.size,
@@ -219,7 +219,7 @@ export async function POST(request: NextRequest) {
             await writeFile(join(uploadDir, filename), buffer)
 
             filesToCreate.push({
-                url: `/public/quotes/images/${quote.id}/${filename}`,
+                url: `/private/quotes/images/${quote.id}/${filename}`,
                 filename,
                 mimeType: image.type,
                 size: image.size,
