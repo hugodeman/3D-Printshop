@@ -125,10 +125,14 @@ model Quote {
 }
 
 model QuoteFile {
-  id      String @id @default(cuid())
-  quoteId String
-  url     String
-  quote   Quote  @relation(fields: [quoteId], references: [id])
+  id       String @id @default(cuid())
+  quoteId  String
+  url      String
+  filename String
+  mimeType String
+  size     Int
+  type     String
+  quote    Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
 }
 
 enum UserRole {
