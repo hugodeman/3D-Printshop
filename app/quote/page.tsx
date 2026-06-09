@@ -2,6 +2,7 @@
 
 import React, {useEffect, useState} from "react"
 import {useSession} from "next-auth/react";
+import {useRouter} from "next/navigation";
 import { BackgroundMain, BackgroundOverlay, BackgroundContrast2 } from "@/components/ui/Background"
 import { H1, H2, H3, P, ErrorText } from "@/components/ui/Typography"
 import { Button } from "@/components/ui/Button"
@@ -19,8 +20,16 @@ type ContactErrors = {
 }
 
 export default function QuotesPage() {
-    const [ready, setReady] = useState(false)
     const { data: session } = useSession()
+    const router = useRouter()
+    const [ready, setReady] = useState(false)
+
+    const handleStart = () => {
+        if (!session?.user.id) {
+            router.push("/auth/login?redirect=/quote")
+        }
+        setReady(true)
+    }
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -48,6 +57,7 @@ export default function QuotesPage() {
     const [modelFile, setModelFile] = useState<File | null>(null)
     const [photoFiles, setPhotoFiles] = useState<File[]>([])
     const [description, setDescription] = useState("")
+    const [descriptionError, setDescriptionError] = useState("")
     const [questions, setQuestions] = useState("")
 
     const [isSubmitting, setIsSubmitting] = useState(false)
@@ -77,7 +87,9 @@ export default function QuotesPage() {
     }
 
     const handleSubmit = async () => {
-        if (!validateContact()) return
+        if (!description.trim()) setDescriptionError("Geef een omschrijving van wat je wilt hebben")
+
+        if (!validateContact() || !description.trim()) return
 
         setIsSubmitting(true)
 
@@ -100,9 +112,6 @@ export default function QuotesPage() {
         try {
             const response = await fetch("/api/quotes", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
                 body: formData,
             })
 
@@ -196,7 +205,7 @@ export default function QuotesPage() {
 
                 {!ready && (
                     <div className={"flex justify-center w-full"}>
-                        <Button onClick={() => setReady(true)} className={"mt-10 min-w-1/3"}>Start offerte</Button>
+                        <Button onClick={handleStart} className={"mt-10 min-w-1/3"}>Start offerte</Button>
                     </div>
                 )}
 
@@ -215,7 +224,7 @@ export default function QuotesPage() {
                                             onChange={(e) => updateContact("firstName", e.target.value)}
                                             placeholder="Voornaam"
                                         />
-                                        {contactErrors.firstName && <ErrorText className="text-red-500">{contactErrors.firstName}</ErrorText>}
+                                        {contactErrors.firstName && <ErrorText>{contactErrors.firstName}</ErrorText>}
                                     </div>
                                     <div className="flex-1">
                                         <Input
@@ -224,7 +233,7 @@ export default function QuotesPage() {
                                             onChange={(e) => updateContact("lastName", e.target.value)}
                                             placeholder="Achternaam"
                                         />
-                                        {contactErrors.lastName && <ErrorText className="text-red-500">{contactErrors.lastName}</ErrorText>}
+                                        {contactErrors.lastName && <ErrorText>{contactErrors.lastName}</ErrorText>}
                                     </div>
                                 </div>
                                 <Input
@@ -233,7 +242,7 @@ export default function QuotesPage() {
                                     onChange={(e) => updateContact("email", e.target.value)}
                                     placeholder="E-mail"
                                 />
-                                {contactErrors.email && <ErrorText className="text-red-500">{contactErrors.email}</ErrorText>}
+                                {contactErrors.email && <ErrorText>{contactErrors.email}</ErrorText>}
                             </div>
 
                             {/* Model upload */}
@@ -269,6 +278,7 @@ export default function QuotesPage() {
                                     rows={4}
                                     className="rounded-lg border p-3 w-full min-w-60 h-40 resize-none bg-input-normal border-input-normal outline-none input-shadow mt-2"
                                 />
+                                <ErrorText>{descriptionError}</ErrorText>
                             </div>
 
                             {/* Photo upload */}
@@ -308,7 +318,7 @@ export default function QuotesPage() {
                             {/* Error message */}
                             {error && (
                                 <div className="w-1/2">
-                                    <ErrorText className="text-red-500 bg-red-500/10 p-3 rounded-lg border border-red-500/30">
+                                    <ErrorText className="bg-red-500/10 p-3 rounded-lg border border-red-500/30">
                                         {error}
                                     </ErrorText>
                                 </div>
