@@ -117,6 +117,10 @@ model Quote {
   id          String      @id @default(cuid())
   userId      String
   status      QuoteStatus @default(PENDING)
+  accepted    Boolean?    @default(false)
+  firstName   String?
+  lastName    String?
+  email       String?
   description String
   question    String?
   createdAt   DateTime    @default(now())
@@ -154,7 +158,6 @@ enum PaymentStatus {
 
 enum QuoteStatus {
   PENDING
-  APPROVED
   REJECTED
   COMPLETED
 }
