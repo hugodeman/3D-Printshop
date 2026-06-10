@@ -158,6 +158,9 @@ export async function POST(request: NextRequest) {
                 userId: session.user.id,
                 description,
                 question: question || null,
+                firstName,
+                lastName,
+                email,
                 status: "PENDING",
             },
         })

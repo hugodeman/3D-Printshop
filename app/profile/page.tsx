@@ -3,6 +3,7 @@
 import React, {useEffect, useState} from "react"
 import { useSession } from "next-auth/react"
 import {signOut} from "next-auth/react";
+import Image from "next/image";
 import {ErrorText, H1, H2, H3, P} from "@/components/ui/Typography"
 import {BackgroundMain, BackgroundContrast2, BackgroundOverlay, BackgroundContrast1} from "@/components/ui/Background"
 import { Button } from "@/components/ui/Button"
@@ -11,10 +12,11 @@ import { Icon } from "@/components/ui/Icon";
 import {Input} from "@/components/ui/Input";
 import ProductDetailModal from "@/components/shop/ProductDetailModal"
 import BuilderPreviewModal from "@/components/builder/BuilderPreviewModal"
+import QuoteDetailModal from "@/components/quote/QuoteDetailModal";
 import { BuilderConfig } from "@/types/BuilderConfig"
-import Image from "next/image";
 import {Product} from "@/types/Product";
 import {BuilderItem} from "@/types/BuilderItem";
+import {Quote} from "@/types/Quote";
 
 /**
  * User profile dashboard.
@@ -61,6 +63,8 @@ export default function ProfilePage() {
         }>
     }>>([])
 
+    const [quoteData, setQuoteData] = useState<Quote[]>([])
+
     const [credentialsErrors, setCredentialsErrors] = useState<{ email?: string; password?: string }>({})
     const [addressErrors, setAddressErrors] = useState<AddressErrors>({})
     const [isSaving, setIsSaving] = useState(false)
@@ -76,6 +80,8 @@ export default function ProfilePage() {
     } | null>(null)
 
     const [selectedBuilderItem, setSelectedBuilderItem] = useState<BuilderConfig | null>(null)
+
+    const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null)
 
     // Ophalen bij mount
     useEffect(() => {
@@ -111,6 +117,17 @@ export default function ProfilePage() {
         }
 
         fetchOrders()
+    }, [])
+
+    useEffect(() => {
+        const fetchQuotes = async () => {
+            const res = await fetch("/api/quotes")
+            if (!res.ok) return
+            const data = await res.json()
+            setQuoteData(data)
+        }
+
+        fetchQuotes()
     }, [])
 
     const formatDate = (dateString: string) =>
@@ -443,7 +460,67 @@ export default function ProfilePage() {
 
                       {step === "offertes" && (
                           <div className="flex flex-col gap-6 flex-1">
-                                <H2 className={"ml-5 mt-5"}>Mijn offertes:</H2>
+                              <H2 className={"ml-5 mt-5"}>Mijn offertes:</H2>
+                              {quoteData.length === 0 ? (
+                                  <P className="ml-5">Je hebt nog geen offertes.</P>
+                              ) : (
+                                  quoteData.map(quote => (
+                                      <div key={quote.id}>
+                                          <div className={"flex items-center justify-between gap-4 ml-5 mr-10 mt-8 mb-2"}>
+                                              <H3 className={"ml-5"}>{formatDate(quote.createdAt)} - offerte #{quote.id.slice(-6).toUpperCase()}</H3>
+                                              <H3>Geaccepteerd?</H3>
+                                          </div>
+                                          <BackgroundContrast2 key={quote.id} className="pl-6 pr-6 py-15 rounded-2xl flex flex-col">
+                                              <div className={"flex flex-row justify-between"}>
+                                                  <div className={"ml-10"}>
+                                                      {quote.status === "PENDING" && (
+                                                          <div className={"flex items-center gap-4"}>
+                                                              <Icon name={"Hourglass"} size={40}/>
+                                                              <H3>In behandeling</H3>
+                                                          </div>
+                                                      )}
+                                                      {quote.status === "REJECTED" &&(
+                                                          <div className={"flex items-center gap-4"}>
+                                                              <Icon name={"X"} size={40}/>
+                                                              <H3>Afgewezen</H3>
+                                                          </div>
+                                                      )}
+                                                      {quote.status === "COMPLETED" &&(
+                                                          <div className={"flex items-center gap-4"}>
+                                                              <Icon name={"Check"} size={40}/>
+                                                              <H3>Afgerond</H3>
+                                                          </div>
+                                                      )}
+                                                  </div>
+                                                  <div onClick={() => {
+                                                      if (!quote) return
+
+                                                      setSelectedQuote(quote)
+                                                  }}
+                                                       className={"cursor-pointer flex items-center"}
+                                                  >
+                                                      <H3 className={"text-action underline hover:cursor-pointer"}>Bekijk details</H3>
+                                                  </div>
+                                                  <div className={"mr-15"}>
+                                                      {quote.accepted ? (
+                                                            <div>
+                                                                <Icon name={"ThumbsUp"} size={40}/>
+                                                            </div>
+                                                      ): !quote.accepted && quote.status === "REJECTED" ? (
+                                                          <div>
+                                                              <Icon name={"ThumbsDown"} size={40}/>
+                                                          </div>
+                                                      ):
+                                                          <div>
+                                                              <Icon name={"Clock"} size={40}/>
+                                                          </div>
+                                                      }
+                                                  </div>
+                                              </div>
+                                          </BackgroundContrast2>
+                                      </div>
+                                  ))
+                              )}
                           </div>
                       )}
                   </div>
@@ -465,6 +542,13 @@ export default function ProfilePage() {
                   isOpen={true}
                   onCloseAction={() => setSelectedBuilderItem(null)}
                   config={selectedBuilderItem}
+              />
+          )}
+          {selectedQuote && (
+              <QuoteDetailModal
+                  isOpen={true}
+                  onCloseAction={() => setSelectedQuote(null)}
+                  quote={selectedQuote}
               />
           )}
       </BackgroundMain>
