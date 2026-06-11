@@ -472,7 +472,7 @@ export default function ProfilePage() {
                                           </div>
                                           <BackgroundContrast2 key={quote.id} className="pl-6 pr-6 py-15 rounded-2xl flex flex-col">
                                               <div className={"flex flex-row justify-between"}>
-                                                  <div className={"ml-10"}>
+                                                  <div className={"ml-10 min-w-50"}>
                                                       {quote.status === "PENDING" && (
                                                           <div className={"flex items-center gap-4"}>
                                                               <Icon name={"Hourglass"} size={40}/>
