@@ -22,12 +22,15 @@ type ContactErrors = {
 export default function QuotesPage() {
     const { data: session } = useSession()
     const router = useRouter()
-    const [ready, setReady] = useState(false)
+    const [ready, setReady] = useState(() =>
+        typeof window !== "undefined" ? localStorage.getItem("ready") === "true" : false
+    )
 
     const handleStart = () => {
         if (!session?.user.id) {
             router.push("/auth/login?redirect=/quote")
         }
+        localStorage.setItem("ready", "true")
         setReady(true)
     }
 
@@ -37,28 +40,38 @@ export default function QuotesPage() {
             if (!res.ok) return
             const data = await res.json()
             if (data.address) {
-                setContactData({
-                    firstName: data.address.firstName ?? "",
-                    lastName: data.address.lastName ?? "",
-                    email: session?.user?.email ?? "",
-                })
+                setContactData(prev => ({
+                    firstName: prev.firstName || data.address.firstName || "",
+                    lastName: prev.lastName || data.address.lastName || "",
+                    email: prev.email || session?.user?.email || "",
+                }))
             }
         }
         fetchProfile()
     }, [])
 
-    const [contactData, setContactData] = useState<ContactData>({
-        firstName: "",
-        lastName: "",
-        email: "",
+    const [contactData, setContactData] = useState<ContactData>( () => {
+      if (typeof window === "undefined") return {firstName: "", lastName: "", email: "",}
+      return {
+          firstName: localStorage.getItem("quote_firstName") ?? "",
+          lastName: localStorage.getItem("quote_lastName") ?? "",
+          email: localStorage.getItem("quote_email") ?? "",
+      }
+
     })
     const [contactErrors, setContactErrors] = useState<ContactErrors>({})
 
     const [modelFile, setModelFile] = useState<File | null>(null)
     const [photoFiles, setPhotoFiles] = useState<File[]>([])
-    const [description, setDescription] = useState("")
+
+    const [description, setDescription] = useState(() =>
+        typeof window !== "undefined" ? localStorage.getItem("quote_description") ?? "" : ""
+    )
     const [descriptionError, setDescriptionError] = useState("")
-    const [questions, setQuestions] = useState("")
+
+    const [questions, setQuestions] = useState(() =>
+        typeof window !== "undefined" ? localStorage.getItem("quote_questions") ?? "" : ""
+    )
 
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [submitted, setSubmitted] = useState(false)
@@ -66,6 +79,7 @@ export default function QuotesPage() {
 
     const updateContact = (field: keyof ContactData, value: string) => {
         setContactData((prev) => ({ ...prev, [field]: value }))
+        localStorage.setItem(`quote_${field}`, value)
         if (contactErrors[field]) {
             setContactErrors((prev) => ({ ...prev, [field]: undefined }))
         }
@@ -121,6 +135,12 @@ export default function QuotesPage() {
                 return
             }
 
+            localStorage.removeItem("quote_firstName")
+            localStorage.removeItem("quote_lastName")
+            localStorage.removeItem("quote_email")
+            localStorage.removeItem("quote_description")
+            localStorage.removeItem("quote_questions")
+            localStorage.removeItem("ready")
             setSubmitted(true)
         } catch (err) {
             const message = err instanceof Error ? err.message : "An error occurred"
@@ -154,6 +174,14 @@ export default function QuotesPage() {
             description: "Samen komen we tot een akkoord",
         },
     ]
+
+    const [mounted, setMounted] = useState(false)
+
+    useEffect(() => {
+        setMounted(true)
+    }, [])
+
+    if (!mounted) return null
 
     if (submitted) {
         return (
@@ -274,7 +302,10 @@ export default function QuotesPage() {
                                 <textarea
                                     placeholder="..."
                                     value={description}
-                                    onChange={(e) => setDescription(e.target.value)}
+                                    onChange={(e) => {
+                                        setDescription(e.target.value)
+                                        localStorage.setItem("quote_description", e.target.value)
+                                    }}
                                     rows={4}
                                     className="rounded-lg border p-3 w-full min-w-60 h-40 resize-none bg-input-normal border-input-normal outline-none input-shadow mt-2"
                                 />
@@ -310,7 +341,10 @@ export default function QuotesPage() {
                                 <textarea
                                     placeholder="..."
                                     value={questions}
-                                    onChange={(e) => setQuestions(e.target.value)}
+                                    onChange={(e) => {
+                                        setQuestions(e.target.value)
+                                        localStorage.setItem("quote_questions", e.target.value)
+                                    }}
                                     className="rounded-lg border p-3 w-full min-w-60 h-40 resize-none bg-input-normal border-input-normal outline-none input-shadow mt-2"
                                 />
                             </div>
