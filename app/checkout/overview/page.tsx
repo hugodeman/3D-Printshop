@@ -97,9 +97,9 @@ export default function OverviewPage() {
 	}
 
 	return (
-		<div className="min-h-screen bg-[#1A1C1E]">
-			<div className="h-[calc(100vh-120px)] p-6 text-white">
-				<div className="mx-auto flex max-h-[90%] h-full w-full max-w-[70%] flex-col">
+		<div className="min-h-screen bg-[#1A1C1E] pb-2">
+			<div className="h-[calc(100vh-120px)] p-6 text-white mb-100">
+				<div className="mx-auto flex max-h-[90%] h-full w-full max-w-[70%] flex-col mb-100">
 
 					{/* HEADER */}
 					<div className="mb-6 mt-5 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
@@ -118,7 +118,7 @@ export default function OverviewPage() {
 					</div>
 
 					{/* MAIN CARD + OVERLAY */}
-					<div className="relative mt-10 min-h-0 h-3/4 w-full flex-1 lg:overflow-visible">
+					<div className="relative mt-10 min-h-190 h-3/4 w-full flex-1 lg:overflow-visible">
 						<div className="h-full flex-1 flex flex-col rounded-4xl border border-white/20 bg-white/2 p-4 shadow-[0_0_30px_rgba(0,0,0,0.45)] lg:pr-28">
 							{/* Preview foto van de build */}
 							{data.previewImage ? (
