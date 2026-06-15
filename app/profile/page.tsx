@@ -17,6 +17,7 @@ import { BuilderConfig } from "@/types/BuilderConfig"
 import {Product} from "@/types/Product";
 import {BuilderItem} from "@/types/BuilderItem";
 import {Quote} from "@/types/Quote";
+import AdminPanelPage from "@/components/profile/AdminPanel";
 
 /**
  * User profile dashboard.
@@ -27,6 +28,8 @@ import {Quote} from "@/types/Quote";
  * - order history
  * - builder item previews
  * - product detail previews
+ * - quotes history
+ * - quote detail previews
  */
 
 export default function ProfilePage() {
@@ -53,6 +56,9 @@ export default function ProfilePage() {
         total: string
         note: string | null
         createdAt: string
+        firstName: string | null
+        lastName: string | null
+        email: string | null
         items: Array<{
             id: string
             quantity: number
@@ -226,10 +232,16 @@ export default function ProfilePage() {
     }
 
     const handleAddressChange = (field: keyof AddressData, value: string) => {
-        setAddressData(prev => ({ ...prev, [field]: value }))
+        setAddressData(prev => ({...prev, [field]: value}))
         if (addressErrors[field]) {
-            setAddressErrors(prev => ({ ...prev, [field]: undefined }))
+            setAddressErrors(prev => ({...prev, [field]: undefined}))
         }
+    }
+
+    const handleCompleteOrder = (orderId: string) => {
+        setOrderData(prev =>
+            prev.map(o => o.id === orderId ? { ...o, status: "COMPLETED" } : o)
+        )
     }
 
     const handleSignOut = async ()=> {
@@ -238,6 +250,22 @@ export default function ProfilePage() {
 
     if (status === "loading") return <BackgroundMain><P>Laden...</P></BackgroundMain>
     if (!session) return <BackgroundMain><P>Je bent niet ingelogd.</P></BackgroundMain>
+
+    if (session.user.role === "ADMIN"){
+        return (
+            <AdminPanelPage
+                orderData={orderData}
+                quoteData={quoteData}
+                credentialsData={credentialsData}
+                onCredentialsChangeAction={handleCredentialsChange}
+                onSaveCredentialsAction={handleSaveCredentials}
+                credentialsErrors={credentialsErrors}
+                isSaving={isSaving}
+                saveSuccess={saveSuccess}
+                onCompleteOrderAction={handleCompleteOrder}
+            />
+        )
+    }
 
     return (
       <BackgroundMain>

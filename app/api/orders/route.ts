@@ -11,7 +11,7 @@
  * Notes:
  * - Prisma Decimal values are converted to numbers before returning JSON
  * - Only orders with status PAID or COMPLETED are returned
- * - Used by the profile page order history
+ * - Used by the profile page order history and admin page
  *
  * Response:
  * 200 -> Order[]
@@ -20,6 +20,7 @@
  */
 
 import { NextResponse, NextRequest } from "next/server"
+import { OrderStatus } from "@prisma/client"
 import prisma from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { createMolliePayment } from "@/lib/mollie"
@@ -37,14 +38,26 @@ export async function GET() {
         return NextResponse.json({ error: "No user available for order creation" }, { status: 400 })
     }
 
+    const statuses: OrderStatus[] = ["PAID", "COMPLETED"]
+
+    const where = session.user.role === "ADMIN"
+        ? { status: { in: statuses } }
+        : { userId: session.user.id, status: { in: statuses } }
+
     try {
         const orders = await prisma.order.findMany({
-            where: {
-                userId: session.user.id,
-                status: { in: ["PAID", "COMPLETED"] },
-            },
+            where,
             orderBy: { createdAt: "desc" },
             include: {
+                user: {
+                    select: {
+                        addresses: {
+                            select: {firstName: true, lastName: true},
+                            take: 1
+                        },
+                        email: true
+                    }
+                },
                 items: {
                     include: {
                         product: {
@@ -61,6 +74,9 @@ export async function GET() {
 
         const formattedOrders = orders.map(order => ({
             ...order,
+            firstName: order.user?.addresses[0]?.firstName ?? null,
+            lastName: order.user?.addresses[0]?.lastName ?? null,
+            email: order.user?.email ?? null,
             items: order.items.map(item => ({
                 ...item,
                 product: item.product
@@ -210,4 +226,27 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json({ orderId: order.id, checkoutUrl })
+}
+
+/**
+ *
+ * PUT /api/orders
+ *
+ * Changes order status from PAID to COMPLETED
+ */
+
+export async function PUT(request: NextRequest) {
+    const session = await auth()
+    if (!session?.user?.id || session.user.role !== "ADMIN") {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const { id, status } = await request.json()
+
+    const updated = await prisma.order.update({
+        where: { id },
+        data: { status },
+    })
+
+    return NextResponse.json(updated)
 }
