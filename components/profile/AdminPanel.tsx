@@ -147,9 +147,14 @@ export default function AdminPanelPage({ orderData, quoteData, credentialsData, 
                                                 <div key={order.id} className={"w-full"}>
                                                     <div className={"w-full"}>
                                                         <div className={"flex justify-center gap-[10vw]"}>
-                                                            <BackgroundContrast2 className="pl-6 pr-6 py-5 rounded-2xl w-3/4 flex justify-between min-h-60 mb-2 mt-8">
+                                                            <BackgroundContrast2 className="pl-6 pr-6 py-5 rounded-2xl w-3/4 flex justify-between h-60 mb-2 mt-8">
                                                                 <div className={"flex gap-15"}>
-                                                                    <Image className="object-cover h-auto" src={firstImage} alt="Order" width={200} height={100} />
+                                                                    {order.items[0].product? (
+                                                                        <Image className="object-cover h-auto w-auto" src={firstImage} alt="Order" width={200} height={100} />
+                                                                    ): (
+                                                                        // eslint-disable-next-line @next/next/no-img-element
+                                                                        <img src={firstImage} alt="Builder item" className="object-cover h-auto rounded-lg w-72" />
+                                                                    )}
                                                                     <div className={"flex flex-col justify-center gap-10"}>
                                                                         <div>
                                                                             <H2>Bestelling #{order.id.slice(-6).toUpperCase()}</H2>

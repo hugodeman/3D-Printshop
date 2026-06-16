@@ -7,6 +7,8 @@ import {H2, H3, P} from "@/components/ui/Typography";
 import {Input} from "@/components/ui/Input";
 import {Order} from "@/types/Order";
 import {BuilderConfig} from "@/types/BuilderConfig";
+import Link from "next/link";
+import {Button} from "@/components/ui/Button";
 
 type Props = {
     isOpen: boolean
@@ -17,6 +19,20 @@ type Props = {
 
 export default function AdminOrderDetailModal({ isOpen, onCloseAction, order, onBuilderPreviewAction }: Props) {
     if (!isOpen) return null
+
+    const mailBody = `Beste ${order.firstName},
+    
+    Als antwoord op uw vraag: 
+    ${order.note}
+    
+    Het antwoord:
+    
+    
+    Met vriendelijke groet,
+    
+    HoekvanNoek`;
+
+    const printFileDownloadUrl = `/api/orders/${order.id}/print-file`
 
     return (
         <div
@@ -34,7 +50,13 @@ export default function AdminOrderDetailModal({ isOpen, onCloseAction, order, on
                             <H3 className="mb-6 text-contrast">{new Date(order.createdAt).toLocaleDateString("nl-NL", { day: "2-digit", month: "short", year: "numeric" })}</H3>
                         </div>
                         <div>
-                            <H2 className={"text-contrast"}>Besteller: {order.firstName} {order.lastName}</H2>
+                            <H2 className={"text-contrast mb-2"}>Besteller: {order.firstName} {order.lastName}</H2>
+                            <div className={"flex gap-4"}>
+                                <Icon name={"Mail"} color={"black"} size={30} />
+                                <a href={`mailto:${order.email}?subject=Bestelling - #${order.id.slice(-6).toUpperCase()}&body=${encodeURIComponent(mailBody)}`} className="text-action-contrast hover:underline text-center">
+                                    Stuur gebruiken een mail
+                                </a>
+                            </div>
                         </div>
                     </div>
 
@@ -68,6 +90,14 @@ export default function AdminOrderDetailModal({ isOpen, onCloseAction, order, on
                                             <P className="text-contrast py-3">Aantal: {item.quantity}</P>
                                             <P className="text-contrast pt-10 pb-4">Opmaak: {item.builderItem.painted ? "Geverfd" : "Niet geverfd"}</P>
                                             <P className="text-contrast pb-5 ">Maaktijd: {item.builderItem.deliveryTime || "1"} uur</P>
+                                        </div>
+                                        <div className={"flex items-center ml-20"}>
+                                            <Link href={printFileDownloadUrl} target="_blank" rel="noreferrer">
+                                                <Button variant="secondary" className="min-w-56 flex gap-3 py-4">
+                                                    <Icon name="Download" size={25} color="#98CEAA" />
+                                                    <H3 className={"text-emerald-600"}>Download printbestand</H3>
+                                                </Button>
+                                            </Link>
                                         </div>
                                     </div>
                                 )}
