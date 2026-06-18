@@ -31,7 +31,7 @@ export default function BuilderPreviewModal({ isOpen, onCloseAction, config }: P
             >
                 <div className={"flex-1"} onClick={(e) => e.stopPropagation()}>
                     <button className="absolute top-4 right-4 z-10" onClick={onCloseAction}>
-                        <Icon name="X" size={24} className="cursor-pointer" />
+                        <Icon name="X" size={50} className="cursor-pointer" />
                     </button>
 
                     <Canvas

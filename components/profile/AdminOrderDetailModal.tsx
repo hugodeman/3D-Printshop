@@ -9,15 +9,21 @@ import {Order} from "@/types/Order";
 import {BuilderConfig} from "@/types/BuilderConfig";
 import Link from "next/link";
 import {Button} from "@/components/ui/Button";
+import ProductDetailModal from "@/components/shop/ProductDetailModal";
+import BuilderPreviewModal from "@/components/builder/BuilderPreviewModal";
+import React, {useState} from "react";
+import {Product} from "@/types/Product";
 
 type Props = {
     isOpen: boolean
     onCloseAction: () => void
     order: Order
-    onBuilderPreviewAction: (config: BuilderConfig) => void
 }
 
-export default function AdminOrderDetailModal({ isOpen, onCloseAction, order, onBuilderPreviewAction }: Props) {
+export default function AdminOrderDetailModal({ isOpen, onCloseAction, order }: Props) {
+    const [selectedProduct, setSelectedProduct] = useState<{ product: Product; option: string } | null>(null)
+    const [selectedBuilderItem, setSelectedBuilderItem] = useState<BuilderConfig | null>(null)
+
     if (!isOpen) return null
 
     const mailBody = `Beste ${order.firstName},
@@ -82,8 +88,9 @@ export default function AdminOrderDetailModal({ isOpen, onCloseAction, order, on
                                         )}
                                         <div className="flex flex-col justify-between">
                                             <div onClick={() => {
-                                                const config = item.builderItem?.configJson as BuilderConfig
-                                                if (config) onBuilderPreviewAction(config)
+                                                // const config = item.builderItem?.configJson as BuilderConfig
+                                                // if (config) onBuilderPreviewAction(config)
+                                                setSelectedBuilderItem(item.builderItem?.configJson as BuilderConfig)
                                             }} className="cursor-pointer">
                                                 <H2 className="mt-11 text-action-contrast hover:underline">Custom Builder Item</H2>
                                             </div>
@@ -118,6 +125,15 @@ export default function AdminOrderDetailModal({ isOpen, onCloseAction, order, on
                     </BackgroundContrast1>
                 </div>
             </div>
+            {selectedProduct && (
+                <ProductDetailModal isOpen={true} onCloseAction={() => setSelectedProduct(null)}
+                                    product={{ ...selectedProduct.product, price: Number(selectedProduct.product.price) }}
+                                    selectedOption={selectedProduct.option}
+                />
+            )}
+            {selectedBuilderItem && (
+                <BuilderPreviewModal isOpen={true} onCloseAction={() => setSelectedBuilderItem(null)} config={selectedBuilderItem} />
+            )}
         </div>
     )
 }
