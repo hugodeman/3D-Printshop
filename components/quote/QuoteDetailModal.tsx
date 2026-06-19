@@ -125,9 +125,14 @@ export default function QuoteDetailModal({ isOpen, onCloseAction, quote, onAccep
 
                             {quote.files.filter((file) => file.type === "model").length > 0  &&(
                                 <div className={"w-1/2"}>
-                                    <H3 className="mb-2 text-contrast">Modelbestand:</H3>
-                                    <div className={"flex justify-start items-start"}>
-                                        <H3 className={"text-action-contrast mt-1 mb-2"}>{quote.files[0].filename}</H3>
+                                    <H3 className="mb-4 text-contrast">Modelbestand:</H3>
+                                    <div className={"flex justify-start items-start gap-5"}>
+                                        {session?.user.role === "ADMIN"? (
+                                            <a href={`/api/quotes/${quote.id}/files/${quote.files[0].id}`} target="_blank" rel="noreferrer" className={"flex gap-5"}>
+                                                <H3 className={"text-action-contrast mt-1 mb-2"}>{quote.files[0].filename}</H3>
+                                                <Icon name="Download" size={25} color="black" />
+                                            </a>
+                                        ): <H3 className={"text-action-contrast mt-1 mb-2"}>{quote.files[0].filename}</H3> }
                                     </div>
                                 </div>
                             )}
@@ -152,7 +157,14 @@ export default function QuoteDetailModal({ isOpen, onCloseAction, quote, onAccep
                                     <H3 className="mb-2 text-contrast">Extra informatie foto(s):</H3>
                                     {quote.files.filter((file) => file.type === "image").map((file) => (
                                         <div key={file.id} className={"flex justify-start items-start mb-1"}>
-                                            <H3 className={"text-action-contrast mt-2"}>{file.filename}</H3>
+                                        {session?.user.role === "ADMIN" ? (
+                                                <a href={`/api/quotes/${quote.id}/files/${file.id}`} target="_blank" rel="noreferrer" className={"flex gap-5 items-center"}>
+                                                    <H3 className={"text-action-contrast mt-2 pb-2"}>{file.filename}</H3>
+                                                    <Icon name="Download" size={25} color="black" />
+                                                </a>
+                                            ): (
+                                                <H3 className={"text-action-contrast mt-2"}>{file.filename}</H3>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
