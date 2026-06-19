@@ -1,17 +1,17 @@
 "use client"
 
+import React, {useState} from "react";
 import Image from "next/image";
+import Link from "next/link";
 import {Icon} from "@/components/ui/Icon";
 import {BackgroundContrast1} from "@/components/ui/Background";
 import {H2, H3, P} from "@/components/ui/Typography";
 import {Input} from "@/components/ui/Input";
-import {Order} from "@/types/Order";
-import {BuilderConfig} from "@/types/BuilderConfig";
-import Link from "next/link";
 import {Button} from "@/components/ui/Button";
 import ProductDetailModal from "@/components/shop/ProductDetailModal";
 import BuilderPreviewModal from "@/components/builder/BuilderPreviewModal";
-import React, {useState} from "react";
+import {Order} from "@/types/Order";
+import {BuilderConfig} from "@/types/BuilderConfig";
 import {Product} from "@/types/Product";
 
 type Props = {
@@ -25,6 +25,13 @@ export default function AdminOrderDetailModal({ isOpen, onCloseAction, order }: 
     const [selectedBuilderItem, setSelectedBuilderItem] = useState<BuilderConfig | null>(null)
 
     if (!isOpen) return null
+
+    const formatDate = (dateString: string) =>
+        new Date(dateString).toLocaleDateString("nl-NL", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+        })
 
     const mailBody = `Beste ${order.firstName},
     
@@ -53,11 +60,11 @@ export default function AdminOrderDetailModal({ isOpen, onCloseAction, order }: 
                     <div className={"flex justify-between mr-50"}>
                         <div>
                             <H2 className="mb-2 text-contrast">Bestelling #{order.id.slice(-6).toUpperCase()}</H2>
-                            <H3 className="mb-6 text-contrast">{new Date(order.createdAt).toLocaleDateString("nl-NL", { day: "2-digit", month: "short", year: "numeric" })}</H3>
+                            <H3 className="mb-6 text-contrast">{formatDate(order.createdAt)}</H3>
                         </div>
                         <div>
                             <H2 className={"text-contrast mb-2"}>Besteller: {order.firstName} {order.lastName}</H2>
-                            <div className={"flex gap-4"}>
+                            <div className={"flex gap-4 items-center"}>
                                 <Icon name={"Mail"} color={"black"} size={30} />
                                 <a href={`mailto:${order.email}?subject=Bestelling - #${order.id.slice(-6).toUpperCase()}&body=${encodeURIComponent(mailBody)}`} className="text-action-contrast hover:underline text-center">
                                     Stuur gebruiken een mail

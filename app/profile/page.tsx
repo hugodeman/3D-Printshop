@@ -13,11 +13,11 @@ import {Input} from "@/components/ui/Input";
 import ProductDetailModal from "@/components/shop/ProductDetailModal"
 import BuilderPreviewModal from "@/components/builder/BuilderPreviewModal"
 import QuoteDetailModal from "@/components/quote/QuoteDetailModal";
+import AdminPanelPage from "@/components/profile/AdminPanel";
 import { BuilderConfig } from "@/types/BuilderConfig"
 import {Product} from "@/types/Product";
 import {BuilderItem} from "@/types/BuilderItem";
 import {Quote} from "@/types/Quote";
-import AdminPanelPage from "@/components/profile/AdminPanel";
 
 /**
  * User profile dashboard.
@@ -244,6 +244,24 @@ export default function ProfilePage() {
         )
     }
 
+    const handleCompleteQuote = (quoteId: string) => {
+        setQuoteData(prev =>
+            prev.map(q => q.id === quoteId ? { ...q, status: "COMPLETED" } : q)
+        )
+    }
+
+    const handleAcceptQuote = (quoteId: string) => {
+        setQuoteData(prev =>
+            prev.map(q => q.id === quoteId ? { ...q, accepted: true } : q)
+        )
+    }
+
+    const handleCancelQuote = (quoteId: string) => {
+        setQuoteData(prev =>
+            prev.map(q => q.id === quoteId ? { ...q, accepted: false, status: "REJECTED" } : q)
+        )
+    }
+
     const handleSignOut = async ()=> {
         await signOut({ redirectTo: "/auth/login" })
     }
@@ -263,6 +281,9 @@ export default function ProfilePage() {
                 isSaving={isSaving}
                 saveSuccess={saveSuccess}
                 onCompleteOrderAction={handleCompleteOrder}
+                onCompleteQuoteAction={handleCompleteQuote}
+                onAcceptQuoteAction={handleAcceptQuote}
+                onCancelQuoteAction={handleCancelQuote}
             />
         )
     }
@@ -577,6 +598,14 @@ export default function ProfilePage() {
                   isOpen={true}
                   onCloseAction={() => setSelectedQuote(null)}
                   quote={selectedQuote}
+                  onAcceptQuoteAction={(quoteId) => {
+                      handleAcceptQuote(quoteId)
+                      setSelectedQuote(null)
+                  }}
+                  onCancelQuoteAction={(quoteId) => {
+                      handleCancelQuote(quoteId)
+                      setSelectedQuote(null)
+                  }}
               />
           )}
       </BackgroundMain>

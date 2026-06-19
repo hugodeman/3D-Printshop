@@ -25,10 +25,12 @@ export async function GET() {
             )
         }
 
+        const where = session.user.role === "ADMIN"?
+            {}:
+            {userId: session.user.id}
+
         const quotes = await prisma.quote.findMany({
-            where: {
-                userId: session.user.id,
-            },
+            where,
             include: {
                 files: true,
             },
@@ -271,4 +273,23 @@ export async function POST(request: NextRequest) {
             }
         )
     }
+}
+
+export async function PATCH(request: NextRequest) {
+    const session = await auth()
+    if (!session?.user?.id || session.user.role !== "ADMIN") {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const { id, status, accepted } = await request.json()
+
+    const updated = await prisma.quote.update({
+        where: { id },
+        data: {
+            ...(status !== undefined && { status }),
+            ...(accepted !== undefined && { accepted }),
+        },
+    })
+
+    return NextResponse.json(updated)
 }
