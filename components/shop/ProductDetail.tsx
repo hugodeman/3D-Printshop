@@ -1,6 +1,7 @@
 "use client"
 
 import {useRouter} from "next/navigation";
+import {useSession} from "next-auth/react";
 import {Icon} from "@/components/ui/Icon";
 import { H2, H3, P } from "@/components/ui/Typography"
 import ProductImageSlider from "@/components/shop/ProductImageSlider"
@@ -15,6 +16,7 @@ type Props = {
 }
 
 export default function ProductDetail({ product, selectedOption, mode = "page", iconColor }: Props) {
+    const {data: session} = useSession()
     const router = useRouter()
     const textClass = mode === "modal" ? "text-contrast" : ""
 
@@ -22,10 +24,6 @@ export default function ProductDetail({ product, selectedOption, mode = "page", 
         try {
             const res = await fetch(`/api/products/${product.id}`, {
                 method: "DELETE",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    product,
-                })
             })
             if (res.status === 200) {
                 router.push("/webshop")
@@ -33,6 +31,10 @@ export default function ProductDetail({ product, selectedOption, mode = "page", 
         } catch (error) {
             console.log(error)
         }
+    }
+
+    const handleEdit = () => {
+        router.push(`/webshop/${product.id}/edit_product`)
     }
 
     return (
@@ -61,9 +63,16 @@ export default function ProductDetail({ product, selectedOption, mode = "page", 
                     <AddToCartButton product={product} />
                 )}
             </div>
-            <div className={"absolute right-50 cursor-pointer"} onClick={handleDelete}>
-                <Icon name={"Trash2"} size={40} color="#FCA5A5" />
-            </div>
+            {session?.user.role === "ADMIN" && (
+                <div>
+                    <div className={"absolute right-50 cursor-pointer"} onClick={handleDelete}>
+                        <Icon name={"Trash2"} size={40} color="#FCA5A5" />
+                    </div>
+                    <div className={"absolute right-70 cursor-pointer"} onClick={handleEdit}>
+                        <Icon name={"SquarePen"} size={40} color="#98CEAA" />
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

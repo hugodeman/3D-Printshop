@@ -74,6 +74,43 @@ export async function GET(
     }
 }
 
+export async function PATCH(
+    request: NextRequest,
+    { params }: { params: Promise<{ productId: string }> }
+) {
+    const session = await auth()
+    if (!session?.user?.id || session.user.role !== "ADMIN") {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const { productId } = await params
+    const body = await request.json()
+
+    // Afbeeldingen vervangen als meegegeven
+    if (body.images && Array.isArray(body.images)) {
+        await prisma.productImage.deleteMany({ where: { productId } })
+        await prisma.productImage.createMany({
+            data: body.images.map((url: string) => ({ productId, url }))
+        })
+    }
+
+    const updated = await prisma.product.update({
+        where: { id: productId },
+        data: {
+            ...(body.title && { title: body.title }),
+            ...(body.description && { description: body.description }),
+            ...(body.price !== undefined && { price: body.price }),
+            ...(body.type && { type: body.type }),
+            ...(body.filament !== undefined && { filament: body.filament }),
+            ...(body.dimensions !== undefined && { dimensions: body.dimensions }),
+            ...(body.deliveryTime !== undefined && { deliveryTime: body.deliveryTime }),
+        },
+        include: { images: true, options: true },
+    })
+
+    return NextResponse.json(updated)
+}
+
 export async function DELETE(
     _request: NextRequest,
     { params }: { params: Promise<{ productId: string }> }
