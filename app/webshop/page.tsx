@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link"
+import {useSession} from "next-auth/react";
 import {H1, H2, H3} from "@/components/ui/Typography";
 import { BackgroundContrast2, BackgroundMain, BackgroundOverlay} from "@/components/ui/Background";
 import { Icon } from "@/components/ui/Icon"
@@ -10,6 +11,7 @@ import {Button} from "@/components/ui/Button";
 import {Product} from "@/types/Product";
 
 export default function WebshopPage() {
+    const {data: session} = useSession()
     const [productData, setProductData] = useState<Product[]>([])
 
     const [productType, setProductType] = useState<"figure" | "practical">("figure")
@@ -51,6 +53,12 @@ export default function WebshopPage() {
             <div className={"flex justify-center gap-20 my-10 pb-5"}>
                 <Button className={"w-64"} isActive={productType === "figure"} onClick={() => setProductType("figure")}>Beeldjes</Button>
                 <Button className={"w-64"} isActive={productType === "practical"} onClick={() => setProductType("practical")}>Praktische spullen</Button>
+                {session?.user.role === "ADMIN" && (
+                    <Link href="/webshop/create_product" className={"absolute right-50 flex items-center justify-center gap-5 hover:underline  py-2"}>
+                        <H3 className={"text-action"}>Maak nieuw product</H3>
+                        <Icon name={"CirclePlus"} size={50} color={"#98CEAA"}/>
+                    </Link>
+                )}
             </div>
 
             <div className={"grid grid-cols-3 gap-15 px-130 justify-center items-center mb-20"}>
