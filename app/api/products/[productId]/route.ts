@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
+import { auth } from "@/lib/auth"
 
 export async function GET(
     _request: NextRequest,
@@ -73,3 +74,22 @@ export async function GET(
     }
 }
 
+export async function DELETE(
+    _request: NextRequest,
+    { params }: { params: Promise<{ productId: string }> }
+) {
+    const session = await auth()
+    if (!session?.user?.id || session.user.role !== "ADMIN") {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const { productId } = await params
+
+    await prisma.$transaction([
+        prisma.productImage.deleteMany({ where: { productId } }),
+        prisma.productOption.deleteMany({ where: { productId } }),
+        prisma.product.delete({ where: { id: productId } }),
+    ])
+
+    return NextResponse.json({ success: true })
+}

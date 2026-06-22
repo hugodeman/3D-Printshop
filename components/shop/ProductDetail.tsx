@@ -1,3 +1,7 @@
+"use client"
+
+import {useRouter} from "next/navigation";
+import {Icon} from "@/components/ui/Icon";
 import { H2, H3, P } from "@/components/ui/Typography"
 import ProductImageSlider from "@/components/shop/ProductImageSlider"
 import AddToCartButton from "@/components/shop/AddToCartButton"
@@ -11,7 +15,25 @@ type Props = {
 }
 
 export default function ProductDetail({ product, selectedOption, mode = "page", iconColor }: Props) {
+    const router = useRouter()
     const textClass = mode === "modal" ? "text-contrast" : ""
+
+    const handleDelete = async () => {
+        try {
+            const res = await fetch(`/api/products/${product.id}`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    product,
+                })
+            })
+            if (res.status === 200) {
+                router.push("/webshop")
+            }
+        } catch (error) {
+            console.log(error)
+        }
+    }
 
     return (
         <div className={`flex ${mode === "modal" ? "flex-row gap-20" : "flex-row gap-20 mr-10"}`}>
@@ -38,6 +60,9 @@ export default function ProductDetail({ product, selectedOption, mode = "page", 
                 ) : (
                     <AddToCartButton product={product} />
                 )}
+            </div>
+            <div className={"absolute right-50 cursor-pointer"} onClick={handleDelete}>
+                <Icon name={"Trash2"} size={40} color="#FCA5A5" />
             </div>
         </div>
     )
