@@ -740,42 +740,37 @@ export default function BuilderPage() {
 							<button
 								type="button"
 								onClick={() => setIsOpen((prev) => !prev)}
-								className="flex items-center justify-center rounded-full border border-[#98CEAA]/60 bg-black/20 backdrop-blur-sm transition hover:bg-[#2A2D31] hover:cursor-pointer h-[clamp(3rem,6vmin,5rem)] w-[clamp(3rem,6vmin,5rem)]"
+								className="flex items-center justify-center rounded-full border border-[#98CEAA]/60 bg-black/20 backdrop-blur-sm transition hover:bg-[#2A2D31] hover:cursor-pointer h-[clamp(5rem,6vmin,5rem)] w-[clamp(5rem,6vmin,5rem)]"
 								aria-label={isOpen ? "Verberg hulp" : "Toon hulp"}
 								title={isOpen ? "Verberg hulp" : "Toon hulp"}
 							>
-								<Icon
-									name="CircleQuestionMark"
-									size={25}
-									color={isOpen ? "#98CEAA" : "#d0e3d3"}
-									className="h-[clamp(1.25rem,3vmin,1.75rem)] w-[clamp(1.25rem,3vmin,1.75rem)]"
-								/>
+								<Icon name="CircleQuestionMark" size={37} color={isOpen ? "#98CEAA" : "#d0e3d3"} />
 							</button>
 
 							<button
 								type="button"
 								onClick={() => setMeasurementActive((prev) => !prev)}
-								className="flex items-center justify-center rounded-full border border-[#98CEAA]/60 bg-black/20 backdrop-blur-sm transition hover:bg-[#2A2D31] hover:cursor-pointer bottom-[clamp(0.75rem,2vh,1.5rem)] right-[clamp(5.5rem,11vw,6.5rem)] h-[clamp(3rem,6vmin,5rem)] w-[clamp(3rem,6vmin,5rem)]"
+								className="flex items-center justify-center rounded-full border border-[#98CEAA]/60 bg-black/20 backdrop-blur-sm transition hover:bg-[#2A2D31] hover:cursor-pointer bottom-[clamp(0.75rem,2vh,1.5rem)] right-[clamp(5.5rem,11vw,6.5rem)] h-[clamp(5rem,6vmin,5rem)] w-[clamp(5rem,6vmin,5rem)]"
 								aria-label={measurementActive ? "Meet modus uit" : "Meet modus aan"}
 								title={measurementActive ? "Meet modus uit" : "Meet modus aan"}
 								disabled={step !== 2}
 							>
-								<Icon name="Ruler" size={25} color={measurementActive ? "#98CEAA" : "#d0e3d3"} className="h-[clamp(1.25rem,3vmin,1.75rem)] w-[clamp(1.25rem,3vmin,1.75rem)]" />
+								<Icon name="Ruler" size={35} color={measurementActive ? "#98CEAA" : "#d0e3d3"} />
 							</button>
 
 							<button
 								type="button"
 								onClick={() => setShowGrid((prev) => !prev)}
-								className="flex items-center justify-center rounded-full border border-[#98CEAA]/60 bg-black/20 backdrop-blur-sm transition hover:bg-[#2A2D31] hover:cursor-pointer bottom-[clamp(0.75rem,2vh,1.5rem)] right-[clamp(0.75rem,2vw,1.5rem)] h-[clamp(3rem,6vmin,5rem)] w-[clamp(3rem,6vmin,5rem)]"
+								className="flex items-center justify-center rounded-full border border-[#98CEAA]/60 bg-black/20 backdrop-blur-sm transition hover:bg-[#2A2D31] hover:cursor-pointer bottom-[clamp(0.75rem,2vh,1.5rem)] right-[clamp(0.75rem,2vw,1.5rem)] h-[clamp(5rem,6vmin,5rem)] w-[clamp(5rem,6vmin,5rem)]"
 								aria-label={showGrid ? "Verberg grid" : "Toon grid"}
 								title={showGrid ? "Verberg grid" : "Toon grid"}
 							>
-								<Icon name="Grid" size={25} color={showGrid ? "#d0e3d3" : "#98CEAA"} className="h-[clamp(1.25rem,3vmin,1.75rem)] w-[clamp(1.25rem,3vmin,1.75rem)]" />
+								<Icon name="Grid" size={32} color={showGrid ? "#d0e3d3" : "#98CEAA"} />
 							</button>
 						</div>
-                        <div className={"absolute z-10 bottom-[clamp(0.75rem,2vh,1.5rem)] left-[clamp(0.75rem,2vw,1.5rem)]"}>
-                            <DeleteSceneButton onClearClick={handleClearScene} clearDisabled={!canClearScene}></DeleteSceneButton>
-                        </div>
+						<div className={"absolute z-10 bottom-[clamp(0.75rem,2vh,1.5rem)] left-[clamp(0.75rem,2vw,1.5rem)]"}>
+							<DeleteSceneButton onClearClick={handleClearScene} clearDisabled={!canClearScene}></DeleteSceneButton>
+						</div>
 					</div>
 				</div>
 
