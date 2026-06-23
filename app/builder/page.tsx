@@ -23,6 +23,7 @@ import {AddCustomObjectModal} from "@/components/builder/AddCustomObjectModal";
 import CustomObject from "@/components/builder/CustomObject"
 import { MeasurementTool, MeasurementDisplay } from "@/components/builder/MeasurementTool"
 import {GLTFObject} from "@/components/builder/GLTFObject";
+import {AxisArrows} from "@/components/builder/AxisArrows";
 
 import { saveBuilderCheckoutDraft } from "@/lib/builder-checkout-draft"
 import {BASE_PLATFORM_SIZE_CM, getPlatformModelScaleVector,} from "@/lib/builder-scene-scale"
@@ -265,6 +266,17 @@ export default function BuilderPage() {
 	const selectedScaleLimits = getAssetScaleLimits(selectedObjectAsset)
 	const positionMin = -(selectedPlatformSize / BASE_PLATFORM_SIZE_CM) + 0.1
 	const positionMax = (selectedPlatformSize / BASE_PLATFORM_SIZE_CM) - 0.1
+
+	const dynamicNumber =
+		selectedPlatformSize === 10
+			? 1.5
+			: selectedPlatformSize === 15
+				? 2
+				: 2.5
+
+	const offset = 2 / selectedPlatformSize - dynamicNumber
+	const arrowPosition: [number, number, number] = [offset, 0, offset]
+
 	const stepItems = [
 		{
 			id: 1,
@@ -657,6 +669,14 @@ export default function BuilderPage() {
 									}
 									return null
 								})}
+
+								{selectedObject && (
+									<AxisArrows
+										platformSize={selectedPlatformSize}
+										key={selectedPlatformSize}
+										platformCenter={arrowPosition}
+									/>
+								)}
 
 								{step === 2 && (
 									<ClickHandler
