@@ -60,7 +60,7 @@ export default function HomePage() {
                 </div>
 
             {/* Populaire producten */}
-            <section className="px-16 py-14">
+            <section className="py-14">
                 <H2 className="text-center mb-10">Populaire producten</H2>
                 <div className={"grid grid-cols-3 gap-15 px-130 justify-center items-center mb-20"}>
                     {randomProducts.map((product) => (
